@@ -1,22 +1,35 @@
 /* gemz.lk — data, shared layout, cart, GSAP + 3D */
 const GEMS = [
-  {slug:'yellow-sapphire',name:'Yellow Sapphire',c:['#fff3a8','#f2b705','#a86a00'],bg:['#3a2a08','#8a5a12'],origin:'Ratnapura, Sri Lanka',hardness:'9',clarity:'Eye-clean to VS',treat:'Unheated available',
+  {slug:'yellow-sapphire',name:'Yellow Sapphire',c:['#fff3a8','#f2b705','#a86a00'],bg:['#3a2a08','#8a5a12'],origin:'Ratnapura, Sri Lanka',hardness:'9',clarity:'Eye-clean to VS',treat:'Unheated available',colour:'Yellow',
    text:'Honey-gold corundum with a warm, luminous body colour. Sri Lankan yellow sapphires are celebrated for brilliance and natural, untreated character.'},
-  {slug:'white-sapphire',name:'White Sapphire',c:['#ffffff','#cfe3ff','#8aa6d6'],bg:['#1a2238','#4a5f8f'],origin:'Elahera, Sri Lanka',hardness:'9',clarity:'Eye-clean',treat:'Natural, untreated',
+  {slug:'white-sapphire',name:'White Sapphire',c:['#ffffff','#cfe3ff','#8aa6d6'],bg:['#1a2238','#4a5f8f'],origin:'Elahera, Sri Lanka',hardness:'9',clarity:'Eye-clean',treat:'Natural, untreated',colour:'Colourless',
    text:'Colourless corundum with diamond-like sparkle and exceptional durability. A pure, versatile stone for fine jewellery.'},
-  {slug:'violet-sapphire',name:'Violet Sapphire',c:['#e6c8ff','#8a4fd0','#41197a'],bg:['#1d0f3a','#5a2f8f'],origin:'Ratnapura, Sri Lanka',hardness:'9',clarity:'Eye-clean to VS',treat:'Unheated available',
+  {slug:'violet-sapphire',name:'Violet Sapphire',c:['#e6c8ff','#8a4fd0','#41197a'],bg:['#1d0f3a','#5a2f8f'],origin:'Ratnapura, Sri Lanka',hardness:'9',clarity:'Eye-clean to VS',treat:'Unheated available',colour:'Violet',
    text:'A rare royal violet with shifting purple and blue flashes. Prized by collectors for saturation and soft colour play.'},
-  {slug:'vanadium-chrysoberyl',name:'Vanadium Chrysoberyl',c:['#d9ffb8','#5fbf3a','#1d6b1f'],bg:['#0f2a14','#2f7a36'],origin:'Sri Lanka',hardness:'8.5',clarity:'Eye-clean',treat:'Natural, untreated',
+  {slug:'vanadium-chrysoberyl',name:'Vanadium Chrysoberyl',c:['#d9ffb8','#5fbf3a','#1d6b1f'],bg:['#0f2a14','#2f7a36'],origin:'Sri Lanka',hardness:'8.5',clarity:'Eye-clean',treat:'Natural, untreated',colour:'Green',
    text:'An exceptionally rare chrysoberyl coloured by vanadium, showing vivid green with a glassy, electric brilliance.'},
-  {slug:'padparadscha',name:'Padparadscha',c:['#ffe0cf','#ff8f6b','#c4452a'],bg:['#3a140c','#b0462e'],origin:'Sri Lanka',hardness:'9',clarity:'Eye-clean',treat:'Natural, untreated',
+  {slug:'padparadscha',name:'Padparadscha',c:['#ffe0cf','#ff8f6b','#c4452a'],bg:['#3a140c','#b0462e'],origin:'Sri Lanka',hardness:'9',clarity:'Eye-clean',treat:'Natural, untreated',colour:'Pink-orange',
    text:'The legendary lotus-blossom sapphire — a delicate balance of pink and orange, born in Sri Lanka and sought worldwide.'},
-  {slug:'blue-sapphire',name:'Ceylon Blue Sapphire',c:['#cfe0ff','#2f63e0','#0e2a7a'],bg:['#0a1430','#27399c'],origin:'Ratnapura, Sri Lanka',hardness:'9',clarity:'Eye-clean to VVS',treat:'Unheated available',
+  {slug:'blue-sapphire',name:'Ceylon Blue Sapphire',c:['#cfe0ff','#2f63e0','#0e2a7a'],bg:['#0a1430','#27399c'],origin:'Ratnapura, Sri Lanka',hardness:'9',clarity:'Eye-clean to VVS',treat:'Unheated available',colour:'Blue',
    text:'Cornflower to royal blue with a sparkling, silky glow. The signature gemstone of Sri Lanka, the island of gems.'},
-  {slug:'spinel',name:'Natural Spinel',c:['#ffd0e4','#e0407f','#7a0f3f'],bg:['#2e0a1e','#a02a60'],origin:'Sri Lanka',hardness:'8',clarity:'Eye-clean',treat:'Natural, untreated',
+  {slug:'spinel',name:'Natural Spinel',c:['#ffd0e4','#e0407f','#7a0f3f'],bg:['#2e0a1e','#a02a60'],origin:'Sri Lanka',hardness:'8',clarity:'Eye-clean',treat:'Natural, untreated',colour:'Pink-red',
    text:'Singly refractive and brilliantly saturated, spinel offers vivid pinks and reds with remarkable clarity and rarity.'},
-  {slug:'alexandrite',name:'Alexandrite',c:['#c8f5e4','#2fa58a','#7a2f78'],bg:['#0c2a28','#5a2f6a'],origin:'Sri Lanka',hardness:'8.5',clarity:'Eye-clean to SI',treat:'Natural, untreated',
+  {slug:'alexandrite',name:'Alexandrite',c:['#c8f5e4','#2fa58a','#7a2f78'],bg:['#0c2a28','#5a2f6a'],origin:'Sri Lanka',hardness:'8.5',clarity:'Eye-clean to SI',treat:'Natural, untreated',colour:'Green to raspberry',
    text:'The chameleon gem: green by daylight, raspberry under candlelight. One of the rarest and most collectible stones.'}
 ];
+const GEM_CATEGORIES = [
+  {label:'Blue Sapphire',match:g=>/blue sapphire/i.test(g.name)},
+  {label:'Ruby',match:g=>/ruby/i.test(g.name)},
+  {label:'Pink Sapphire',match:g=>/pink sapphire/i.test(g.name)},
+  {label:'Yellow Sapphire',match:g=>/yellow sapphire/i.test(g.name)},
+  {label:'Purple Sapphire',match:g=>/purple|violet sapphire/i.test(g.name)},
+  {label:'Teal Sapphire',match:g=>/teal sapphire/i.test(g.name)},
+  {label:'Padparadscha',match:g=>/padparadscha/i.test(g.name)},
+  {label:'Star Sapphire',match:g=>/star sapphire/i.test(g.name)},
+  {label:"Cat's Eye",match:g=>/cat.?s eye/i.test(g.name)},
+  {label:'Other',match:g=>!/blue sapphire|ruby|pink sapphire|yellow sapphire|purple sapphire|violet sapphire|teal sapphire|padparadscha|star sapphire|cat.?s eye/i.test(g.name)}
+];
+const JEWELLERY_CATEGORIES = ['Rings','Pendants','Necklaces','Earrings','Bangle','Gent','Wedding','Bracelets'];
 const ARTICLES = [
   {t:'How to read a gemstone certificate',k:'Guide',g:0,p:'What origin, treatment and clarity grades really mean before you buy.'},
   {t:'Unheated vs heated sapphires',k:'Education',g:5,p:'Understanding treatments and why unheated Ceylon stones command a premium.'},

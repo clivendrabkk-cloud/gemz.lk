@@ -8,10 +8,35 @@
 </head><body>
 <div id="site-header"></div>
 <main>
-<section class="page-hero"><div class="wrap"><span class="eyebrow">Our Collection</span><h1 style="font-size:clamp(2.6rem,6vw,5rem)">Our Gemstones</h1><p>Natural, authentic stones from Sri Lanka. Price on request.</p></div></section>
+<section class="page-hero"><div class="wrap"><span class="eyebrow">Our Collection</span><h1 style="font-size:clamp(2.6rem,6vw,5rem)">Our Gemstones</h1><p>Explore gemstones, jewellery and watches from Sri Lanka. Prices are available on request.</p></div></section>
 <section style="padding-top:50px"><div class="wrap">
-  <div class="chips" id="chips"><button class="chip on" data-f="all">All</button><button class="chip" data-f="sapphire">Sapphires</button><button class="chip" data-f="rare">Rare Stones</button></div>
+  <div class="collection-tabs" id="collectionTabs" role="tablist" aria-label="Product categories">
+    <button class="collection-tab on" type="button" role="tab" aria-selected="true" data-section="gem">GEM</button>
+    <button class="collection-tab" type="button" role="tab" aria-selected="false" data-section="jewellery">JEWELLERY</button>
+    <button class="collection-tab" type="button" role="tab" aria-selected="false" data-section="watch">WATCH</button>
+  </div>
+  <div id="categoryPanel" role="tabpanel">
+    <div class="category-group" id="gemCategories">
+      <p class="category-label">Browse gemstones</p>
+      <div class="chips" id="gemChips">
+        <button class="chip on" type="button" data-f="all" aria-pressed="true">All</button>
+        <button class="chip" type="button" data-f="sapphire" aria-pressed="false">Sapphires</button>
+        <button class="chip" type="button" data-f="rare" aria-pressed="false">Rare Stones</button>
+      </div>
+      <p class="category-label category-label-sub">Gem categories</p>
+      <div class="chips" id="gemTypeChips"></div>
+    </div>
+    <div class="category-group" id="jewelleryCategories" hidden>
+      <p class="category-label">Browse jewellery</p>
+      <div class="chips" id="jewelleryChips"></div>
+    </div>
+    <div class="category-group" id="watchCategories" hidden>
+      <p class="category-label">WATCH</p>
+      <p class="category-note">Please contact us for watch availability and sourcing.</p>
+    </div>
+  </div>
   <div class="grid" id="grid"></div>
+  <p class="empty-category" id="emptyCategory" hidden></p>
 </div></section>
 </main>
 <div id="site-footer"></div>
@@ -20,9 +45,19 @@
 <script src="js/app.js"></script>
 <script>
   const grid=document.getElementById('grid');
-  function render(f){
-    const list=GEMS.filter(g=>f==='all'||(f==='sapphire'?/sapphire|padparadscha/i.test(g.name):!/sapphire/i.test(g.name)));
+  const emptyCategory=document.getElementById('emptyCategory');
+  const categoryGroups={gem:document.getElementById('gemCategories'),jewellery:document.getElementById('jewelleryCategories'),watch:document.getElementById('watchCategories')};
+  let section='gem';
+  let currentCategory='Gem';
+  function render(f='all'){
+    let list=[];
+    if(section==='gem'){
+      const category=GEM_CATEGORIES.find(c=>c.label===f);
+      list=GEMS.filter(g=>category?category.match(g):f==='all'||(f==='sapphire'?/sapphire|padparadscha/i.test(g.name):!/sapphire/i.test(g.name)));
+    }
     grid.innerHTML=list.map(cardHTML).join('');
+    emptyCategory.hidden=list.length>0||section==='watch';
+    emptyCategory.textContent=`${currentCategory} has no products listed yet. Please contact us to ask about availability.`;
     if(window.gsap)gsap.from(grid.children,{opacity:0,y:40,stagger:.08,duration:.7,ease:'power3.out',clearProps:'all'});
     initTilt();
   }
@@ -35,7 +70,31 @@
       el.addEventListener('pointerleave',()=>{rx(0);ry(0)});
     });
   }
-  document.getElementById('chips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));b.classList.add('on');render(b.dataset.f)});
+  function selectChip(button,group){
+    group.querySelectorAll('.chip').forEach(c=>{const active=c===button;c.classList.toggle('on',active);c.setAttribute('aria-pressed',String(active))});
+  }
+  function setSection(next){
+    section=next;
+    document.querySelectorAll('.collection-tab').forEach(tab=>{const active=tab.dataset.section===next;tab.classList.toggle('on',active);tab.setAttribute('aria-selected',String(active))});
+    Object.entries(categoryGroups).forEach(([key,node])=>node.hidden=key!==next);
+    grid.hidden=next==='watch';
+    currentCategory=next==='watch'?'Watches':next==='jewellery'?'Jewellery':'Gemstones';
+    if(next==='gem'){
+      selectChip(gemChips.querySelector('[data-f="all"]'),gemChips);
+      gemTypeChips.querySelectorAll('.chip').forEach(c=>{c.classList.remove('on');c.setAttribute('aria-pressed','false')});
+    }
+    if(next==='jewellery')jewelleryChips.querySelectorAll('.chip').forEach(c=>{c.classList.remove('on');c.setAttribute('aria-pressed','false')});
+    render('all');
+  }
+  document.getElementById('collectionTabs').addEventListener('click',e=>{const tab=e.target.closest('.collection-tab');if(tab)setSection(tab.dataset.section)});
+  const gemChips=document.getElementById('gemChips');
+  const gemTypeChips=document.getElementById('gemTypeChips');
+  gemTypeChips.innerHTML=GEM_CATEGORIES.map(c=>`<button class="chip" type="button" data-f="${c.label}" aria-pressed="false">${c.label}</button>`).join('');
+  const jewelleryChips=document.getElementById('jewelleryChips');
+  jewelleryChips.innerHTML=JEWELLERY_CATEGORIES.map(c=>`<button class="chip" type="button" data-f="${c}" aria-pressed="false">${c}</button>`).join('');
+  gemChips.addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;selectChip(b,gemChips);gemTypeChips.querySelectorAll('.chip').forEach(c=>{c.classList.remove('on');c.setAttribute('aria-pressed','false')});currentCategory=b.dataset.f==='all'?'Gemstones':b.dataset.f==='sapphire'?'Sapphires':'Rare Stones';render(b.dataset.f)});
+  gemTypeChips.addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;selectChip(b,gemTypeChips);gemChips.querySelectorAll('.chip').forEach(c=>{c.classList.remove('on');c.setAttribute('aria-pressed','false')});currentCategory=b.dataset.f;render(b.dataset.f)});
+  jewelleryChips.addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;selectChip(b,jewelleryChips);currentCategory=b.dataset.f;render(b.dataset.f)});
   layout('collection');render('all');
 </script>
 </body></html>

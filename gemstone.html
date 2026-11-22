@@ -23,16 +23,24 @@
   const slug=new URLSearchParams(location.search).get('slug');
   const g=GEMS.find(x=>x.slug===slug)||GEMS[0];
   document.title=g.name+' — Gemz.lk';
+  const gemDetails=[
+    ['Code No','—'],['Stone',g.name],['Weight','—'],['Clarity Grade',g.clarity],['Colour',g.colour||'—'],
+    ['Origin',g.origin],['Dimensions','—'],['Shape','—'],['Cut','—'],['Treatment',g.treat],
+    ['Certificate','—'],['Comment','—'],['Hardness (Mohs)',g.hardness],['Price','Price on Request']
+  ];
+  const jewelleryDetails=[
+    ['Metal','—'],['Weight','—'],['Gemstones','—'],['Gemstone Weight','—'],['Number of Diamonds','—'],
+    ['Diamond Weight','—'],['Diamond Colour','—'],['Diamond Clarity','—'],['Setting type','—'],
+    ['Final finishing','—'],['Dimensions','—'],['Comment','—']
+  ];
+  const detailRows=rows=>rows.map(([label,value])=>`<tr><td>${label}</td><td>${value}</td></tr>`).join('');
   document.getElementById('detail').innerHTML=`
   <div class="viewer" style="background:${bgOf(g)}"><div class="gem3d">${gemSVG(g,'d')}</div><small>Drag to rotate</small></div>
   <div>
     <span class="eyebrow">Natural Gemstone</span><h1 style="font-size:clamp(2.4rem,5vw,4.2rem)">${g.name}</h1>
     <p class="lead" style="margin-top:20px">${g.text}</p>
-    <table class="specs">
-      <tr><td>Origin</td><td>${g.origin}</td></tr><tr><td>Hardness (Mohs)</td><td>${g.hardness}</td></tr>
-      <tr><td>Clarity</td><td>${g.clarity}</td></tr><tr><td>Treatment</td><td>${g.treat}</td></tr>
-      <tr><td>Price</td><td><span class="tag">Price on Request</span></td></tr>
-    </table>
+    <div class="detail-spec"><h2>GEM DETAILS</h2><table class="specs">${detailRows(gemDetails)}</table></div>
+    <div class="detail-spec jewellery-spec"><h2>JEWELLERY DETAILS</h2><h3>Features &amp; Specifications</h3><table class="specs">${detailRows(jewelleryDetails)}</table></div>
     <div class="detail-actions"><button class="btn btn-gold" id="add">Add to Inquiry</button><a class="btn btn-ghost" href="contact.html?gem=${g.slug}">Request Price</a></div>
     <p class="note" id="msg" style="margin-top:14px"></p>
   </div>`;
