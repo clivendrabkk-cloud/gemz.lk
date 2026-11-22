@@ -129,20 +129,8 @@ function initFX(){
     const o={v:0},end=+el.dataset.count,suf=el.dataset.suffix||'';
     gsap.to(o,{v:end,duration:2,ease:'power2.out',scrollTrigger:{trigger:el,start:'top 90%'},onUpdate:()=>el.textContent=Math.round(o.v)+suf});
   });
-  /* hero 3D */
-  const gem=document.querySelector('.hero-gem');
-  if(gem){
-    gsap.from('.hero .eyebrow,.hero h1,.hero p,.hero .btn',{y:60,opacity:0,duration:1.2,stagger:.14,ease:'power4.out',delay:.2});
-    gsap.from(gem,{scale:.5,rotationY:-120,opacity:0,duration:1.8,ease:'expo.out',delay:.3});
-    gsap.to(gem,{y:-22,duration:3,yoyo:true,repeat:-1,ease:'sine.inOut'});
-    gsap.to('.orbit',{rotation:'+=360',duration:40,repeat:-1,ease:'none',transformOrigin:'50% 50%'});
-    const stage=document.querySelector('.hero-stage');
-    const rY=gsap.quickTo(gem,'rotationY',{duration:1,ease:'power3'}),rX=gsap.quickTo(gem,'rotationX',{duration:1,ease:'power3'});
-    gsap.set(gem,{transformPerspective:1000});
-    addEventListener('pointermove',e=>{rY((e.clientX/innerWidth-.5)*50);rX(-(e.clientY/innerHeight-.5)*30)});
-    gsap.to(gem,{scale:.7,rotationZ:12,ease:'none',scrollTrigger:{trigger:'.hero',start:'top top',end:'bottom top',scrub:true}});
-    gsap.utils.toArray('.spark').forEach((s,i)=>{gsap.set(s,{left:Math.random()*100+'%',top:Math.random()*100+'%'});gsap.to(s,{opacity:.1,scale:.3,duration:1.4+Math.random()*2,repeat:-1,yoyo:true,delay:i*.2,ease:'sine.inOut'})});
-  }
+  /* hero text intro */
+  gsap.from('.hero .eyebrow,.hero h1,.hero p,.hero .btn',{y:60,opacity:0,duration:1.2,stagger:.14,ease:'power4.out',delay:.2});
   /* split visual 3D scroll */
   const sv=document.querySelector('.split-visual');
   if(sv){gsap.set(sv,{transformPerspective:1000});gsap.fromTo(sv,{rotationY:-18,rotationX:6},{rotationY:0,rotationX:0,ease:'none',scrollTrigger:{trigger:sv,start:'top 90%',end:'center 50%',scrub:true}});
