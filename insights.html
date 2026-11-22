@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Insights — Gemz.lk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css"><script>document.documentElement.classList.add('js')</script>
+</head><body>
+<div id="site-header"></div>
+<main>
+<section class="page-hero"><div class="wrap"><span class="eyebrow">Journal</span><h1 style="font-size:clamp(2.6rem,6vw,5rem)">Insights</h1><p>Guides, education and market stories from the world of natural gemstones.</p></div></section>
+<section><div class="wrap"><div class="posts" id="posts" data-stagger></div></div></section>
+</main>
+<div id="site-footer"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="js/app.js"></script>
+<script>
+  document.getElementById('posts').innerHTML=ARTICLES.map((a,i)=>{const g=GEMS[a.g];return `<article class="post"><div class="thumb" style="background:${bgOf(g)}">${gemSVG(g,'p'+i)}</div><div class="b"><small>${a.k}</small><h3>${a.t}</h3><p>${a.p}</p></div></article>`}).join('');
+  boot('insights');
+</script>
+</body></html>
