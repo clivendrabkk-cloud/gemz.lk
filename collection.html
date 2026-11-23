@@ -8,8 +8,8 @@
 </head><body>
 <div id="site-header"></div>
 <main>
-<section class="page-hero"><div class="wrap"><span class="eyebrow">Our Collection</span><h1 style="font-size:clamp(2.6rem,6vw,5rem)">Our Gemstones</h1><p>Explore gemstones, jewellery and watches from Sri Lanka. Prices are available on request.</p></div></section>
-<section style="padding-top:50px"><div class="wrap">
+<section class="page-hero"><div class="wrap"><span class="eyebrow">Our Collection</span><h1 style="font-size:clamp(2.6rem,6vw,5rem)">Gems, Jewellery &amp; Watches</h1><p>Explore gemstones, jewellery and watches from Sri Lanka. Prices are available on request.</p></div></section>
+<section id="gem" style="padding-top:50px"><div class="wrap">
   <div class="collection-tabs" id="collectionTabs" role="tablist" aria-label="Product categories">
     <button class="collection-tab on" type="button" role="tab" aria-selected="true" data-section="gem">GEM</button>
     <button class="collection-tab" type="button" role="tab" aria-selected="false" data-section="jewellery">JEWELLERY</button>
@@ -17,14 +17,11 @@
   </div>
   <div id="categoryPanel" role="tabpanel">
     <div class="category-group" id="gemCategories">
-      <p class="category-label">Browse gemstones</p>
+      <p class="category-label">GEM subcategories</p>
       <div class="chips" id="gemChips">
-        <button class="chip on" type="button" data-f="all" aria-pressed="true">All</button>
-        <button class="chip" type="button" data-f="sapphire" aria-pressed="false">Sapphires</button>
-        <button class="chip" type="button" data-f="rare" aria-pressed="false">Rare Stones</button>
+        <button class="chip on" type="button" data-f="all" aria-pressed="true">All Gems</button>
       </div>
-      <p class="category-label category-label-sub">Gem categories</p>
-      <div class="chips" id="gemTypeChips"></div>
+      <div class="chips" id="gemTypeChips" aria-label="Gem subcategories"></div>
     </div>
     <div class="category-group" id="jewelleryCategories" hidden>
       <p class="category-label">Browse jewellery</p>
@@ -53,11 +50,16 @@
     let list=[];
     if(section==='gem'){
       const category=GEM_CATEGORIES.find(c=>c.label===f);
-      list=GEMS.filter(g=>category?category.match(g):f==='all'||(f==='sapphire'?/sapphire|padparadscha/i.test(g.name):!/sapphire/i.test(g.name)));
+      list=GEMS.filter(g=>category?category.match(g):f==='all');
     }
     grid.innerHTML=list.map(cardHTML).join('');
     emptyCategory.hidden=list.length>0||section==='watch';
-    emptyCategory.textContent=`${currentCategory} has no products listed yet. Please contact us to ask about availability.`;
+    if(section==='jewellery'){
+      const detailURL=`jewellery-product.html?category=${encodeURIComponent(currentCategory==='Jewellery'?'Rings':currentCategory)}`;
+      emptyCategory.innerHTML=`${currentCategory} pieces are available on request. <a class="text-link" href="${detailURL}">View jewellery product details</a>`;
+    }else{
+      emptyCategory.textContent=`${currentCategory} has no products listed yet. Please contact us to ask about availability.`;
+    }
     if(window.gsap)gsap.from(grid.children,{opacity:0,y:40,stagger:.08,duration:.7,ease:'power3.out',clearProps:'all'});
     initTilt();
   }
@@ -96,5 +98,15 @@
   gemTypeChips.addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;selectChip(b,gemTypeChips);gemChips.querySelectorAll('.chip').forEach(c=>{c.classList.remove('on');c.setAttribute('aria-pressed','false')});currentCategory=b.dataset.f;render(b.dataset.f)});
   jewelleryChips.addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;selectChip(b,jewelleryChips);currentCategory=b.dataset.f;render(b.dataset.f)});
   layout('collection');render('all');
+  const initialParams=new URLSearchParams(location.search);
+  const initialSection=initialParams.get('section');
+  if(['gem','jewellery','watch'].includes(initialSection))setSection(initialSection);
+  if(initialSection==='jewellery'){
+    const requestedCategory=JEWELLERY_CATEGORIES.find(c=>c.toLowerCase()===initialParams.get('category')?.toLowerCase());
+    if(requestedCategory){
+      const categoryButton=[...jewelleryChips.querySelectorAll('.chip')].find(chip=>chip.dataset.f===requestedCategory);
+      if(categoryButton)categoryButton.click();
+    }
+  }
 </script>
 </body></html>

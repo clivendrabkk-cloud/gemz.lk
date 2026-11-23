@@ -17,9 +17,14 @@
 <script src="js/app.js"></script>
 <script>
   function draw(){
-    const list=Cart.get().map(s=>GEMS.find(g=>g.slug===s)).filter(Boolean);
-    items.innerHTML=list.length?list.map((g,i)=>`<div class="cart-item"><div class="frame" style="background:${bgOf(g)}">${gemSVG(g,'k'+i)}</div><div><h3>${g.name}</h3><span class="tag">Price on Request</span></div><button class="rm" data-s="${g.slug}">Remove</button></div>`).join(''):`<div class="empty"><h3>Your inquiry cart is empty</h3><p style="margin:10px 0 24px;opacity:.7">Browse the collection and add stones you love.</p><a class="btn btn-dark" href="collection.html">Explore Gemstones</a></div>`;
-    act.innerHTML=list.length?`<a class="btn btn-gold" href="mailto:info@gemz.lk?subject=${encodeURIComponent('Inquiry')}&body=${encodeURIComponent('I am interested in:\n'+list.map(g=>'- '+g.name).join('\n'))}">Send Inquiry</a>`:'';
+    const list=Cart.get().map(s=>{
+      const gem=GEMS.find(item=>item.slug===s);
+      if(gem)return{slug:s,name:gem.name,kind:'gem',item:gem};
+      const category=JEWELLERY_CATEGORIES.find(item=>`jewellery-${item.toLowerCase()}`===s);
+      return category?{slug:s,name:`${category} Jewellery`,kind:'jewellery',category}:null;
+    }).filter(Boolean);
+    items.innerHTML=list.length?list.map((item,i)=>`<div class="cart-item"><div class="frame" style="background:${item.kind==='gem'?bgOf(item.item):'linear-gradient(145deg,#20263a,#474f68)'}">${item.kind==='gem'?gemSVG(item.item,'k'+i):jewelleryArt(item.category)}</div><div><h3>${item.name}</h3><span class="tag">Price on Request</span></div><button class="rm" data-s="${item.slug}">Remove</button></div>`).join(''):`<div class="empty"><h3>Your inquiry cart is empty</h3><p style="margin:10px 0 24px;opacity:.7">Browse the collection and add pieces you like.</p><a class="btn btn-dark" href="collection.html">Explore the collection</a></div>`;
+    act.innerHTML=list.length?`<a class="btn btn-gold" href="mailto:info@gemz.lk?subject=${encodeURIComponent('Inquiry')}&body=${encodeURIComponent('I am interested in:\n'+list.map(item=>'- '+item.name).join('\n'))}">Send Inquiry</a>`:'';
     Cart.badge();
   }
   items.onclick=e=>{const b=e.target.closest('.rm');if(b){Cart.remove(b.dataset.s);draw()}};

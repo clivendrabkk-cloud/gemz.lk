@@ -30,6 +30,10 @@ const GEM_CATEGORIES = [
   {label:'Other',match:g=>!/blue sapphire|ruby|pink sapphire|yellow sapphire|purple sapphire|violet sapphire|teal sapphire|padparadscha|star sapphire|cat.?s eye/i.test(g.name)}
 ];
 const JEWELLERY_CATEGORIES = ['Rings','Pendants','Necklaces','Earrings','Bangle','Gent','Wedding','Bracelets'];
+const JEWELLERY_DETAIL_FIELDS = [
+  'Metal','Weight','Gemstones','Gemstone Weight','Number of Diamonds','Diamond Weight',
+  'Diamond Colour','Diamond Clarity','Setting type','Final finishing','Dimensions','Comment'
+];
 const ARTICLES = [
   {t:'How to read a gemstone certificate',k:'Guide',g:0,p:'What origin, treatment and clarity grades really mean before you buy.'},
   {t:'Unheated vs heated sapphires',k:'Education',g:5,p:'Understanding treatments and why unheated Ceylon stones command a premium.'},
@@ -78,9 +82,9 @@ const Cart={
 function layout(active){
   const L=(h,t,k)=>`<a href="${h}" class="${active===k?'active':''}">${t}</a>`;
   document.getElementById('site-header').innerHTML=`
-  <div class="announce"><div class="announce-track">${Array(8).fill('<span>Authentic Natural Gemstones from Sri Lanka to the World.</span><span>Over 40 Years of Expertise in Exceptional Natural Gemstones.</span>').join('')}</div></div>
+  <div class="announce"><div class="announce-track">${Array(8).fill('<span>Natural Gems &amp; Fine Jewellery from Sri Lanka.</span><span>Over 40 Years of Ceylon Gem Expertise.</span>').join('')}</div></div>
   <header class="header" id="hdr"><div class="header-in">
-    <nav class="nav">${L('index.html','Home','home')}${L('collection.html','Our Gemstones','collection')}${L('about.html','About us','about')}<a href="insights.html" class="only-md ${active==='insights'?'active':''}">Insights</a><a href="contact.html" class="only-md ${active==='contact'?'active':''}">Contact</a></nav>
+    <nav class="nav" aria-label="Main navigation">${L('index.html','Home','home')}${L('collection.html','Our Gemstones','collection')}<a class="nav-gem ${active==='collection'?'active':''}" href="collection.html?section=gem">GEM</a><details class="nav-drop"><summary class="${active==='collection'?'active':''}">JEWELLERY</summary><div class="nav-dropdown"><a href="collection.html?section=jewellery">All Jewellery</a>${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${category}</a>`).join('')}</div></details>${L('collection.html?section=watch','WATCH','collection')}${L('about.html','About us','about')}</nav>
     <button class="burger" id="burger" aria-label="Menu"><i></i><i></i><i></i></button>
     <a href="index.html" class="logo" aria-label="Gemz.lk home"><svg viewBox="0 0 200 200">${gemSVG(GEMS[5],'logo').replace(/<\/?svg[^>]*>/g,'')}</svg><span>GEMZ<small>SRI LANKA</small></span></a>
     <div class="utils">
@@ -91,7 +95,7 @@ function layout(active){
       <a class="ico" href="cart.html" aria-label="Inquiry cart">${icon.bag}<span class="cart-count">0</span></a>
       <a class="ico opt" href="login.html" aria-label="Account">${icon.user}</a>
     </div></div></header>
-  <div class="mobile-nav" id="mnav"><a href="index.html">Home</a><a href="collection.html">Our Gemstones</a><a href="about.html">About us</a><a href="insights.html">Insights</a><a href="contact.html">Contact Us</a><a href="login.html">Account</a></div>`;
+  <div class="mobile-nav" id="mnav"><a href="index.html">Home</a><a href="collection.html">Our Gemstones</a><a href="collection.html?section=gem">GEM</a><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=jewellery">JEWELLERY</a><div class="mobile-jewellery-subnav">${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${category}</a>`).join('')}</div></div><a href="collection.html?section=watch">WATCH</a><a href="about.html">About us</a><a href="insights.html">Insights</a><a href="contact.html">Contact Us</a><a href="login.html">Account</a></div>`;
   document.getElementById('site-footer').innerHTML=`<footer class="footer"><div class="wrap"><div class="foot-grid">
     <div><div class="logo" style="color:#fff;margin-bottom:16px">GEMZ<small>.LK</small></div><p style="max-width:34ch;font-size:.92rem">Authentic natural gemstones sourced in Sri Lanka and delivered worldwide. Established 1985.</p></div>
     <div><h4>Explore</h4><a href="index.html">Home</a><a href="collection.html">Our Gemstones</a><a href="about.html">About us</a><a href="insights.html">Insights</a></div>
@@ -107,6 +111,28 @@ function cardHTML(g,i){
   return `<a class="card" href="gemstone.html?slug=${g.slug}" data-tilt>
   <div class="frame" style="background:${bgOf(g)}">${gemSVG(g,'c'+i+Math.random().toString(36).slice(2,5))}</div>
   <div class="card-body"><h3>${g.name}</h3><span class="tag">Price on Request</span></div></a>`;
+}
+
+function jewelleryCategoryURL(category){
+  return `collection.html?section=jewellery&category=${encodeURIComponent(category)}`;
+}
+
+function jewelleryArt(category){
+  const art={
+    Rings:'<ellipse cx="120" cy="144" rx="60" ry="35" stroke-width="14"/><path d="M98 85 120 58l22 27-22 35z" stroke-width="5"/>',
+    Pendants:'<path d="M82 42c2 49 18 64 38 82 20-18 36-33 38-82" stroke-width="7"/><path d="m120 122 28 30-28 48-28-48z" stroke-width="5"/>',
+    Necklaces:'<path d="M48 50c6 118 38 158 72 158s66-40 72-158" stroke-width="7"/><path d="m120 173 19 20-19 34-19-34z" stroke-width="5"/>',
+    Earrings:'<path d="M78 58v28m64-28v28" stroke-width="6"/><circle cx="78" cy="139" r="34" stroke-width="7"/><circle cx="142" cy="139" r="34" stroke-width="7"/>',
+    Bangle:'<ellipse cx="120" cy="128" rx="62" ry="82" stroke-width="14"/><path d="m120 36 15 21-15 22-15-22z" stroke-width="5"/>',
+    Gent:'<path d="M72 118h96l-9 40H81z" stroke-width="8"/><path d="M92 118c0-46 56-46 56 0" stroke-width="8"/><path d="m120 128 18 16-18 20-18-20z" stroke-width="4"/>',
+    Wedding:'<ellipse cx="120" cy="144" rx="59" ry="34" stroke-width="12"/><path d="m120 65 27 31-27 31-27-31z" stroke-width="6"/><path d="M120 54v-9" stroke-width="5"/>',
+    Bracelets:'<path d="M60 93c32-31 88-31 120 0M60 159c32 31 88 31 120 0" stroke-width="9"/><path d="M60 93c-19 20-19 46 0 66m120-66c19 20 19 46 0 66" stroke-width="9"/><circle cx="120" cy="126" r="11" stroke-width="5"/>'
+  };
+  return `<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g fill="none" stroke="#e8c77f" stroke-linecap="round" stroke-linejoin="round">${art[category]||art.Rings}</g><circle cx="120" cy="120" r="105" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="1"/></svg>`;
+}
+
+function jewelleryCardHTML(category){
+  return `<a class="jewellery-card" href="${jewelleryCategoryURL(category)}"><div class="jewellery-art">${jewelleryArt(category)}</div><div class="jewellery-card-body"><h3>${category}</h3><span class="tag">Explore</span></div></a>`;
 }
 
 /* Effects */
