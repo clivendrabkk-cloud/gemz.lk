@@ -29,6 +29,13 @@
   <div class="scroll-cue">Scroll</div>
 </section>
 
+<nav class="collection-shortcuts" aria-label="Browse collections">
+  <div class="wrap">
+    <a href="collection.html?section=gem" class="btn btn-gold">Gemstones</a>
+    <a href="collection.html?section=jewellery" class="btn btn-ghost">Jewellery</a>
+  </div>
+</nav>
+
 <!-- New arrivals -->
 <section class="new-arrivals" id="new-arrivals">
   <div class="wrap center"><span class="eyebrow" data-reveal>Just selected</span><h2 data-reveal>New Arrivals</h2><p class="lead" data-reveal>Discover a few of the natural stones now available to enquire about.</p></div>
@@ -53,18 +60,11 @@
 <!-- Watch feature -->
 <section class="watch-feature" id="watch-box">
   <div class="wrap watch-panel">
-    <div class="watch-clip" role="img" aria-label="Animated close-up preview of a wristwatch">
-      <svg viewBox="0 0 300 360" aria-hidden="true">
-        <defs><linearGradient id="watchMetal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f3d391"/><stop offset=".5" stop-color="#9d6d2d"/><stop offset="1" stop-color="#f3d391"/></linearGradient><radialGradient id="watchFace"><stop stop-color="#26304d"/><stop offset="1" stop-color="#090d19"/></radialGradient></defs>
-        <path d="M120 8h60l18 94h-96zM102 258h96l-18 94h-60z" fill="url(#watchMetal)"/>
-        <rect x="83" y="82" width="134" height="196" rx="62" fill="url(#watchMetal)"/>
-        <circle cx="150" cy="180" r="55" fill="url(#watchFace)" stroke="#f3d391" stroke-width="4"/>
-        <circle cx="150" cy="180" r="43" fill="none" stroke="#f3d391" stroke-opacity=".45"/>
-        <path d="M150 180V144" stroke="#f7f4ee" stroke-width="4" stroke-linecap="round"/>
-        <path class="watch-second-hand" d="M150 180l25-17" stroke="#d9a54a" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="150" cy="180" r="5" fill="#d9a54a"/>
-        <path d="M150 137v5m0 76v5m43-43h-5m-76 0h-5" stroke="#f3d391" stroke-width="2"/>
-      </svg>
+    <div class="watch-clip">
+      <video autoplay loop muted playsinline controls preload="metadata" aria-label="Gemz.lk hero video preview">
+        <source src="https://iseknah2nmm0rxln.public.blob.vercel-storage.com/hero-tPEhcYlV4OTW4kBOsUQDDHLu83QLRz.mp4" type="video/mp4">
+        Your browser does not support video playback.
+      </video>
       <span class="clip-label">A closer look</span>
     </div>
     <div class="watch-copy"><span class="eyebrow">Time, considered</span><h2>A Watch Worth a Closer Look</h2><p>Explore our watch selection and enquire for availability and details.</p><a href="collection.html?section=watch" class="btn btn-gold">Discover watches</a></div>
@@ -75,7 +75,7 @@
 <section class="promo-videos" id="promotional-videos">
   <div class="wrap center"><span class="eyebrow" data-reveal>Stories from Sri Lanka</span><h2 data-reveal>Promotional Videos</h2><p class="lead" data-reveal>A closer look at the stones and story behind Gemz.lk.</p></div>
   <div class="wrap promo-grid">
-    <article class="promo-card"><video controls playsinline preload="metadata"><source src="https://iseknah2nmm0rxln.public.blob.vercel-storage.com/hero-tPEhcYlV4OTW4kBOsUQDDHLu83QLRz.mp4" type="video/mp4">Your browser does not support video playback.</video><div><span class="eyebrow">The collection</span><h3>Natural Gems of Ceylon</h3></div></article>
+    <article class="promo-card"><video autoplay loop muted controls playsinline preload="metadata" aria-label="Natural Gems of Ceylon promotional video"><source src="https://iseknah2nmm0rxln.public.blob.vercel-storage.com/hero-tPEhcYlV4OTW4kBOsUQDDHLu83QLRz.mp4" type="video/mp4">Your browser does not support video playback.</video><div><span class="eyebrow">The collection</span><h3>Natural Gems of Ceylon</h3></div></article>
     <article class="promo-card promo-card-copy"><div class="promo-visual"><div class="gem-in" id="promoGem"></div></div><div><span class="eyebrow">Our heritage</span><h3>Over 40 Years in Gems</h3><a href="about.html" class="text-link">Discover our story</a></div></article>
   </div>
 </section>
@@ -94,6 +94,7 @@
   const jewelleryCards=JEWELLERY_CATEGORIES.map(jewelleryCardHTML).join('');
   document.getElementById('jewelleryTrack').innerHTML=jewelleryCards+jewelleryCards;
   const hv=document.getElementById('heroVideo');hv.addEventListener('error',()=>hv.remove(),true);hv.querySelector('source').addEventListener('error',()=>hv.remove());
+  document.querySelectorAll('.watch-clip video,.promo-card video').forEach(video=>{const playback=video.play();if(playback&&typeof playback.catch==='function')playback.catch(()=>{});});
   boot('home');
 </script>
 </body>
