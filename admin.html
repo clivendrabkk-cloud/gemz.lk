@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Store Admin — Gemz.lk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin-settings.css">
+</head>
+<body>
+  <section class="gate" id="gate" aria-live="polite">
+    <a class="brand" href="index.html"><span class="brand-mark">G</span><span>GEMZ<small>STORE ADMIN</small></span></a>
+    <div class="gate-card" id="loginCard">
+      <span class="eyebrow">Private workspace</span><h1>Sign in to manage Gemz.lk</h1>
+      <p>Use an administrator account configured in Supabase Auth.</p>
+      <form id="loginForm" class="stack">
+        <label>Email<input name="email" type="email" autocomplete="username" required></label>
+        <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+        <button class="button primary" type="submit">Sign in</button>
+        <p class="notice" id="loginNotice" role="status"></p>
+      </form>
+    </div>
+    <div class="gate-card setup-card" id="setupCard" hidden>
+      <span class="eyebrow">Setup needed</span><h1>Connect this site to Supabase</h1>
+      <p>Add the project URL and anon/public key in <code>js/supabase-config.js</code>, then run <code>supabase/schema.sql</code> in your project’s SQL editor.</p>
+      <p>The browser app only uses the public anon key. Admin permissions are enforced by Supabase Auth and row-level security.</p>
+      <a class="button primary" href="README.md">Read setup guide</a>
+    </div>
+    <p class="gate-foot"><a href="index.html">Return to Gemz.lk</a></p>
+  </section>
+
+  <div class="admin-shell" id="adminShell" hidden>
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="admin.html"><span class="brand-mark">G</span><span>GEMZ<small>STORE ADMIN</small></span></a>
+      <p class="side-label">Workspace</p>
+      <nav class="side-nav" aria-label="Admin sections">
+        <button data-view="overview" class="active"><span>⌂</span>Overview</button>
+        <button data-view="catalog"><span>◇</span>Catalog</button>
+        <button data-view="articles"><span>▤</span>Insights</button>
+        <button data-view="inquiries"><span>✉</span>Inquiries</button>
+        <button data-view="media"><span>▧</span>Media library</button>
+        <button data-view="settings"><span>⚙</span>Site settings</button>
+      </nav>
+      <div class="sidebar-bottom"><a href="index.html" target="_blank" rel="noreferrer">View storefront ↗</a><button class="signout" id="signout">Sign out</button></div>
+    </aside>
+    <main class="main-area">
+      <header class="topbar"><button class="menu-toggle" id="menuToggle" aria-label="Open menu">☰</button><div><span class="eyebrow" id="sectionEyebrow">Store workspace</span><h1 id="sectionTitle">Overview</h1></div><div class="top-actions"><span class="user-pill" id="userEmail"></span><button class="button quiet" id="refreshButton">Refresh</button></div></header>
+      <div class="content-area">
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+        <section class="view active" id="view-overview">
+          <div class="welcome-panel"><div><span class="eyebrow">Your shop at a glance</span><h2>Welcome to Gemz.lk</h2><p>Keep products current, publish stories, and follow up on new enquiries.</p></div><a class="button light" href="collection.html" target="_blank" rel="noreferrer">Open storefront</a></div>
+          <div class="stat-grid">
+            <article class="stat-card"><span>Published products</span><strong id="statProducts">—</strong><small>Gems, jewellery and watches</small></article>
+            <article class="stat-card"><span>Published insights</span><strong id="statArticles">—</strong><small>Stories visible on the site</small></article>
+            <article class="stat-card"><span>New enquiries</span><strong id="statInquiries">—</strong><small>Waiting for a response</small></article>
+          </div>
+          <div class="panel"><div class="panel-heading"><div><span class="eyebrow">Recently received</span><h2>Latest enquiries</h2></div><button class="text-button" data-jump="inquiries">View all</button></div><div id="recentInquiries" class="table-wrap"></div></div>
+          <div class="quick-grid"><button data-jump="catalog"><b>Manage your catalog</b><span>Add gemstones, jewellery and watches</span></button><button data-jump="articles"><b>Write an insight</b><span>Publish guides and stories</span></button><button data-jump="settings"><b>Edit store details</b><span>Update your homepage and contact info</span></button></div>
+        </section>
+
+        <section class="view" id="view-catalog">
+          <div class="toolbar"><div><span class="eyebrow">Products</span><h2>Catalog</h2></div><div class="toolbar-actions"><input id="productSearch" type="search" placeholder="Search products" aria-label="Search products"><select id="productTypeFilter" aria-label="Filter product type"><option value="">All types</option><option value="gem">Gemstones</option><option value="jewellery">Jewellery</option><option value="watch">Watches</option></select><button class="button primary" id="addProduct">Add product</button></div></div>
+          <div class="panel"><div id="productsTable" class="table-wrap"></div></div>
+        </section>
+
+        <section class="view" id="view-articles">
+          <div class="toolbar"><div><span class="eyebrow">Journal</span><h2>Insights</h2></div><button class="button primary" id="addArticle">New article</button></div>
+          <div class="panel"><div id="articlesTable" class="table-wrap"></div></div>
+        </section>
+
+        <section class="view" id="view-inquiries">
+          <div class="toolbar"><div><span class="eyebrow">Customer messages</span><h2>Inquiries</h2></div><select id="inquiryFilter" aria-label="Filter inquiries"><option value="">All inquiries</option><option value="new">New</option><option value="in_progress">In progress</option><option value="resolved">Resolved</option></select></div>
+          <div class="panel"><div id="inquiriesTable" class="table-wrap"></div></div>
+        </section>
+
+        <section class="view" id="view-media">
+          <div class="toolbar"><div><span class="eyebrow">Supabase Storage</span><h2>Media library</h2></div></div>
+          <div class="panel upload-panel"><div><h3>Upload an image or video</h3><p>Files are stored in the <code>gemz-media</code> bucket. Copy a public URL into a product, article, or site setting.</p></div><form id="mediaUploadForm" class="upload-row"><input id="mediaFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" required><button class="button primary" type="submit">Upload file</button></form></div>
+          <div class="media-grid" id="mediaGrid"></div>
+        </section>
+
+        <section class="view" id="view-settings">
+          <div class="toolbar"><div><span class="eyebrow">Storefront content</span><h2>Site settings</h2></div></div>
+          <form id="settingsForm" class="settings-layout">
+            <div class="panel settings-group"><span class="eyebrow">Homepage</span><h3>Hero and media</h3>
+              <label>Announcement strip<input name="announcement"></label><label>Hero eyebrow<input name="hero_eyebrow"></label><label>Hero headline<input name="hero_title"></label><label>Hero description<textarea name="hero_description" rows="3"></textarea></label><label>Hero video URL<input name="hero_video_url" type="url"></label><label>First video title<input name="home_video_title"></label><label>Heritage feature title<input name="home_promo_title"></label><label>Search description<textarea name="meta_description" rows="2"></textarea></label>
+            </div>
+            <div class="panel settings-group"><span class="eyebrow">Contact</span><h3>Store details</h3>
+              <label>Public email<input name="contact_email" type="email"></label><label>Phone<input name="contact_phone" type="tel"></label><label>Address<input name="contact_address"></label><label>Contact page note<textarea name="contact_note" rows="3"></textarea></label>
+            </div>
+            <div class="panel settings-group wide"><span class="eyebrow">Homepage sections</span><h3>Section labels and copy</h3><div class="settings-copy-grid">
+              <fieldset><legend>New arrivals</legend><label>Eyebrow<input name="home_arrivals_eyebrow"></label><label>Heading<input name="home_arrivals_title"></label><label>Description<textarea name="home_arrivals_description" rows="2"></textarea></label></fieldset>
+              <fieldset><legend>Gemstone collection</legend><label>Eyebrow<input name="home_gem_eyebrow"></label><label>Heading<input name="home_gem_title"></label><label>Description<textarea name="home_gem_description" rows="2"></textarea></label></fieldset>
+              <fieldset><legend>Jewellery</legend><label>Eyebrow<input name="home_jewellery_eyebrow"></label><label>Heading<input name="home_jewellery_title"></label><label>Description<textarea name="home_jewellery_description" rows="2"></textarea></label></fieldset>
+              <fieldset><legend>Watch feature</legend><label>Eyebrow<input name="home_watch_eyebrow"></label><label>Heading<input name="home_watch_title"></label><label>Description<textarea name="home_watch_description" rows="2"></textarea></label></fieldset>
+              <fieldset><legend>Promotional videos</legend><label>Eyebrow<input name="home_videos_eyebrow"></label><label>Heading<input name="home_videos_title"></label><label>Description<textarea name="home_videos_description" rows="2"></textarea></label></fieldset>
+            </div></div>
+            <div class="panel settings-group wide"><span class="eyebrow">Other pages</span><h3>Page headings and story</h3><div class="settings-copy-grid">
+              <fieldset><legend>Collection</legend><label>Eyebrow<input name="collection_eyebrow"></label><label>Heading<input name="collection_title"></label><label>Description<textarea name="collection_description" rows="2"></textarea></label></fieldset>
+              <fieldset><legend>Insights</legend><label>Eyebrow<input name="insights_eyebrow"></label><label>Heading<input name="insights_title"></label><label>Description<textarea name="insights_description" rows="2"></textarea></label></fieldset>
+              <fieldset><legend>Contact</legend><label>Eyebrow<input name="contact_eyebrow"></label><label>Heading<input name="contact_title"></label><label>Description<textarea name="contact_description" rows="2"></textarea></label></fieldset>
+              <fieldset><legend>About</legend><label>Eyebrow<input name="about_eyebrow"></label><label>Heading<input name="about_title"></label><label>Description<textarea name="about_description" rows="2"></textarea></label></fieldset>
+              <fieldset><legend>About story</legend><label>Eyebrow<input name="about_story_eyebrow"></label><label>Heading<input name="about_story_title"></label><label>Paragraph one<textarea name="about_story_paragraph_1" rows="3"></textarea></label><label>Paragraph two<textarea name="about_story_paragraph_2" rows="3"></textarea></label></fieldset>
+              <fieldset><legend>Footer</legend><label>Store description<textarea name="footer_tagline" rows="3"></textarea></label></fieldset>
+            </div></div>
+            <div class="settings-submit"><button class="button primary" type="submit">Save settings</button><p class="notice" id="settingsNotice" role="status"></p></div>
+          </form>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <dialog id="editorDialog" class="editor-dialog"><form id="editorForm" method="dialog"><div class="dialog-head"><div><span class="eyebrow" id="editorEyebrow">Catalog</span><h2 id="editorTitle">Edit item</h2></div><button type="button" class="close-button" id="closeDialog" aria-label="Close">×</button></div><div id="editorFields" class="editor-fields"></div><div class="dialog-actions"><button type="button" class="button quiet" id="cancelDialog">Cancel</button><button type="submit" class="button primary" id="saveRecord">Save changes</button></div></form></dialog>
+
+  <script src="js/supabase-config.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

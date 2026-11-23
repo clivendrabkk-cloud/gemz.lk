@@ -126,6 +126,7 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .jewellery-card:hover{transform:translateY(-6px);box-shadow:var(--shadow)}
 .jewellery-art{aspect-ratio:1;border-radius:12px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 45%,#39405a,#151925 72%)}
 .jewellery-art svg{width:78%;filter:drop-shadow(0 18px 18px rgba(0,0,0,.4));transition:transform .7s var(--ease)}
+.jewellery-art img{width:100%;height:100%;object-fit:cover}
 .jewellery-card:hover .jewellery-art svg{transform:scale(1.08) rotate(-4deg)}
 .jewellery-card-body{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 4px 4px}
 .jewellery-card-body h3{font-size:1.5rem}
@@ -152,6 +153,8 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .card{display:block;background:var(--white);border-radius:var(--r);padding:14px;border:1px solid var(--line);transition:box-shadow .5s var(--ease),border-color .5s;transform-style:preserve-3d;will-change:transform}
 .card:hover{box-shadow:var(--shadow);border-color:rgba(201,138,43,.5)}
 .frame{aspect-ratio:1;border-radius:12px;display:grid;place-items:center;position:relative;overflow:hidden;transform:translateZ(30px)}
+.frame img{width:100%;height:100%;object-fit:cover}
+.watch-glyph{font-size:clamp(3rem,10vw,6rem);line-height:1;filter:drop-shadow(0 15px 18px rgba(0,0,0,.35))}
 .frame svg{width:68%;transition:transform .8s var(--ease);filter:drop-shadow(0 18px 24px rgba(0,0,0,.35))}
 .card:hover .frame svg{transform:scale(1.12) rotate(-6deg)}
 .frame::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.35) 50%,transparent 65%);transform:translateX(-120%);transition:transform 1s var(--ease)}
@@ -186,6 +189,7 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .viewer{position:sticky;top:110px;aspect-ratio:1;border-radius:24px;display:grid;place-items:center;cursor:grab;perspective:900px;overflow:hidden;box-shadow:var(--shadow)}
 .viewer:active{cursor:grabbing}
 .viewer .gem3d{width:62%;transform-style:preserve-3d;filter:drop-shadow(0 40px 40px rgba(0,0,0,.45));will-change:transform}
+.viewer .gem3d img{width:100%;height:100%;object-fit:contain}
 .viewer small{position:absolute;bottom:18px;left:0;right:0;text-align:center;color:rgba(255,255,255,.7);font-size:.68rem;letter-spacing:.26em;text-transform:uppercase}
 .specs{width:100%;border-collapse:collapse;margin:30px 0}
 .specs td{padding:15px 0;border-bottom:1px solid var(--line);font-size:.95rem}
@@ -200,6 +204,7 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .product-title{font-size:clamp(2.4rem,5vw,4.2rem)}
 .jewellery-product-visual{position:sticky;top:110px;aspect-ratio:1;border-radius:24px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 45%,#39405a,#151925 72%);box-shadow:var(--shadow)}
 .jewellery-product-visual svg{width:70%;filter:drop-shadow(0 25px 25px rgba(0,0,0,.4))}
+.jewellery-product-visual img{width:100%;height:100%;object-fit:cover}
 .jewellery-product .specs td:first-child{width:48%}
 .detail-actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
 
@@ -216,9 +221,11 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .post{background:var(--white);border-radius:var(--r);overflow:hidden;border:1px solid var(--line);transition:.5s var(--ease)}
 .post:hover{transform:translateY(-8px);box-shadow:var(--shadow)}
 .post .thumb{aspect-ratio:16/10;display:grid;place-items:center}
+.post .thumb img{width:100%;height:100%;object-fit:cover}
 .post .thumb svg{width:34%;filter:drop-shadow(0 12px 18px rgba(0,0,0,.35))}
 .post div.b{padding:26px}.post small{font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--amber);font-weight:700}
 .post h3{margin:10px 0}.post p{font-size:.92rem;color:rgba(12,14,19,.68)}
+.post details{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}.post summary{cursor:pointer;color:#8a5a12;font-size:.76rem;font-weight:700}.post details p{white-space:pre-line;line-height:1.75;margin-top:10px}
 .contact-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:clamp(30px,6vw,80px)}
 .info-row{display:flex;gap:16px;padding:22px 0;border-bottom:1px solid var(--line)}
 .info-row .ico{background:rgba(201,138,43,.15);flex:none}

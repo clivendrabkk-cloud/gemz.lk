@@ -18,28 +18,35 @@
 <div id="site-footer"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="js/supabase-config.js"></script>
 <script src="js/app.js"></script>
 <script>
+window.GEMZ_READY.then(()=>{
   const slug=new URLSearchParams(location.search).get('slug');
   const g=GEMS.find(x=>x.slug===slug)||GEMS[0];
+  if(!g){document.getElementById('detail').innerHTML='<div class="empty"><h2>Gemstone unavailable</h2><p>This item is not currently listed.</p><a class="btn btn-dark" href="collection.html">Browse the collection</a></div>';boot('collection');return}
   document.title=g.name+' — Gemz.lk';
   const gemDetails=[
     ['Code No',g.codeNo||'—'],['Stone',g.name],['Weight',g.weight||'—'],['Clarity Grade',g.clarity||'—'],['Colour',g.colour||'—'],
-    ['Origin',g.origin||'—'],['Dimensions',g.dimensions||'—'],['Shape',g.shape||'—'],['Cut',g.cut||'—'],['Treatment',g.treat||'—'],
+    ['Origin',g.origin||'—'],['Hardness',g.hardness||'—'],['Dimensions',g.dimensions||'—'],['Shape',g.shape||'—'],['Cut',g.cut||'—'],['Treatment',g.treat||'—'],
     ['Certificate',g.certificate||'—'],['Comment',g.comment||'—']
   ];
-  const detailRows=rows=>rows.map(([label,value])=>`<tr><td>${label}</td><td>${value}</td></tr>`).join('');
+  const extraDetails=Object.entries(g.specs||{}).filter(([key])=>!['origin','hardness','clarity','treat','colour'].includes(key)).map(([key,value])=>[key.replace(/([A-Z])/g,' $1').replace(/^./,letter=>letter.toUpperCase()),value]);
+  gemDetails.push(...extraDetails);
+  const detailRows=rows=>rows.map(([label,value])=>`<tr><td>${htmlEscape(label)}</td><td>${htmlEscape(value)}</td></tr>`).join('');
+  const visual=g.image_url?`<img src="${htmlEscape(g.image_url)}" alt="${htmlEscape(g.name)}">`:gemSVG(g,'d');
   document.getElementById('detail').innerHTML=`
-  <div class="viewer" style="background:${bgOf(g)}"><div class="gem3d">${gemSVG(g,'d')}</div><small>Drag to rotate</small></div>
+  <div class="viewer" style="background:${bgOf(g)}"><div class="gem3d">${visual}</div><small>Drag to rotate</small></div>
   <div>
-    <span class="eyebrow">Natural Gemstone</span><h1 style="font-size:clamp(2.4rem,5vw,4.2rem)">${g.name}</h1>
-    <p class="lead" style="margin-top:20px">${g.text}</p>
+    <span class="eyebrow">Natural Gemstone</span><h1 style="font-size:clamp(2.4rem,5vw,4.2rem)">${htmlEscape(g.name)}</h1>
+    <p class="lead" style="margin-top:20px">${htmlEscape(g.text)}</p>
     <div class="detail-spec"><h2>GEM DETAILS</h2><table class="specs">${detailRows(gemDetails)}</table></div>
-    <div class="detail-actions"><button class="btn btn-gold" id="add">Add to Inquiry</button><a class="btn btn-ghost" href="contact.html?gem=${g.slug}">Request Price</a></div>
+    <div class="detail-actions"><button class="btn btn-gold" id="add">Add to Inquiry</button><a class="btn btn-ghost" href="contact.html?gem=${encodeURIComponent(g.slug)}">Request Price</a></div>
     <p class="note" id="msg" style="margin-top:14px"></p>
   </div>`;
   document.getElementById('add').onclick=()=>{Cart.add(g.slug);document.getElementById('msg').textContent=g.name+' added to your inquiry cart.'};
   document.getElementById('more').innerHTML=GEMS.filter(x=>x!==g).slice(0,3).map(cardHTML).join('');
   boot('collection');
+});
 </script>
 </body></html>

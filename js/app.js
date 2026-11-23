@@ -1,5 +1,5 @@
 /* gemz.lk — data, shared layout, cart, GSAP + 3D */
-const GEMS = [
+let GEMS = [
   {slug:'yellow-sapphire',name:'Yellow Sapphire',c:['#fff3a8','#f2b705','#a86a00'],bg:['#3a2a08','#8a5a12'],origin:'Ratnapura, Sri Lanka',hardness:'9',clarity:'Eye-clean to VS',treat:'Unheated available',colour:'Yellow',
    text:'Honey-gold corundum with a warm, luminous body colour. Sri Lankan yellow sapphires are celebrated for brilliance and natural, untreated character.'},
   {slug:'white-sapphire',name:'White Sapphire',c:['#ffffff','#cfe3ff','#8aa6d6'],bg:['#1a2238','#4a5f8f'],origin:'Elahera, Sri Lanka',hardness:'9',clarity:'Eye-clean',treat:'Natural, untreated',colour:'Colourless',
@@ -17,7 +17,7 @@ const GEMS = [
   {slug:'alexandrite',name:'Alexandrite',c:['#c8f5e4','#2fa58a','#7a2f78'],bg:['#0c2a28','#5a2f6a'],origin:'Sri Lanka',hardness:'8.5',clarity:'Eye-clean to SI',treat:'Natural, untreated',colour:'Green to raspberry',
    text:'The chameleon gem: green by daylight, raspberry under candlelight. One of the rarest and most collectible stones.'}
 ];
-const GEM_CATEGORIES = [
+let GEM_CATEGORIES = [
   {label:'Blue Sapphire',match:g=>/blue sapphire/i.test(g.name)},
   {label:'Ruby',match:g=>/ruby/i.test(g.name)},
   {label:'Pink Sapphire',match:g=>/pink sapphire/i.test(g.name)},
@@ -29,12 +29,14 @@ const GEM_CATEGORIES = [
   {label:"Cat's Eye",match:g=>/cat.?s eye/i.test(g.name)},
   {label:'Other',match:g=>!/blue sapphire|ruby|pink sapphire|yellow sapphire|purple sapphire|violet sapphire|teal sapphire|padparadscha|star sapphire|cat.?s eye/i.test(g.name)}
 ];
-const JEWELLERY_CATEGORIES = ['Rings','Pendants','Necklaces','Earrings','Bangle','Gent','Wedding','Bracelets'];
+let JEWELLERY_CATEGORIES = ['Rings','Pendants','Necklaces','Earrings','Bangle','Gent','Wedding','Bracelets'];
+let JEWELLERY_PRODUCTS = [];
+let WATCH_PRODUCTS = [];
 const JEWELLERY_DETAIL_FIELDS = [
   'Metal','Weight','Gemstones','Gemstone Weight','Number of Diamonds','Diamond Weight',
   'Diamond Colour','Diamond Clarity','Setting type','Final finishing','Dimensions','Comment'
 ];
-const ARTICLES = [
+let ARTICLES = [
   {t:'How to read a gemstone certificate',k:'Guide',g:0,p:'What origin, treatment and clarity grades really mean before you buy.'},
   {t:'Unheated vs heated sapphires',k:'Education',g:5,p:'Understanding treatments and why unheated Ceylon stones command a premium.'},
   {t:'Padparadscha: the rarest sapphire',k:'Collector',g:4,p:'Colour, origin and the debate around this lotus-blossom treasure.'},
@@ -42,9 +44,54 @@ const ARTICLES = [
   {t:'Caring for your fine gemstones',k:'Care',g:1,p:'Cleaning, storage and setting advice to keep stones brilliant for generations.'},
   {t:'Why natural gems hold value',k:'Insight',g:3,p:'Rarity, provenance and demand across three continents.'}
 ];
+let SITE_SETTINGS = {};
+
+const htmlEscape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+function publicMediaURL(value){
+  const url=String(value||'').trim();
+  return /^(https?:\/\/|\/)/i.test(url)&&!/^javascript:/i.test(url)?url:'';
+}
+function productFromRow(row){
+  const specs=row.specs||{},visual=row.visual||{};
+  const validColors=(items,fallback)=>Array.isArray(items)&&items.length===fallback.length&&items.every(item=>/^#[0-9a-f]{3,8}$/i.test(item))?items:fallback;
+  const colors=validColors(visual.colors,['#fff3a8','#f2b705','#a86a00']);
+  const background=validColors(visual.background,['#3a2a08','#8a5a12']);
+  return { ...specs, specs, slug:row.slug, name:row.name, type:row.product_type, category:row.category||'',
+    text:row.description||'', description:row.description||'', image_url:publicMediaURL(row.image_url),
+    status:row.status, featured:row.featured, sort_order:row.sort_order,
+    c:colors,bg:background,visual:{colors,background} };
+}
+async function loadPublicContent(){
+  try{
+    const client=window.GEMZ_SUPABASE||await window.GEMZ_SUPABASE_READY;
+    if(!client)return;
+    const [productResult,articleResult,settingsResult]=await Promise.all([
+      client.from('products').select('*').eq('status','published').order('sort_order').order('created_at'),
+      client.from('articles').select('*').eq('status','published').order('created_at',{ascending:false}),
+      client.from('site_settings').select('setting_key,setting_value')
+    ]);
+    if(!productResult.error){
+      const rows=(productResult.data||[]).map(productFromRow);
+      GEMS=rows.filter(row=>row.type==='gem');
+      JEWELLERY_PRODUCTS=rows.filter(row=>row.type==='jewellery');
+      WATCH_PRODUCTS=rows.filter(row=>row.type==='watch');
+      const gemCategories=[...new Set(GEMS.map(row=>row.category).filter(Boolean))];
+      if(gemCategories.length)GEM_CATEGORIES=gemCategories.map(label=>({label,match:gem=>gem.category===label}));
+      const categories=[...new Set(JEWELLERY_PRODUCTS.map(row=>row.category).filter(Boolean))];
+      if(categories.length)JEWELLERY_CATEGORIES=categories;
+    }
+    if(!articleResult.error) ARTICLES=(articleResult.data||[]).map(row=>({
+      t:row.title,k:row.category||'Insight',g:0,p:row.excerpt||'',slug:row.slug,content:row.content||'',
+      image_url:publicMediaURL(row.cover_image)
+    }));
+    if(!settingsResult.error) SITE_SETTINGS=Object.fromEntries((settingsResult.data||[]).map(row=>[row.setting_key,row.setting_value]));
+  }catch(error){console.warn('Gemz public content could not be loaded from Supabase.',error)}
+}
+window.GEMZ_READY=window.GEMZ_READY||Promise.resolve().then(loadPublicContent);
 
 /* Faceted gem SVG */
 function gemSVG(g,uid){
+  if(!g)return '';
   const [a,b,c]=g.c, id='g'+uid;
   return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <defs><linearGradient id="${id}a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset=".55" stop-color="${b}"/><stop offset="1" stop-color="${c}"/></linearGradient>
@@ -81,36 +128,47 @@ const Cart={
 /* Shared layout */
 function layout(active){
   const L=(h,t,k)=>`<a href="${h}" class="${active===k?'active':''}">${t}</a>`;
+  const logoGem=GEMS[5]||GEMS[0];
+  const email=htmlEscape(SITE_SETTINGS.contact_email||'info@gemz.lk');
+  const phone=htmlEscape(SITE_SETTINGS.contact_phone||'+94 11 234 5678');
+  const address=htmlEscape(SITE_SETTINGS.contact_address||'Colombo, Sri Lanka');
+  const announce=htmlEscape(SITE_SETTINGS.announcement||'Natural Gems & Fine Jewellery from Sri Lanka.');
   document.getElementById('site-header').innerHTML=`
-  <div class="announce"><div class="announce-track">${Array(8).fill('<span>Natural Gems &amp; Fine Jewellery from Sri Lanka.</span><span>Over 40 Years of Ceylon Gem Expertise.</span>').join('')}</div></div>
+  <div class="announce"><div class="announce-track">${Array(8).fill(`<span>${announce}</span><span>Over 40 Years of Ceylon Gem Expertise.</span>`).join('')}</div></div>
   <header class="header" id="hdr"><div class="header-in">
-    <nav class="nav" aria-label="Main navigation">${L('index.html','Home','home')}${L('collection.html','Our Gemstones','collection')}<a class="nav-gem ${active==='collection'?'active':''}" href="collection.html?section=gem">GEM</a><details class="nav-drop"><summary class="${active==='collection'?'active':''}">JEWELLERY</summary><div class="nav-dropdown"><a href="collection.html?section=jewellery">All Jewellery</a>${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${category}</a>`).join('')}</div></details>${L('collection.html?section=watch','WATCH','collection')}${L('about.html','About us','about')}</nav>
+    <nav class="nav" aria-label="Main navigation">${L('index.html','Home','home')}${L('collection.html','Our Gemstones','collection')}<a class="nav-gem ${active==='collection'?'active':''}" href="collection.html?section=gem">GEM</a><details class="nav-drop"><summary class="${active==='collection'?'active':''}">JEWELLERY</summary><div class="nav-dropdown"><a href="collection.html?section=jewellery">All Jewellery</a>${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('')}</div></details>${L('collection.html?section=watch','WATCH','collection')}${L('about.html','About us','about')}</nav>
     <button class="burger" id="burger" aria-label="Menu"><i></i><i></i><i></i></button>
-    <a href="index.html" class="logo" aria-label="Gemz.lk home"><svg viewBox="0 0 200 200">${gemSVG(GEMS[5],'logo').replace(/<\/?svg[^>]*>/g,'')}</svg><span>GEMZ<small>SRI LANKA</small></span></a>
+    <a href="index.html" class="logo" aria-label="Gemz.lk home"><svg viewBox="0 0 200 200">${gemSVG(logoGem,'logo').replace(/<\/?svg[^>]*>/g,'')}</svg><span>GEMZ<small>SRI LANKA</small></span></a>
     <div class="utils">
       <a href="insights.html" class="txt">Insights</a><a href="contact.html" class="txt">Contact Us</a>
-      <a class="ico opt" href="tel:+94112345678" aria-label="Call">${icon.phone}</a>
-      <a class="ico opt" href="mailto:info@gemz.lk" aria-label="Email">${icon.mail}</a>
+      <a class="ico opt" href="tel:${phone.replace(/[^+\d]/g,'')}" aria-label="Call">${icon.phone}</a>
+      <a class="ico opt" href="mailto:${email}" aria-label="Email">${icon.mail}</a>
       <a class="ico opt" href="contact.html" aria-label="Location">${icon.pin}</a>
       <a class="ico" href="cart.html" aria-label="Inquiry cart">${icon.bag}<span class="cart-count">0</span></a>
       <a class="ico opt" href="login.html" aria-label="Account">${icon.user}</a>
     </div></div></header>
-  <div class="mobile-nav" id="mnav"><a href="index.html">Home</a><a href="collection.html">Our Gemstones</a><a href="collection.html?section=gem">GEM</a><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=jewellery">JEWELLERY</a><div class="mobile-jewellery-subnav">${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${category}</a>`).join('')}</div></div><a href="collection.html?section=watch">WATCH</a><a href="about.html">About us</a><a href="insights.html">Insights</a><a href="contact.html">Contact Us</a><a href="login.html">Account</a></div>`;
+  <div class="mobile-nav" id="mnav"><a href="index.html">Home</a><a href="collection.html">Our Gemstones</a><a href="collection.html?section=gem">GEM</a><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=jewellery">JEWELLERY</a><div class="mobile-jewellery-subnav">${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('')}</div></div><a href="collection.html?section=watch">WATCH</a><a href="about.html">About us</a><a href="insights.html">Insights</a><a href="contact.html">Contact Us</a><a href="login.html">Account</a></div>`;
   document.getElementById('site-footer').innerHTML=`<footer class="footer"><div class="wrap"><div class="foot-grid">
-    <div><div class="logo" style="color:#fff;margin-bottom:16px">GEMZ<small>.LK</small></div><p style="max-width:34ch;font-size:.92rem">Authentic natural gemstones sourced in Sri Lanka and delivered worldwide. Established 1985.</p></div>
+    <div><div class="logo" style="color:#fff;margin-bottom:16px">GEMZ<small>.LK</small></div><p data-setting="footer_tagline" style="max-width:34ch;font-size:.92rem">Authentic natural gemstones sourced in Sri Lanka and delivered worldwide. Established 1985.</p></div>
     <div><h4>Explore</h4><a href="index.html">Home</a><a href="collection.html">Our Gemstones</a><a href="about.html">About us</a><a href="insights.html">Insights</a></div>
     <div><h4>Account</h4><a href="cart.html">Inquiry Cart</a><a href="login.html">Login</a><a href="contact.html">Contact Us</a></div>
-    <div><h4>Contact</h4><a href="mailto:info@gemz.lk">info@gemz.lk</a><a href="tel:+94112345678">+94 11 234 5678</a><a href="contact.html">Colombo, Sri Lanka</a></div>
+    <div><h4>Contact</h4><a href="mailto:${email}">${email}</a><a href="tel:${phone.replace(/[^+\d]/g,'')}">${phone}</a><a href="contact.html">${address}</a></div>
   </div><div class="foot-bot"><span>© ${new Date().getFullYear()} Gemz.lk. All rights reserved.</span><span>Natural · Authentic · Ceylon</span></div></div></footer>`;
   const b=document.getElementById('burger'),m=document.getElementById('mnav');
   b.onclick=()=>{b.classList.toggle('open');m.classList.toggle('open');document.body.style.overflow=m.classList.contains('open')?'hidden':''};
   Cart.badge();
 }
 
+function productDetailURL(product){
+  return product.type==='jewellery'||product.type==='watch'?`jewellery-product.html?slug=${encodeURIComponent(product.slug)}`:`gemstone.html?slug=${encodeURIComponent(product.slug)}`;
+}
 function cardHTML(g,i){
-  return `<a class="card" href="gemstone.html?slug=${g.slug}" data-tilt>
-  <div class="frame" style="background:${bgOf(g)}">${gemSVG(g,'c'+i+Math.random().toString(36).slice(2,5))}</div>
-  <div class="card-body"><h3>${g.name}</h3><span class="tag">Price on Request</span></div></a>`;
+  const href=productDetailURL(g);
+  if(g.image_url)return `<a class="card" href="${href}" data-tilt><div class="frame" style="background:${bgOf(g)}"><img src="${htmlEscape(g.image_url)}" alt="${htmlEscape(g.name)}" loading="lazy"></div><div class="card-body"><h3>${htmlEscape(g.name)}</h3><span class="tag">Price on Request</span></div></a>`;
+  const art=g.type==='jewellery'?jewelleryArt(g.category):g.type==='watch'?'<span class="watch-glyph" aria-hidden="true">⌚</span>':gemSVG(g,'c'+i+Math.random().toString(36).slice(2,5));
+  return `<a class="card" href="${href}" data-tilt>
+  <div class="frame" style="background:${bgOf(g)}">${art}</div>
+  <div class="card-body"><h3>${htmlEscape(g.name)}</h3><span class="tag">Price on Request</span></div></a>`;
 }
 
 function jewelleryCategoryURL(category){
@@ -132,7 +190,10 @@ function jewelleryArt(category){
 }
 
 function jewelleryCardHTML(category){
-  return `<a class="jewellery-card" href="${jewelleryCategoryURL(category)}"><div class="jewellery-art">${jewelleryArt(category)}</div><div class="jewellery-card-body"><h3>${category}</h3><span class="tag">Explore</span></div></a>`;
+  const product=JEWELLERY_PRODUCTS.find(item=>item.category===category);
+  const href=product?`jewellery-product.html?slug=${encodeURIComponent(product.slug)}`:jewelleryCategoryURL(category);
+  const art=product?.image_url?`<img src="${htmlEscape(product.image_url)}" alt="${htmlEscape(category)}" loading="lazy">`:jewelleryArt(category);
+  return `<a class="jewellery-card" href="${href}"><div class="jewellery-art">${art}</div><div class="jewellery-card-body"><h3>${htmlEscape(category)}</h3><span class="tag">Explore</span></div></a>`;
 }
 
 /* Effects */
@@ -190,4 +251,16 @@ function initFX(){
     b.addEventListener('pointerleave',()=>gsap.to(b,{x:0,y:0,duration:.6,ease:'elastic.out(1,.4)'}));
   });
 }
-function boot(active){layout(active);initFX();}
+function boot(active){return window.GEMZ_READY.then(()=>{layout(active);initFX();applySiteSettings();});}
+function applySiteSettings(){
+  const setText=(selector,value)=>{const node=document.querySelector(selector);if(node&&value)node.textContent=value};
+  setText('.hero .eyebrow',SITE_SETTINGS.hero_eyebrow);
+  setText('.hero h1',SITE_SETTINGS.hero_title);
+  setText('.hero p',SITE_SETTINGS.hero_description);
+  setText('.announce span',SITE_SETTINGS.announcement);
+  const videoURL=publicMediaURL(SITE_SETTINGS.hero_video_url);
+  if(videoURL){document.querySelectorAll('#heroVideo source,.watch-clip video source,.promo-card video source').forEach(source=>{source.src=videoURL;source.parentElement.load?.()})}
+  setText('.promo-card-copy h3',SITE_SETTINGS.home_promo_title);
+  const meta=document.querySelector('meta[name="description"]');if(meta&&SITE_SETTINGS.meta_description)meta.content=SITE_SETTINGS.meta_description;
+  document.querySelectorAll('[data-setting]').forEach(node=>{const value=SITE_SETTINGS[node.dataset.setting];if(value!==undefined&&value!==null)node.textContent=String(value)});
+}

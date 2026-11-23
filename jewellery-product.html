@@ -10,15 +10,16 @@
 <div id="site-header"></div>
 <main>
   <section class="jewellery-product"><div class="wrap">
-    <p class="product-back"><a href="collection.html?section=jewellery">← JEWELLERY</a></p>
+    <p class="product-back"><a id="productBack" href="collection.html?section=jewellery">← JEWELLERY</a></p>
     <div class="detail">
       <div class="jewellery-product-visual" id="productVisual" aria-hidden="true"></div>
       <div>
-        <span class="eyebrow">Features &amp; Specifications</span>
+        <span class="eyebrow" id="productEyebrow">Features &amp; Specifications</span>
         <h1 id="productName" class="product-title">Jewellery</h1>
+        <p id="productDescription" class="lead" style="margin-top:18px"></p>
         <div class="detail-spec jewellery-spec">
-          <h2>JEWELLERY DETAILS</h2>
-          <h3>Features &amp; Specifications</h3>
+          <h2 id="productSectionTitle">JEWELLERY DETAILS</h2>
+          <h3 id="productSubheading">Features &amp; Specifications</h3>
           <table class="specs"><tbody id="productSpecs"></tbody></table>
         </div>
         <div class="detail-actions"><button class="btn btn-gold" id="add">Add to Inquiry</button><a class="btn btn-ghost" id="requestPrice">Request Price</a></div>
@@ -30,17 +31,35 @@
 <div id="site-footer"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="js/supabase-config.js"></script>
 <script src="js/app.js"></script>
 <script>
+window.GEMZ_READY.then(()=>{
   const params=new URLSearchParams(location.search);
-  const category=JEWELLERY_CATEGORIES.find(item=>item.toLowerCase()===params.get('category')?.toLowerCase())||'Rings';
-  const inquiryId=`jewellery-${category.toLowerCase()}`;
-  document.title=`${category} Jewellery — Gemz.lk`;
-  document.getElementById('productName').textContent=category;
-  document.getElementById('productVisual').innerHTML=jewelleryArt(category);
-  document.getElementById('productSpecs').innerHTML=JEWELLERY_DETAIL_FIELDS.map(label=>`<tr><td>${label}</td><td>—</td></tr>`).join('');
-  document.getElementById('requestPrice').href=`contact.html?jewellery=${encodeURIComponent(category)}`;
-  document.getElementById('add').onclick=()=>{Cart.add(inquiryId);document.getElementById('message').textContent=`${category} added to your inquiry cart.`};
+  const product=[...JEWELLERY_PRODUCTS,...WATCH_PRODUCTS].find(item=>item.slug===params.get('slug'));
+  const type=product?.type||'jewellery';
+  const section=type==='watch'?'watch':'jewellery';
+  const category=product?.category||JEWELLERY_CATEGORIES.find(item=>item.toLowerCase()===params.get('category')?.toLowerCase())||'Rings';
+  const title=product?.name||category;
+  const inquiryId=product?.slug||`jewellery-${category.toLowerCase()}`;
+  document.title=`${title} — Gemz.lk`;
+  document.getElementById('productBack').href=`collection.html?section=${section}`;
+  document.getElementById('productBack').textContent=`← ${section.toUpperCase()}`;
+  document.getElementById('productEyebrow').textContent=`${type==='watch'?'Watch':'Jewellery'} features & specifications`;
+  document.getElementById('productSectionTitle').textContent=`${type.toUpperCase()} DETAILS`;
+  document.getElementById('productSubheading').textContent=`${type==='watch'?'Watch':'Jewellery'} details`;
+  document.getElementById('productName').textContent=title;
+  document.getElementById('productDescription').textContent=product?.description||'Explore fine jewellery from Sri Lanka. Contact us for current availability and details.';
+  document.getElementById('productVisual').innerHTML=product?.image_url?`<img src="${htmlEscape(product.image_url)}" alt="${htmlEscape(title)}">`:type==='watch'?'<span class="watch-glyph" aria-hidden="true">⌚</span>':jewelleryArt(category);
+  const details=product?.specs||product?.details||product||{};
+  const jewelleryRows=type==='watch'?[]:JEWELLERY_DETAIL_FIELDS.map(label=>[label,details[label]||details[label.toLowerCase().replaceAll(' ','_')]||'—']);
+  const knownFields=new Set(JEWELLERY_DETAIL_FIELDS.map(label=>label.toLowerCase().replaceAll(' ','_')));
+  jewelleryRows.push(...Object.entries(details).filter(([key])=>!knownFields.has(key.toLowerCase().replaceAll(' ','_'))).map(([key,value])=>[key.replace(/([A-Z])/g,' $1').replace(/^./,letter=>letter.toUpperCase()),value]));
+  if(!jewelleryRows.length)jewelleryRows.push(['Details','Contact us for current availability and information.']);
+  document.getElementById('productSpecs').innerHTML=jewelleryRows.map(([label,value])=>`<tr><td>${htmlEscape(label)}</td><td>${htmlEscape(value)}</td></tr>`).join('');
+  document.getElementById('requestPrice').href=product?`contact.html?product=${encodeURIComponent(product.slug)}`:`contact.html?jewellery=${encodeURIComponent(category)}`;
+  document.getElementById('add').onclick=()=>{Cart.add(inquiryId);document.getElementById('message').textContent=`${title} added to your inquiry cart.`};
   boot('collection');
+});
 </script>
 </body></html>
