@@ -3,8 +3,8 @@
   const $$ = (selector, root=document) => [...root.querySelectorAll(selector)];
   const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const defaultVisual={colors:['#fff3a8','#f2b705','#a86a00'],background:['#3a2a08','#8a5a12']};
-  const state={client:null,user:null,products:[],articles:[],inquiries:[],settings:{},view:'overview',editing:null,toastTimer:null};
-  const viewTitles={overview:'Overview',catalog:'Catalog',articles:'Insights',inquiries:'Inquiries',media:'Media library',settings:'Site settings'};
+  const state={client:null,user:null,products:[],categories:[],articles:[],inquiries:[],settings:{},view:'overview',editing:null,editingCategory:null,toastTimer:null};
+  const viewTitles={overview:'Overview',catalog:'Catalog',categories:'Categories',articles:'Insights',inquiries:'Inquiries',media:'Media library',settings:'Site settings'};
 
   function notify(message,type='success'){
     const toast=$('#toast');toast.textContent=message;toast.className=`toast show${type==='error'?' error':''}`;
@@ -28,6 +28,11 @@
   function typeName(type){return ({gem:'Gemstone',jewellery:'Jewellery',watch:'Watch'})[type]||type}
   function badge(value){return `<span class="badge ${escapeHTML(value)}">${escapeHTML(String(value||'').replace('_',' '))}</span>`}
   function announceStorefrontChange(){try{localStorage.setItem('gemz-public-content-updated',String(Date.now()))}catch{}}
+  function categoryOptions(type,selected='',legacy=''){
+    const categories=state.categories.filter(item=>item.product_type===type);
+    if(legacy&&!categories.some(item=>item.name===legacy))categories.push({name:legacy});
+    return `<option value="">Choose a category</option>${categories.map(item=>`<option value="${escapeHTML(item.name)}" ${item.name===selected?'selected':''}>${escapeHTML(item.name)}</option>`).join('')}`;
+  }
 
   async function authorize(user){
     state.user=user;
@@ -41,6 +46,7 @@
   async function loadAll(){
     const resources={
       products:state.client.from('products').select('*').order('sort_order').order('created_at',{ascending:false}),
+      categories:state.client.from('product_categories').select('*').order('product_type').order('sort_order').order('name'),
       articles:state.client.from('articles').select('*').order('created_at',{ascending:false}),
       inquiries:state.client.from('inquiries').select('*').order('created_at',{ascending:false}),
       settings:state.client.from('site_settings').select('*').order('setting_key')
@@ -52,6 +58,7 @@
     for(const [name,result] of results){
       if(result.error){errors.push(`${name}: ${result.error.message}`);continue}
       if(name==='products')state.products=result.data||[];
+      if(name==='categories')state.categories=result.data||[];
       if(name==='articles')state.articles=result.data||[];
       if(name==='inquiries')state.inquiries=result.data||[];
       if(name==='settings')state.settings=Object.fromEntries((result.data||[]).map(row=>[row.setting_key,row.setting_value]));
@@ -60,7 +67,7 @@
     if(errors.length)notify(`Some admin data could not be refreshed. ${errors.join(' · ')}`,'error');
     return errors.length===0;
   }
-  function renderAll(){renderOverview();renderProducts();renderArticles();renderInquiries();populateSettings()}
+  function renderAll(){renderOverview();renderProducts();renderCategories();renderArticles();renderInquiries();populateSettings()}
   function renderOverview(){
     $('#statProducts').textContent=state.products.filter(item=>item.status==='published').length;
     $('#statArticles').textContent=state.articles.filter(item=>item.status==='published').length;
@@ -72,6 +79,10 @@
     const needle=$('#productSearch').value.trim().toLowerCase(),type=$('#productTypeFilter').value;
     const items=state.products.filter(item=>(!type||item.product_type===type)&&(!needle||`${item.name} ${item.slug} ${item.category}`.toLowerCase().includes(needle)));
     $('#productsTable').innerHTML=items.length?`<table class="data-table"><thead><tr><th>Product</th><th>Type</th><th>Category</th><th>Status</th><th>Featured</th><th>Actions</th></tr></thead><tbody>${items.map(item=>`<tr><td><div class="item-cell"><span class="item-thumb">${item.image_url?`<img src="${escapeHTML(item.image_url)}" alt="">`:'G'}</span><span><b>${escapeHTML(item.name)}</b><small>${escapeHTML(item.slug)}</small></span></div></td><td>${escapeHTML(typeName(item.product_type))}</td><td>${escapeHTML(item.category||'—')}</td><td>${badge(item.status)}</td><td>${item.featured?'Yes':'—'}</td><td><div class="table-actions"><button class="small-button" data-edit-product="${escapeHTML(item.id)}">Edit</button><button class="small-button remove" data-delete-product="${escapeHTML(item.id)}">Delete</button></div></td></tr>`).join('')}</tbody></table>`:emptyState('No products found','Add a gemstone, jewellery piece or watch to your catalog.');
+  }
+  function renderCategories(){
+    const items=state.categories;
+    $('#categoriesTable').innerHTML=items.length?`<table class="data-table"><thead><tr><th>Category</th><th>Product type</th><th>Products</th><th>Display order</th><th>Actions</th></tr></thead><tbody>${items.map(item=>{const count=state.products.filter(product=>product.product_type===item.product_type&&product.category===item.name).length;return `<tr><td><b>${escapeHTML(item.name)}</b></td><td>${escapeHTML(typeName(item.product_type))}</td><td>${count}</td><td>${item.sort_order}</td><td><div class="table-actions"><button class="small-button" data-edit-category="${escapeHTML(item.id)}">Edit</button><button class="small-button remove" data-delete-category="${escapeHTML(item.id)}">Delete</button></div></td></tr>`}).join('')}</tbody></table>`:emptyState('No categories yet','Add categories for gemstones, jewellery or watches. Run the updated Supabase schema if this section cannot load.');
   }
   function renderArticles(){
     const items=state.articles;
@@ -96,6 +107,16 @@
     $('#editorFields').innerHTML=kind==='product'?productFields(row):articleFields(row);
     $('#editorDialog').showModal();
   }
+  function openCategoryEditor(category=null){
+    state.editingCategory=category?.id||null;
+    const form=$('#categoryForm');
+    form.reset();
+    form.elements.product_type.value=category?.product_type||'gem';
+    form.elements.name.value=category?.name||'';
+    form.elements.sort_order.value=category?.sort_order??0;
+    $('#categoryDialogTitle').textContent=category?'Edit category':'Add category';
+    $('#categoryDialog').showModal();
+  }
   function formatSpecLabel(value){
     const aliases={treat:'Treatment',colour:'Colour',codeNo:'Code No'};
     if(Object.hasOwn(aliases,value))return aliases[value];
@@ -110,7 +131,7 @@
   function productFields(row){
     const value=(key,fallback='')=>escapeHTML(row?.[key]??fallback);
     return `<label>Type<select name="product_type" required><option value="gem" ${row?.product_type==='gem'?'selected':''}>Gemstone</option><option value="jewellery" ${row?.product_type==='jewellery'?'selected':''}>Jewellery</option><option value="watch" ${row?.product_type==='watch'?'selected':''}>Watch</option></select></label>
-      <label>Category<input name="category" value="${value('category')}" placeholder="Blue Sapphire, Rings…" required></label>
+      <label>Category<select name="category" required>${categoryOptions(row?.product_type||'gem',row?.category||'',row?.category||'')}</select><span class="field-help">Manage these options in Categories.</span></label>
       <label class="full">Product name<input name="name" value="${value('name')}" required autocomplete="off"></label>
       <label class="full">URL slug<input name="slug" value="${value('slug')}" autocomplete="off"><span class="field-help">Lowercase letters and hyphens. Generated from the name if left blank.</span></label>
       <label class="full">Description<textarea name="description" rows="3">${value('description')}</textarea></label>
@@ -170,6 +191,26 @@
     if(error)throw error;
     $('#editorDialog').close();notify(`${kind==='product'?'Product':'Article'} saved.`);announceStorefrontChange();await loadAll();
   }
+  async function saveCategory(event){
+    event.preventDefault();
+    const form=event.currentTarget,fd=new FormData(form);
+    const record={product_type:fd.get('product_type'),name:fd.get('name').trim(),sort_order:Number(fd.get('sort_order')||0),updated_at:new Date().toISOString()};
+    if(!record.name)throw new Error('Enter a category name.');
+    const query=state.editingCategory?state.client.from('product_categories').update(record).eq('id',state.editingCategory):state.client.from('product_categories').insert(record);
+    const {error}=await query;
+    if(error)throw error;
+    $('#categoryDialog').close();notify('Category saved.');announceStorefrontChange();await loadAll();
+  }
+  async function deleteCategory(id){
+    const category=state.categories.find(item=>item.id===id);
+    if(!category)return;
+    const used=state.products.filter(product=>product.product_type===category.product_type&&product.category===category.name).length;
+    if(used){notify(`This category is used by ${used} product${used===1?'':'s'}. Reassign or delete those products first.`,'error');return}
+    if(!confirm(`Delete the ${category.name} category? This cannot be undone.`))return;
+    const {error}=await state.client.from('product_categories').delete().eq('id',id);
+    if(error){notify(error.message,'error');return}
+    notify('Category deleted.');announceStorefrontChange();await loadAll();
+  }
   async function deleteRow(table,id,label){
     if(!confirm(`Delete this ${label}? This cannot be undone.`))return;
     const {error}=await state.client.from(table).delete().eq('id',id);
@@ -226,8 +267,10 @@
     $('#productSearch').addEventListener('input',renderProducts);$('#productTypeFilter').addEventListener('change',renderProducts);
     $('#inquiryFilter').addEventListener('change',renderInquiries);
     $('#addProduct').addEventListener('click',()=>openEditor('product'));
+    $('#addCategory').addEventListener('click',()=>openCategoryEditor());
     $('#addArticle').addEventListener('click',()=>openEditor('article'));
     $('#productsTable').addEventListener('click',event=>{const edit=event.target.closest('[data-edit-product]'),remove=event.target.closest('[data-delete-product]');if(edit)openEditor('product',state.products.find(item=>item.id===edit.dataset.editProduct));if(remove)deleteRow('products',remove.dataset.deleteProduct,'product')});
+    $('#categoriesTable').addEventListener('click',event=>{const edit=event.target.closest('[data-edit-category]'),remove=event.target.closest('[data-delete-category]');if(edit)openCategoryEditor(state.categories.find(item=>item.id===edit.dataset.editCategory));if(remove)deleteCategory(remove.dataset.deleteCategory)});
     $('#articlesTable').addEventListener('click',event=>{const edit=event.target.closest('[data-edit-article]'),remove=event.target.closest('[data-delete-article]');if(edit)openEditor('article',state.articles.find(item=>item.id===edit.dataset.editArticle));if(remove)deleteRow('articles',remove.dataset.deleteArticle,'article')});
     $('#inquiriesTable').addEventListener('change',event=>{const field=event.target.closest('[data-inquiry-status]');if(field)updateInquiryStatus(field.dataset.inquiryStatus,field.value)});
     $('#recentInquiries').addEventListener('change',event=>{const field=event.target.closest('[data-inquiry-status]');if(field)updateInquiryStatus(field.dataset.inquiryStatus,field.value)});
@@ -237,7 +280,12 @@
       if(event.target.closest('[data-add-spec]')){$('.specification-list').insertAdjacentHTML('beforeend',specificationRows({}));return}
       if(event.target.closest('[data-remove-spec]'))event.target.closest('.specification-row').remove();
     });
+    $('#editorFields').addEventListener('change',event=>{
+      if(event.target.name==='product_type')$('#editorFields [name="category"]').innerHTML=categoryOptions(event.target.value);
+    });
     $('#closeDialog').addEventListener('click',()=>$('#editorDialog').close());$('#cancelDialog').addEventListener('click',()=>$('#editorDialog').close());
+    $('#categoryForm').addEventListener('submit',event=>saveCategory(event).catch(error=>notify(error.message||'Could not save category.','error')));
+    $('#closeCategoryDialog').addEventListener('click',()=>$('#categoryDialog').close());$('#cancelCategoryDialog').addEventListener('click',()=>$('#categoryDialog').close());
     $('#settingsForm').addEventListener('submit',event=>saveSettings(event).catch(error=>notify(error.message,'error')));
     $('#settingsForm').addEventListener('click',event=>{const button=event.target.closest('[data-settings-upload]');if(button)handleSettingsUpload(button);if(event.target.closest('[data-settings-video-upload]'))handleSettingsVideoUpload()});
     $('#settingsForm').addEventListener('input',event=>{if(event.target.name==='store_logo_url'||event.target.name==='store_favicon_url'||event.target.name==='seo_og_image'){const preview=$(`#${event.target.name==='store_logo_url'?'storeLogoPreview':event.target.name==='store_favicon_url'?'storeFaviconPreview':'seoOgImagePreview'}`);preview.hidden=!event.target.value;if(event.target.value)preview.src=event.target.value;else preview.removeAttribute('src')}});

@@ -12,7 +12,8 @@
 <main>
 <section><div class="wrap">
   <p style="font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;margin-bottom:30px"><a href="collection.html#gem" style="opacity:.6">← GEM</a></p>
-  <div class="detail" id="detail"></div>
+  <div class="empty loading-state" id="productLoading" role="status">Loading gemstone details…</div>
+  <div class="detail" id="detail" hidden></div>
 </div></section>
 <section class="collection"><div class="wrap center"><span class="eyebrow">Discover More</span><h2>You May Also Admire</h2></div>
   <div class="wrap"><div class="grid" id="more"></div></div></section>
@@ -21,7 +22,7 @@
 <script src="js/supabase-config.js"></script>
 <script src="js/app.js"></script>
 <script>
-window.GEMZ_READY.then(()=>{
+window.GEMZ_CONTENT_READY.then(()=>{
   const slug=new URLSearchParams(location.search).get('slug');
   function renderGemstone(){
     const g=GEMS.find(item=>item.slug===slug);
@@ -29,14 +30,18 @@ window.GEMZ_READY.then(()=>{
     if(!g){
       if(window.GEMZ_CONTENT_PENDING){
         document.title='Loading gemstone — Gemz.lk';
-        detail.innerHTML='<div class="empty loading-state" role="status">Loading gemstone details…</div>';
+        document.getElementById('productLoading').hidden=false;
         return;
       }
       document.title='Gemstone unavailable — Gemz.lk';
+      document.getElementById('productLoading').hidden=true;
+      detail.hidden=false;
       detail.innerHTML='<div class="empty"><h2>Gemstone unavailable</h2><p>This item is not currently listed.</p><a class="btn btn-dark" href="collection.html?section=gem">Browse gemstones</a></div>';
       document.getElementById('more').innerHTML=GEMS.slice(0,3).map(cardHTML).join('');
       return;
     }
+    document.getElementById('productLoading').hidden=true;
+    detail.hidden=false;
     document.title=g.name+' — Gemz.lk';
     applySeoSettings({title:g.seo_title||`${g.name} | ${SITE_SETTINGS.store_name||'Gemz.lk'}`,description:g.seo_description||g.description||g.text,image:g.image_url,type:'product',product:g});
     const gemDetails=[

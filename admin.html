@@ -39,6 +39,7 @@
       <nav class="side-nav" aria-label="Admin sections">
         <button data-view="overview" class="active"><span>⌂</span>Overview</button>
         <button data-view="catalog"><span>◇</span>Catalog</button>
+        <button data-view="categories"><span>⌑</span>Categories</button>
         <button data-view="articles"><span>▤</span>Insights</button>
         <button data-view="inquiries"><span>✉</span>Inquiries</button>
         <button data-view="media"><span>▧</span>Media library</button>
@@ -65,6 +66,11 @@
         <section class="view" id="view-catalog">
           <div class="toolbar"><div><span class="eyebrow">Products</span><h2>Catalog</h2></div><div class="toolbar-actions"><input id="productSearch" type="search" placeholder="Search products" aria-label="Search products"><select id="productTypeFilter" aria-label="Filter product type"><option value="">All types</option><option value="gem">Gemstones</option><option value="jewellery">Jewellery</option><option value="watch">Watches</option></select><button class="button primary" id="addProduct">Add product</button></div></div>
           <div class="panel"><div id="productsTable" class="table-wrap"></div></div>
+        </section>
+
+        <section class="view" id="view-categories">
+          <div class="toolbar"><div><span class="eyebrow">Product organization</span><h2>Categories</h2></div><button class="button primary" id="addCategory">Add category</button></div>
+          <div class="panel"><div id="categoriesTable" class="table-wrap"></div></div>
         </section>
 
         <section class="view" id="view-articles">
@@ -165,6 +171,8 @@
   </div>
 
   <dialog id="editorDialog" class="editor-dialog"><form id="editorForm" method="dialog"><div class="dialog-head"><div><span class="eyebrow" id="editorEyebrow">Catalog</span><h2 id="editorTitle">Edit item</h2></div><button type="button" class="close-button" id="closeDialog" aria-label="Close">×</button></div><div id="editorFields" class="editor-fields"></div><div class="dialog-actions"><button type="button" class="button quiet" id="cancelDialog">Cancel</button><button type="submit" class="button primary" id="saveRecord">Save changes</button></div></form></dialog>
+
+  <dialog id="categoryDialog" class="editor-dialog"><form id="categoryForm" method="dialog"><div class="dialog-head"><div><span class="eyebrow">Product organization</span><h2 id="categoryDialogTitle">Add category</h2></div><button type="button" class="close-button" id="closeCategoryDialog" aria-label="Close">×</button></div><div class="editor-fields"><label>Product type<select name="product_type" required><option value="gem">Gemstone</option><option value="jewellery">Jewellery</option><option value="watch">Watch</option></select></label><label>Category name<input name="name" required maxlength="80" autocomplete="off"></label><label>Display order<input name="sort_order" type="number" value="0"></label><p class="field-help full">Categories appear in product forms and storefront navigation. A category in use cannot be deleted.</p></div><div class="dialog-actions"><button type="button" class="button quiet" id="cancelCategoryDialog">Cancel</button><button type="submit" class="button primary">Save category</button></div></form></dialog>
 
   <script src="js/supabase-config.js"></script>
   <script src="js/admin.js"></script>

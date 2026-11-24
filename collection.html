@@ -31,6 +31,7 @@
     </div>
     <div class="category-group" id="watchCategories" hidden>
       <p class="category-label">WATCH</p>
+      <div class="chips" id="watchChips" aria-label="Watch subcategories"></div>
       <p class="category-note">Please contact us for watch availability and sourcing.</p>
     </div>
   </div>
@@ -50,15 +51,18 @@ window.GEMZ_READY.then(()=>{
   let section=['gem','jewellery','watch'].includes(initialParams.get('section'))?initialParams.get('section'):'gem';
   let currentFilter='all';
   let currentCategory='Gemstones';
+  let requestedCategoryPending=Boolean(initialParams.get('category'));
   const gemChips=document.getElementById('gemChips');
   const gemTypeChips=document.getElementById('gemTypeChips');
   const jewelleryChips=document.getElementById('jewelleryChips');
+  const watchChips=document.getElementById('watchChips');
   function selectChip(button,group){
     group.querySelectorAll('.chip').forEach(c=>{const active=c===button;c.classList.toggle('on',active);c.setAttribute('aria-pressed',String(active))});
   }
   function populateFilters(){
     gemTypeChips.innerHTML=GEM_CATEGORIES.map(c=>`<button class="chip" type="button" data-f="${htmlEscape(c.label)}" aria-pressed="false">${htmlEscape(c.label)}</button>`).join('');
-    jewelleryChips.innerHTML=JEWELLERY_CATEGORIES.map(c=>`<button class="chip" type="button" data-f="${htmlEscape(c)}" aria-pressed="false">${htmlEscape(c)}</button>`).join('');
+    jewelleryChips.innerHTML=`<button class="chip" type="button" data-f="all" aria-pressed="false">All Jewellery</button>${JEWELLERY_CATEGORIES.map(c=>`<button class="chip" type="button" data-f="${htmlEscape(c)}" aria-pressed="false">${htmlEscape(c)}</button>`).join('')}`;
+    watchChips.innerHTML=`<button class="chip" type="button" data-f="all" aria-pressed="false">All Watches</button>${WATCH_CATEGORIES.map(c=>`<button class="chip" type="button" data-f="${htmlEscape(c)}" aria-pressed="false">${htmlEscape(c)}</button>`).join('')}`;
   }
   function render(f='all'){
     currentFilter=f;
@@ -68,7 +72,7 @@ window.GEMZ_READY.then(()=>{
       list=GEMS.filter(g=>category?category.match(g):f==='all');
     }
     if(section==='jewellery')list=JEWELLERY_PRODUCTS.filter(product=>f==='all'||product.category===f);
-    if(section==='watch')list=WATCH_PRODUCTS;
+    if(section==='watch')list=WATCH_PRODUCTS.filter(product=>f==='all'||product.category===f);
     grid.innerHTML=list.map(cardHTML).join('');
     emptyCategory.hidden=list.length>0;
     if(section==='jewellery'&&!list.length){
@@ -86,7 +90,7 @@ window.GEMZ_READY.then(()=>{
     document.querySelectorAll('.collection-tab').forEach(tab=>{const active=tab.dataset.section===next;tab.classList.toggle('on',active);tab.setAttribute('aria-selected',String(active))});
     Object.entries(categoryGroups).forEach(([key,node])=>node.hidden=key!==next);
     grid.hidden=false;
-    currentCategory=next==='watch'?'Watches':next==='jewellery'?(filter==='all'?'Jewellery':filter):(filter==='all'?'Gemstones':filter);
+    currentCategory=next==='watch'?(filter==='all'?'Watches':filter):next==='jewellery'?(filter==='all'?'Jewellery':filter):(filter==='all'?'Gemstones':filter);
     if(next==='gem'){
       const group=filter==='all'?gemChips:gemTypeChips;
       const selected=[...group.querySelectorAll('.chip')].find(chip=>chip.dataset.f===filter);
@@ -96,21 +100,30 @@ window.GEMZ_READY.then(()=>{
     if(next==='jewellery'){
       selectChip([...jewelleryChips.querySelectorAll('.chip')].find(chip=>chip.dataset.f===filter)||null,jewelleryChips);
     }
+    if(next==='watch')selectChip([...watchChips.querySelectorAll('.chip')].find(chip=>chip.dataset.f===filter)||null,watchChips);
     render(filter);
   }
   document.getElementById('collectionTabs').addEventListener('click',e=>{const tab=e.target.closest('.collection-tab');if(tab)setSection(tab.dataset.section)});
   gemChips.addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;setSection('gem',b.dataset.f)});
   gemTypeChips.addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;setSection('gem',b.dataset.f)});
   jewelleryChips.addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;setSection('jewellery',b.dataset.f)});
+  watchChips.addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;setSection('watch',b.dataset.f)});
   function refreshCollection(){
     populateFilters();
-    const desired=currentFilter;
-    const valid=section==='gem'?desired==='all'||GEM_CATEGORIES.some(c=>c.label===desired):section==='jewellery'?desired==='all'||JEWELLERY_CATEGORIES.includes(desired):true;
+    let desired=currentFilter;
+    if(requestedCategoryPending){
+      requestedCategoryPending=false;
+      const requested=initialParams.get('category')?.toLowerCase();
+      desired=section==='gem'?GEM_CATEGORIES.find(c=>c.label.toLowerCase()===requested)?.label||'all':section==='jewellery'?JEWELLERY_CATEGORIES.find(c=>c.toLowerCase()===requested)||'all':WATCH_CATEGORIES.find(c=>c.toLowerCase()===requested)||'all';
+    }
+    const valid=section==='gem'?desired==='all'||GEM_CATEGORIES.some(c=>c.label===desired):section==='jewellery'?desired==='all'||JEWELLERY_CATEGORIES.includes(desired):section==='watch'?desired==='all'||WATCH_CATEGORIES.includes(desired):false;
     setSection(section,valid?desired:'all');
   }
   populateFilters();
-  const requestedCategory=JEWELLERY_CATEGORIES.find(c=>c.toLowerCase()===initialParams.get('category')?.toLowerCase());
-  if(requestedCategory&&section==='jewellery')currentFilter=requestedCategory;
+  const requestedCategory=initialParams.get('category');
+  if(section==='gem')currentFilter=GEM_CATEGORIES.find(c=>c.label.toLowerCase()===requestedCategory?.toLowerCase())?.label||'all';
+  if(section==='jewellery')currentFilter=JEWELLERY_CATEGORIES.find(c=>c.toLowerCase()===requestedCategory?.toLowerCase())||'all';
+  if(section==='watch')currentFilter=WATCH_CATEGORIES.find(c=>c.toLowerCase()===requestedCategory?.toLowerCase())||'all';
   setSection(section,currentFilter);
   boot('collection');
   onPageRefresh(refreshCollection);

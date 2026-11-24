@@ -13,7 +13,8 @@
 <main>
   <section class="jewellery-product"><div class="wrap">
     <p class="product-back"><a id="productBack" href="collection.html?section=jewellery">← JEWELLERY</a></p>
-    <div class="detail">
+    <p class="empty loading-state" id="productLoading" role="status">Loading product details…</p>
+    <div class="detail" hidden>
       <div class="jewellery-product-visual" id="productVisual" aria-hidden="true"></div>
       <div>
         <span class="eyebrow" id="productEyebrow">Features &amp; Specifications</span>
@@ -34,7 +35,7 @@
 <script src="js/supabase-config.js"></script>
 <script src="js/app.js"></script>
 <script>
-window.GEMZ_READY.then(()=>{
+window.GEMZ_CONTENT_READY.then(()=>{
   const params=new URLSearchParams(location.search);
   const slug=params.get('slug');
   function renderJewelleryProduct(){
@@ -42,13 +43,17 @@ window.GEMZ_READY.then(()=>{
     if(slug&&!product){
       if(window.GEMZ_CONTENT_PENDING){
         document.title='Loading product — Gemz.lk';
-        document.querySelector('.detail').innerHTML='<div class="empty loading-state" role="status">Loading product details…</div>';
+        document.getElementById('productLoading').hidden=false;
         return;
       }
       document.title='Product unavailable — Gemz.lk';
-      document.querySelector('.detail').innerHTML='<div class="empty"><h2>Product unavailable</h2><p>This item is no longer listed.</p><a class="btn btn-dark" href="collection.html">Browse the collection</a></div>';
+      document.getElementById('productLoading').hidden=true;
+      const detail=document.querySelector('.detail');detail.hidden=false;
+      detail.innerHTML='<div class="empty"><h2>Product unavailable</h2><p>This item is no longer listed.</p><a class="btn btn-dark" href="collection.html">Browse the collection</a></div>';
       return;
     }
+    document.getElementById('productLoading').hidden=true;
+    document.querySelector('.detail').hidden=false;
     const type=product?.type||'jewellery';
     const section=type==='watch'?'watch':'jewellery';
     const category=product?.category||JEWELLERY_CATEGORIES.find(item=>item.toLowerCase()===params.get('category')?.toLowerCase())||'Rings';

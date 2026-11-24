@@ -16,6 +16,16 @@ $$;
 revoke all on function public.is_gemz_admin() from public;
 grant execute on function public.is_gemz_admin() to anon, authenticated;
 
+create table if not exists public.product_categories (
+  id uuid primary key default gen_random_uuid(),
+  product_type text not null check (product_type in ('gem','jewellery','watch')),
+  name text not null,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (product_type, name)
+);
+
 create table if not exists public.products (
   id uuid primary key default gen_random_uuid(),
   product_type text not null check (product_type in ('gem','jewellery','watch')),
@@ -36,6 +46,45 @@ create table if not exists public.products (
 );
 alter table public.products add column if not exists seo_title text not null default '';
 alter table public.products add column if not exists seo_description text not null default '';
+
+create or replace function public.sync_products_after_category_rename()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if old.name is distinct from new.name or old.product_type is distinct from new.product_type then
+    update public.products
+    set category = new.name, product_type = new.product_type, updated_at = now()
+    where product_type = old.product_type and category = old.name;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists product_categories_sync_products on public.product_categories;
+create trigger product_categories_sync_products
+after update of name, product_type on public.product_categories
+for each row execute function public.sync_products_after_category_rename();
+
+create or replace function public.prevent_deleting_used_product_category()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if exists (
+    select 1 from public.products
+    where product_type = old.product_type and category = old.name
+  ) then
+    raise exception 'This category is used by products. Reassign or delete those products first.';
+  end if;
+  return old;
+end;
+$$;
+drop trigger if exists product_categories_prevent_used_delete on public.product_categories;
+create trigger product_categories_prevent_used_delete
+before delete on public.product_categories
+for each row execute function public.prevent_deleting_used_product_category();
 
 create table if not exists public.articles (
   id uuid primary key default gen_random_uuid(),
@@ -68,6 +117,7 @@ create table if not exists public.site_settings (
 );
 
 alter table public.gemz_admins enable row level security;
+alter table public.product_categories enable row level security;
 alter table public.products enable row level security;
 alter table public.articles enable row level security;
 alter table public.inquiries enable row level security;
@@ -76,6 +126,13 @@ alter table public.site_settings enable row level security;
 drop policy if exists "admins can read own membership" on public.gemz_admins;
 create policy "admins can read own membership" on public.gemz_admins
   for select to authenticated using (user_id = auth.uid());
+
+drop policy if exists "product categories are public to read" on public.product_categories;
+create policy "product categories are public to read" on public.product_categories
+  for select to anon, authenticated using (true);
+drop policy if exists "admins manage product categories" on public.product_categories;
+create policy "admins manage product categories" on public.product_categories
+  for all to authenticated using (public.is_gemz_admin()) with check (public.is_gemz_admin());
 
 drop policy if exists "published products are public" on public.products;
 create policy "published products are public" on public.products
@@ -105,9 +162,9 @@ drop policy if exists "admins manage settings" on public.site_settings;
 create policy "admins manage settings" on public.site_settings
   for all to authenticated using (public.is_gemz_admin()) with check (public.is_gemz_admin());
 
-grant select on public.products, public.articles, public.site_settings to anon, authenticated;
+grant select on public.products, public.product_categories, public.articles, public.site_settings to anon, authenticated;
 grant insert on public.inquiries to anon, authenticated;
-grant select, insert, update, delete on public.products, public.articles, public.site_settings to authenticated;
+grant select, insert, update, delete on public.products, public.product_categories, public.articles, public.site_settings to authenticated;
 grant select, update, delete on public.inquiries to authenticated;
 grant select on public.gemz_admins to authenticated;
 
@@ -132,6 +189,14 @@ insert into public.products (product_type,slug,name,category,description,status,
 ('jewellery','jewellery-wedding','Wedding','Wedding','Wedding jewellery featuring natural Sri Lankan gemstones. Contact us for availability and custom details.','published',true,26),
 ('jewellery','jewellery-bracelets','Bracelets','Bracelets','Gemstone bracelets selected and crafted in Sri Lanka. Contact us for availability and custom details.','published',true,27)
 on conflict (slug) do nothing;
+
+-- Keep the managed category list in sync with product records already in the catalog.
+insert into public.product_categories (product_type, name, sort_order)
+select product_type, category, min(sort_order)
+from public.products
+where trim(category) <> ''
+group by product_type, category
+on conflict (product_type, name) do nothing;
 
 insert into public.articles (slug,title,category,excerpt,content,status) values
 ('read-gemstone-certificate','How to read a gemstone certificate','Guide','What origin, treatment and clarity grades really mean before you buy.','A gemstone certificate records key information about a stone, including its identity, measurements, origin assessment and any treatment detected. Ask the seller to explain each report field and confirm the issuing laboratory.','published'),

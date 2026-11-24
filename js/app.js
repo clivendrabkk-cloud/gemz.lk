@@ -30,6 +30,7 @@ let GEM_CATEGORIES = [
   {label:'Other',match:g=>!/blue sapphire|ruby|pink sapphire|yellow sapphire|purple sapphire|violet sapphire|teal sapphire|padparadscha|star sapphire|cat.?s eye/i.test(g.name)}
 ];
 let JEWELLERY_CATEGORIES = ['Rings','Pendants','Necklaces','Earrings','Bangle','Gent','Wedding','Bracelets'];
+let WATCH_CATEGORIES = [];
 let JEWELLERY_PRODUCTS = [];
 let WATCH_PRODUCTS = [];
 const JEWELLERY_DETAIL_FIELDS = [
@@ -97,15 +98,17 @@ async function createInquiry(record){
 async function loadPublicContent(){
   const requestId=++publicContentRequest;
   try{
-    const [productResult,articleResult,settingsResult]=await Promise.allSettled([
+    const [productResult,categoryResult,articleResult,settingsResult]=await Promise.allSettled([
       fetchPublicTable('products',{select:'*',status:'eq.published',order:'sort_order.asc,created_at.asc'}),
+      fetchPublicTable('product_categories',{select:'*',order:'product_type.asc,sort_order.asc,name.asc'}),
       fetchPublicTable('articles',{select:'*',status:'eq.published',order:'created_at.desc'}),
       fetchPublicTable('site_settings',{select:'setting_key,setting_value'})
     ]);
     const products=productResult.status==='fulfilled'?productResult.value:null;
+    const categories=categoryResult.status==='fulfilled'?categoryResult.value:null;
     const articles=articleResult.status==='fulfilled'?articleResult.value:null;
     const settings=settingsResult.status==='fulfilled'?settingsResult.value:null;
-    for(const [name,result] of [['products',productResult],['articles',articleResult],['site settings',settingsResult]]){
+    for(const [name,result] of [['products',productResult],['product categories',categoryResult],['articles',articleResult],['site settings',settingsResult]]){
       if(result.status==='rejected')console.warn(`Gemz ${name} could not be loaded from Supabase.`,result.reason);
     }
     if(requestId!==publicContentRequest)return null;
@@ -114,17 +117,25 @@ async function loadPublicContent(){
       GEMS=rows.filter(row=>row.type==='gem');
       JEWELLERY_PRODUCTS=rows.filter(row=>row.type==='jewellery');
       WATCH_PRODUCTS=rows.filter(row=>row.type==='watch');
-      const gemCategories=[...new Set(GEMS.map(row=>row.category).filter(Boolean))];
-      if(gemCategories.length)GEM_CATEGORIES=gemCategories.map(label=>({label,match:gem=>gem.category===label}));
-      const categories=[...new Set(JEWELLERY_PRODUCTS.map(row=>row.category).filter(Boolean))];
-      if(categories.length)JEWELLERY_CATEGORIES=categories;
+      if(!categories){
+        const gemCategories=[...new Set(GEMS.map(row=>row.category).filter(Boolean))];
+        if(gemCategories.length)GEM_CATEGORIES=gemCategories.map(label=>({label,match:gem=>gem.category===label}));
+        const jewelleryCategories=[...new Set(JEWELLERY_PRODUCTS.map(row=>row.category).filter(Boolean))];
+        if(jewelleryCategories.length)JEWELLERY_CATEGORIES=jewelleryCategories;
+        WATCH_CATEGORIES=[...new Set(WATCH_PRODUCTS.map(row=>row.category).filter(Boolean))];
+      }
+    }
+    if(categories){
+      GEM_CATEGORIES=categories.filter(item=>item.product_type==='gem').map(item=>({label:item.name,match:gem=>gem.category===item.name}));
+      JEWELLERY_CATEGORIES=categories.filter(item=>item.product_type==='jewellery').map(item=>item.name);
+      WATCH_CATEGORIES=categories.filter(item=>item.product_type==='watch').map(item=>item.name);
     }
     if(articles) ARTICLES=articles.map(row=>({
       t:row.title,k:row.category||'Insight',g:0,p:row.excerpt||'',slug:row.slug,content:row.content||'',
       image_url:publicMediaURL(row.cover_image)
     }));
     if(settings) SITE_SETTINGS=Object.fromEntries(settings.map(row=>[row.setting_key,row.setting_value]));
-    const loaded=Boolean(products||articles||settings);
+    const loaded=Boolean(products||categories||articles||settings);
     if(!loaded)console.warn('Gemz public content could not be loaded from Supabase.');
     return loaded;
   }catch(error){if(requestId===publicContentRequest)console.warn('Gemz public content could not be loaded from Supabase.',error)}
@@ -215,10 +226,12 @@ function layout(active){
   const address=htmlEscape(SITE_SETTINGS.contact_address||'Colombo, Sri Lanka');
   const announce=htmlEscape(SITE_SETTINGS.announcement||'Natural Gems & Fine Jewellery from Sri Lanka.');
   const navHome=label('nav_home','Home'),navCollection=label('nav_collection','Our Gemstones'),navGems=label('nav_gemstones','GEM'),navJewellery=label('nav_jewellery','JEWELLERY'),navAllJewellery=label('nav_all_jewellery','All Jewellery'),navWatches=label('nav_watches','WATCH'),navAbout=label('nav_about','About us'),navInsights=label('nav_insights','Insights'),navContact=label('nav_contact','Contact Us'),navAccount=label('nav_account','Account');
+  const gemNavLinks=GEM_CATEGORIES.map(category=>`<a href="${categoryBrowseURL('gem',category.label)}">${htmlEscape(category.label)}</a>`).join('');
+  const jewelleryNavLinks=JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('');
   document.getElementById('site-header').innerHTML=`
   <div class="announce"><span class="sr-only">${announce}</span><div class="announce-track" aria-hidden="true">${Array(8).fill(`<span>${announce}</span><span>Over 40 Years of Ceylon Gem Expertise.</span>`).join('')}</div></div>
   <header class="header" id="hdr"><div class="header-in">
-    <nav class="nav" aria-label="Main navigation">${L('index.html',navHome,'home')}${L('collection.html',navCollection,'collection')}<a class="nav-gem ${active==='collection'?'active':''}" href="collection.html?section=gem">${navGems}</a><details class="nav-drop"><summary class="${active==='collection'?'active':''}">${navJewellery}</summary><div class="nav-dropdown"><a href="collection.html?section=jewellery">${navAllJewellery}</a>${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('')}</div></details>${L('collection.html?section=watch',navWatches,'collection')}${L('about.html',navAbout,'about')}</nav>
+    <nav class="nav" aria-label="Main navigation">${L('index.html',navHome,'home')}<details class="nav-drop"><summary class="${active==='collection'?'active':''}">${navCollection}</summary><div class="nav-dropdown"><a href="collection.html?section=gem">${navGems}</a>${gemNavLinks}</div></details><details class="nav-drop"><summary class="${active==='collection'?'active':''}">${navJewellery}</summary><div class="nav-dropdown"><a href="collection.html?section=jewellery">${navAllJewellery}</a>${jewelleryNavLinks}</div></details>${L('collection.html?section=watch',navWatches,'collection')}${L('about.html',navAbout,'about')}</nav>
     <button class="burger" id="burger" aria-label="Open menu" aria-controls="mnav" aria-expanded="false"><i></i><i></i><i></i></button>
     <a href="index.html" class="logo logo-only" aria-label="${storeName} home">${brandMark(active==='home'?'dark':'light')}</a>
     <div class="utils">
@@ -229,7 +242,7 @@ function layout(active){
       <a class="ico opt" href="login.html" aria-label="${navAccount}">${icon.user}</a>
       <a class="ico" href="cart.html" aria-label="Inquiry cart">${icon.bag}<span class="cart-count">0</span></a>
     </div></div></header>
-  <div class="mobile-nav" id="mnav" inert><a href="index.html">${navHome}</a><a href="collection.html">${navCollection}</a><a href="collection.html?section=gem">${navGems}</a><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=jewellery">${navJewellery}</a><div class="mobile-jewellery-subnav">${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('')}</div></div><a href="collection.html?section=watch">${navWatches}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a><a href="contact.html">${navContact}</a><a href="login.html">${navAccount}</a></div>`;
+  <div class="mobile-nav" id="mnav" inert><a href="index.html">${navHome}</a><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=gem">${navCollection}</a><div class="mobile-jewellery-subnav"><a href="collection.html?section=gem">${navGems}</a>${gemNavLinks}</div></div><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=jewellery">${navJewellery}</a><div class="mobile-jewellery-subnav"><a href="collection.html?section=jewellery">${navAllJewellery}</a>${jewelleryNavLinks}</div></div><a href="collection.html?section=watch">${navWatches}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a><a href="contact.html">${navContact}</a><a href="login.html">${navAccount}</a></div>`;
   document.getElementById('site-footer').innerHTML=`<footer class="footer"><div class="wrap"><div class="foot-grid">
     <div class="foot-brand"><a href="index.html" class="logo logo-only footer-logo" aria-label="${storeName} home">${brandMark('dark')}</a><p data-setting="footer_tagline">Authentic natural gemstones sourced in Sri Lanka and delivered worldwide. Established 1985.</p></div>
     <div><h4>${label('footer_explore_title','Explore')}</h4><a href="index.html">${navHome}</a><a href="collection.html">${navCollection}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a></div>
@@ -264,7 +277,10 @@ function cardHTML(g,i){
 }
 
 function jewelleryCategoryURL(category){
-  return `collection.html?section=jewellery&category=${encodeURIComponent(category)}`;
+  return categoryBrowseURL('jewellery',category);
+}
+function categoryBrowseURL(section,category){
+  return `collection.html?section=${encodeURIComponent(section)}&category=${encodeURIComponent(category)}`;
 }
 
 function jewelleryArt(category){
