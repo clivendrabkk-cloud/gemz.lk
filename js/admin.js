@@ -196,7 +196,7 @@
   }
   async function init(){
     bindEvents();
-    try{state.client=window.GEMZ_SUPABASE||await window.GEMZ_SUPABASE_READY}catch(error){showGate('setup');$('#setupCard p').insertAdjacentHTML('beforeend',`<br><br><span class="notice">${escapeHTML(error.message)}</span>`);return}
+    try{state.client=window.GEMZ_SUPABASE||await window.GEMZ_GET_SUPABASE()}catch(error){showGate('setup');$('#setupCard p').insertAdjacentHTML('beforeend',`<br><br><span class="notice">${escapeHTML(error.message)}</span>`);return}
     if(!state.client){showGate('setup');return}
     const {data,error}=await state.client.auth.getSession();
     if(error){showGate('login',error.message);return}

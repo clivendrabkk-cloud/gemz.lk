@@ -1,4 +1,4 @@
-/* gemz.lk — data, shared layout, cart, GSAP + 3D */
+/* gemz.lk — public data, shared layout, inquiry cart, and lightweight interactions */
 let GEMS = [
   {slug:'yellow-sapphire',name:'Yellow Sapphire',c:['#fff3a8','#f2b705','#a86a00'],bg:['#3a2a08','#8a5a12'],origin:'Ratnapura, Sri Lanka',hardness:'9',clarity:'Eye-clean to VS',treat:'Unheated available',colour:'Yellow',
    text:'Honey-gold corundum with a warm, luminous body colour. Sri Lankan yellow sapphires are celebrated for brilliance and natural, untreated character.'},
@@ -61,17 +61,46 @@ function productFromRow(row){
     status:row.status, featured:row.featured, sort_order:row.sort_order,
     c:colors,bg:background,visual:{colors,background} };
 }
+async function fetchPublicTable(table,query){
+  const config=window.GEMZ_SUPABASE_CONFIG;
+  if(!config?.url||!config?.anonKey)throw new Error('Supabase public configuration is missing.');
+  const controller=new AbortController();
+  const timeout=window.setTimeout(()=>controller.abort(),6000);
+  try{
+    const params=new URLSearchParams(query);
+    const response=await fetch(`${config.url.replace(/\/+$/,'')}/rest/v1/${table}?${params}`,{
+      headers:{apikey:config.anonKey},signal:controller.signal
+    });
+    if(!response.ok)throw new Error(`Supabase ${table} request failed (${response.status}).`);
+    return await response.json();
+  }finally{window.clearTimeout(timeout)}
+}
+async function createInquiry(record){
+  const config=window.GEMZ_SUPABASE_CONFIG;
+  if(!config?.url||!config?.anonKey)throw new Error('Enquiry service is unavailable.');
+  const controller=new AbortController();
+  const timeout=window.setTimeout(()=>controller.abort(),15000);
+  try{
+    const response=await fetch(`${config.url.replace(/\/+$/,'')}/rest/v1/inquiries`,{
+      method:'POST',
+      headers:{apikey:config.anonKey,'Content-Type':'application/json',Prefer:'return=minimal'},
+      body:JSON.stringify(record),signal:controller.signal
+    });
+    if(!response.ok)throw new Error(`Enquiry request failed (${response.status}).`);
+  }finally{window.clearTimeout(timeout)}
+}
 async function loadPublicContent(){
   try{
-    const client=window.GEMZ_SUPABASE||await window.GEMZ_SUPABASE_READY;
-    if(!client)return;
-    const [productResult,articleResult,settingsResult]=await Promise.all([
-      client.from('products').select('*').eq('status','published').order('sort_order').order('created_at'),
-      client.from('articles').select('*').eq('status','published').order('created_at',{ascending:false}),
-      client.from('site_settings').select('setting_key,setting_value')
+    const [productResult,articleResult,settingsResult]=await Promise.allSettled([
+      fetchPublicTable('products',{select:'*',status:'eq.published',order:'sort_order.asc,created_at.asc'}),
+      fetchPublicTable('articles',{select:'*',status:'eq.published',order:'created_at.desc'}),
+      fetchPublicTable('site_settings',{select:'setting_key,setting_value'})
     ]);
-    if(!productResult.error){
-      const rows=(productResult.data||[]).map(productFromRow);
+    const products=productResult.status==='fulfilled'?productResult.value:null;
+    const articles=articleResult.status==='fulfilled'?articleResult.value:null;
+    const settings=settingsResult.status==='fulfilled'?settingsResult.value:null;
+    if(products){
+      const rows=products.map(productFromRow);
       GEMS=rows.filter(row=>row.type==='gem');
       JEWELLERY_PRODUCTS=rows.filter(row=>row.type==='jewellery');
       WATCH_PRODUCTS=rows.filter(row=>row.type==='watch');
@@ -80,14 +109,37 @@ async function loadPublicContent(){
       const categories=[...new Set(JEWELLERY_PRODUCTS.map(row=>row.category).filter(Boolean))];
       if(categories.length)JEWELLERY_CATEGORIES=categories;
     }
-    if(!articleResult.error) ARTICLES=(articleResult.data||[]).map(row=>({
+    if(articles) ARTICLES=articles.map(row=>({
       t:row.title,k:row.category||'Insight',g:0,p:row.excerpt||'',slug:row.slug,content:row.content||'',
       image_url:publicMediaURL(row.cover_image)
     }));
-    if(!settingsResult.error) SITE_SETTINGS=Object.fromEntries((settingsResult.data||[]).map(row=>[row.setting_key,row.setting_value]));
+    if(settings) SITE_SETTINGS=Object.fromEntries(settings.map(row=>[row.setting_key,row.setting_value]));
+    const loaded=Boolean(products||articles||settings);
+    if(!loaded)console.warn('Gemz public content could not be loaded from Supabase.');
+    return loaded;
   }catch(error){console.warn('Gemz public content could not be loaded from Supabase.',error)}
+  return false;
 }
-window.GEMZ_READY=window.GEMZ_READY||Promise.resolve().then(loadPublicContent);
+// Public pages render from the built-in content immediately. Supabase refreshes in the
+// background and notifies pages when it is ready, so network latency never blocks first paint.
+window.GEMZ_READY=Promise.resolve();
+window.GEMZ_CONTENT_PENDING=true;
+let contentSettled=false;
+function announcePublicContent(loaded){
+  if(!window.GEMZ_CONTENT_PENDING&&window.GEMZ_CONTENT_LOADED===loaded)return;
+  window.GEMZ_CONTENT_PENDING=false;
+  window.GEMZ_CONTENT_LOADED=loaded;
+  window.dispatchEvent(new CustomEvent('gemz-content-updated',{detail:{loaded}}));
+}
+const contentFallbackTimer=window.setTimeout(()=>{
+  if(!contentSettled)announcePublicContent(false);
+},2500);
+window.GEMZ_CONTENT_READY=loadPublicContent().then(loaded=>{
+  contentSettled=true;
+  window.clearTimeout(contentFallbackTimer);
+  announcePublicContent(loaded);
+  return loaded;
+});
 
 /* Faceted gem SVG */
 function gemSVG(g,uid){
@@ -118,7 +170,7 @@ const icon={
 
 /* Cart (inquiry list) */
 const Cart={
-  get(){try{return JSON.parse(localStorage.getItem('gemz_cart')||'[]')}catch(e){return[]}},
+  get(){try{const items=JSON.parse(localStorage.getItem('gemz_cart')||'[]');return Array.isArray(items)?items.filter(item=>typeof item==='string'):[]}catch(e){return[]}},
   set(v){try{localStorage.setItem('gemz_cart',JSON.stringify(v))}catch(e){}this.badge()},
   add(s){const c=this.get();if(!c.includes(s))c.push(s);this.set(c)},
   remove(s){this.set(this.get().filter(x=>x!==s))},
@@ -126,7 +178,10 @@ const Cart={
 };
 
 /* Shared layout */
+let ACTIVE_PAGE='home';
 function layout(active){
+  ACTIVE_PAGE=active;
+  document.body.style.overflow='';
   const L=(h,t,k)=>`<a href="${h}" class="${active===k?'active':''}">${t}</a>`;
   const logoGem=GEMS[5]||GEMS[0];
   const email=htmlEscape(SITE_SETTINGS.contact_email||'info@gemz.lk');
@@ -134,10 +189,10 @@ function layout(active){
   const address=htmlEscape(SITE_SETTINGS.contact_address||'Colombo, Sri Lanka');
   const announce=htmlEscape(SITE_SETTINGS.announcement||'Natural Gems & Fine Jewellery from Sri Lanka.');
   document.getElementById('site-header').innerHTML=`
-  <div class="announce"><div class="announce-track">${Array(8).fill(`<span>${announce}</span><span>Over 40 Years of Ceylon Gem Expertise.</span>`).join('')}</div></div>
+  <div class="announce"><span class="sr-only">${announce}</span><div class="announce-track" aria-hidden="true">${Array(8).fill(`<span>${announce}</span><span>Over 40 Years of Ceylon Gem Expertise.</span>`).join('')}</div></div>
   <header class="header" id="hdr"><div class="header-in">
     <nav class="nav" aria-label="Main navigation">${L('index.html','Home','home')}${L('collection.html','Our Gemstones','collection')}<a class="nav-gem ${active==='collection'?'active':''}" href="collection.html?section=gem">GEM</a><details class="nav-drop"><summary class="${active==='collection'?'active':''}">JEWELLERY</summary><div class="nav-dropdown"><a href="collection.html?section=jewellery">All Jewellery</a>${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('')}</div></details>${L('collection.html?section=watch','WATCH','collection')}${L('about.html','About us','about')}</nav>
-    <button class="burger" id="burger" aria-label="Menu"><i></i><i></i><i></i></button>
+    <button class="burger" id="burger" aria-label="Open menu" aria-controls="mnav" aria-expanded="false"><i></i><i></i><i></i></button>
     <a href="index.html" class="logo" aria-label="Gemz.lk home"><svg viewBox="0 0 200 200">${gemSVG(logoGem,'logo').replace(/<\/?svg[^>]*>/g,'')}</svg><span>GEMZ<small>SRI LANKA</small></span></a>
     <div class="utils">
       <a href="insights.html" class="txt">Insights</a><a href="contact.html" class="txt">Contact Us</a>
@@ -147,7 +202,7 @@ function layout(active){
       <a class="ico" href="cart.html" aria-label="Inquiry cart">${icon.bag}<span class="cart-count">0</span></a>
       <a class="ico opt" href="login.html" aria-label="Account">${icon.user}</a>
     </div></div></header>
-  <div class="mobile-nav" id="mnav"><a href="index.html">Home</a><a href="collection.html">Our Gemstones</a><a href="collection.html?section=gem">GEM</a><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=jewellery">JEWELLERY</a><div class="mobile-jewellery-subnav">${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('')}</div></div><a href="collection.html?section=watch">WATCH</a><a href="about.html">About us</a><a href="insights.html">Insights</a><a href="contact.html">Contact Us</a><a href="login.html">Account</a></div>`;
+  <div class="mobile-nav" id="mnav" inert><a href="index.html">Home</a><a href="collection.html">Our Gemstones</a><a href="collection.html?section=gem">GEM</a><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=jewellery">JEWELLERY</a><div class="mobile-jewellery-subnav">${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('')}</div></div><a href="collection.html?section=watch">WATCH</a><a href="about.html">About us</a><a href="insights.html">Insights</a><a href="contact.html">Contact Us</a><a href="login.html">Account</a></div>`;
   document.getElementById('site-footer').innerHTML=`<footer class="footer"><div class="wrap"><div class="foot-grid">
     <div><div class="logo" style="color:#fff;margin-bottom:16px">GEMZ<small>.LK</small></div><p data-setting="footer_tagline" style="max-width:34ch;font-size:.92rem">Authentic natural gemstones sourced in Sri Lanka and delivered worldwide. Established 1985.</p></div>
     <div><h4>Explore</h4><a href="index.html">Home</a><a href="collection.html">Our Gemstones</a><a href="about.html">About us</a><a href="insights.html">Insights</a></div>
@@ -155,7 +210,17 @@ function layout(active){
     <div><h4>Contact</h4><a href="mailto:${email}">${email}</a><a href="tel:${phone.replace(/[^+\d]/g,'')}">${phone}</a><a href="contact.html">${address}</a></div>
   </div><div class="foot-bot"><span>© ${new Date().getFullYear()} Gemz.lk. All rights reserved.</span><span>Natural · Authentic · Ceylon</span></div></div></footer>`;
   const b=document.getElementById('burger'),m=document.getElementById('mnav');
-  b.onclick=()=>{b.classList.toggle('open');m.classList.toggle('open');document.body.style.overflow=m.classList.contains('open')?'hidden':''};
+  const setMenuOpen=open=>{
+    b.classList.toggle('open',open);
+    b.setAttribute('aria-expanded',String(open));
+    b.setAttribute('aria-label',open?'Close menu':'Open menu');
+    m.classList.toggle('open',open);
+    m.inert=!open;
+    document.body.style.overflow=open?'hidden':'';
+  };
+  b.onclick=()=>setMenuOpen(b.getAttribute('aria-expanded')!=='true');
+  m.onclick=event=>{if(event.target.closest('a'))setMenuOpen(false)};
+  document.onkeydown=event=>{if(event.key==='Escape'&&b.getAttribute('aria-expanded')==='true')setMenuOpen(false)};
   Cart.badge();
 }
 
@@ -164,7 +229,7 @@ function productDetailURL(product){
 }
 function cardHTML(g,i){
   const href=productDetailURL(g);
-  if(g.image_url)return `<a class="card" href="${href}" data-tilt><div class="frame" style="background:${bgOf(g)}"><img src="${htmlEscape(g.image_url)}" alt="${htmlEscape(g.name)}" loading="lazy"></div><div class="card-body"><h3>${htmlEscape(g.name)}</h3><span class="tag">Price on Request</span></div></a>`;
+  if(g.image_url)return `<a class="card" href="${href}" data-tilt><div class="frame" style="background:${bgOf(g)}"><img src="${htmlEscape(g.image_url)}" alt="${htmlEscape(g.name)}" loading="lazy" decoding="async"></div><div class="card-body"><h3>${htmlEscape(g.name)}</h3><span class="tag">Price on Request</span></div></a>`;
   const art=g.type==='jewellery'?jewelleryArt(g.category):g.type==='watch'?'<span class="watch-glyph" aria-hidden="true">⌚</span>':gemSVG(g,'c'+i+Math.random().toString(36).slice(2,5));
   return `<a class="card" href="${href}" data-tilt>
   <div class="frame" style="background:${bgOf(g)}">${art}</div>
@@ -192,66 +257,91 @@ function jewelleryArt(category){
 function jewelleryCardHTML(category){
   const product=JEWELLERY_PRODUCTS.find(item=>item.category===category);
   const href=product?`jewellery-product.html?slug=${encodeURIComponent(product.slug)}`:jewelleryCategoryURL(category);
-  const art=product?.image_url?`<img src="${htmlEscape(product.image_url)}" alt="${htmlEscape(category)}" loading="lazy">`:jewelleryArt(category);
+  const art=product?.image_url?`<img src="${htmlEscape(product.image_url)}" alt="${htmlEscape(category)}" loading="lazy" decoding="async">`:jewelleryArt(category);
   return `<a class="jewellery-card" href="${href}"><div class="jewellery-art">${art}</div><div class="jewellery-card-body"><h3>${htmlEscape(category)}</h3><span class="tag">Explore</span></div></a>`;
 }
 
-/* Effects */
-function initFX(){
-  const hasG=typeof gsap!=='undefined';
-  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
-  /* header theme over hero */
-  const hdr=document.getElementById('hdr'),hero=document.querySelector('.hero');
-  if(hdr&&hero){const f=()=>hdr.classList.toggle('dark',scrollY<hero.offsetHeight-120);f();addEventListener('scroll',f,{passive:true});}
-  /* 3D tilt cards */
-  document.querySelectorAll('[data-tilt]').forEach(el=>{
-    if(!hasG||reduce)return;
-    const rx=gsap.quickTo(el,'rotationX',{duration:.5,ease:'power3'}),ry=gsap.quickTo(el,'rotationY',{duration:.5,ease:'power3'});
-    gsap.set(el,{transformPerspective:900});
-    el.addEventListener('pointermove',e=>{const r=el.getBoundingClientRect();ry(((e.clientX-r.left)/r.width-.5)*14);rx(-((e.clientY-r.top)/r.height-.5)*14)});
-    el.addEventListener('pointerleave',()=>{rx(0);ry(0)});
-  });
-  if(!hasG||reduce)return;
-  gsap.registerPlugin(ScrollTrigger);
-  /* reveals */
-  gsap.utils.toArray('[data-reveal]').forEach(el=>{
-    gsap.to(el,{opacity:1,y:0,duration:1,ease:'power3.out',delay:+(el.dataset.delay||0),scrollTrigger:{trigger:el,start:'top 88%'}});
-  });
-  gsap.utils.toArray('[data-stagger]').forEach(p=>{
-    gsap.from(p.children,{opacity:0,y:50,duration:.9,stagger:.12,ease:'power3.out',scrollTrigger:{trigger:p,start:'top 85%'}});
-  });
-  /* parallax */
-  gsap.utils.toArray('[data-parallax]').forEach(el=>{
-    gsap.to(el,{yPercent:+el.dataset.parallax,ease:'none',scrollTrigger:{trigger:el.parentElement,scrub:true,start:'top bottom',end:'bottom top'}});
-  });
-  /* counters */
-  gsap.utils.toArray('[data-count]').forEach(el=>{
-    const o={v:0},end=+el.dataset.count,suf=el.dataset.suffix||'';
-    gsap.to(o,{v:end,duration:2,ease:'power2.out',scrollTrigger:{trigger:el,start:'top 90%'},onUpdate:()=>el.textContent=Math.round(o.v)+suf});
-  });
-  /* hero text intro */
-  gsap.from('.hero .eyebrow,.hero h1,.hero p',{y:60,opacity:0,duration:1.2,stagger:.14,ease:'power4.out',delay:.2});
-  /* split visual 3D scroll */
-  const sv=document.querySelector('.split-visual');
-  if(sv){gsap.set(sv,{transformPerspective:1000});gsap.fromTo(sv,{rotationY:-18,rotationX:6},{rotationY:0,rotationX:0,ease:'none',scrollTrigger:{trigger:sv,start:'top 90%',end:'center 50%',scrub:true}});
-    gsap.to('.split-visual .gem-in',{rotationY:360,duration:18,repeat:-1,ease:'none'});}
-  /* detail viewer drag */
-  const v=document.querySelector('.viewer .gem3d');
-  if(v){
-    let rx=-10,ry=0,drag=false,lx=0,ly=0;const vw=v.parentElement;
-    gsap.set(v,{transformPerspective:900,rotationX:rx});
-    const auto=gsap.to({}, {duration:1,repeat:-1,onRepeat:()=>{if(!drag){ry+=18;gsap.to(v,{rotationY:ry,duration:1,ease:'none'})}}});
-    vw.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;vw.setPointerCapture(e.pointerId)});
-    vw.addEventListener('pointerup',()=>drag=false);
-    vw.addEventListener('pointermove',e=>{if(!drag)return;ry+=(e.clientX-lx)*.6;rx=Math.max(-50,Math.min(50,rx-(e.clientY-ly)*.4));lx=e.clientX;ly=e.clientY;gsap.to(v,{rotationY:ry,rotationX:rx,duration:.3})});
-  }
-  /* magnetic buttons */
-  document.querySelectorAll('.btn-gold,.btn-dark').forEach(b=>{
-    b.addEventListener('pointermove',e=>{const r=b.getBoundingClientRect();gsap.to(b,{x:(e.clientX-r.left-r.width/2)*.25,y:(e.clientY-r.top-r.height/2)*.35,duration:.4})});
-    b.addEventListener('pointerleave',()=>gsap.to(b,{x:0,y:0,duration:.6,ease:'elastic.out(1,.4)'}));
+/* Effects use native browser APIs so the storefront does not depend on a motion CDN. */
+function initTilt(root=document){
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches||!matchMedia('(hover:hover) and (pointer:fine)').matches)return;
+  root.querySelectorAll('[data-tilt]:not([data-tilt-ready])').forEach(card=>{
+    card.dataset.tiltReady='true';
+    card.addEventListener('pointermove',event=>{
+      const rect=card.getBoundingClientRect();
+      const x=(event.clientX-rect.left)/rect.width-.5;
+      const y=(event.clientY-rect.top)/rect.height-.5;
+      card.style.transform=`perspective(900px) rotateX(${-y*5}deg) rotateY(${x*5}deg)`;
+    });
+    card.addEventListener('pointerleave',()=>{card.style.transform=''});
   });
 }
-function boot(active){return window.GEMZ_READY.then(()=>{layout(active);initFX();applySiteSettings();});}
+function initViewer(){
+  const viewer=document.querySelector('.viewer');
+  const visual=viewer?.querySelector('.gem3d');
+  if(!viewer||!visual||viewer.dataset.dragReady)return;
+  viewer.dataset.dragReady='true';
+  let rx=-10,ry=0,lastX=0,lastY=0,dragging=false;
+  const paint=()=>{visual.style.transform=`perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg)`};
+  paint();
+  viewer.addEventListener('pointerdown',event=>{
+    if(event.button!==0)return;
+    dragging=true;lastX=event.clientX;lastY=event.clientY;
+    viewer.setPointerCapture(event.pointerId);
+  });
+  viewer.addEventListener('pointermove',event=>{
+    if(!dragging)return;
+    ry+=(event.clientX-lastX)*.6;
+    rx=Math.max(-50,Math.min(50,rx-(event.clientY-lastY)*.4));
+    lastX=event.clientX;lastY=event.clientY;paint();
+  });
+  const stop=()=>{dragging=false};
+  viewer.addEventListener('pointerup',stop);
+  viewer.addEventListener('pointercancel',stop);
+}
+function loadLazyVideo(video){
+  const source=video.querySelector('source');
+  const url=source?.dataset.src;
+  if(!source||!url)return;
+  let resolvedURL;
+  try{resolvedURL=new URL(url,document.baseURI).href}catch(error){return}
+  if(source.src!==resolvedURL){source.src=url;video.load()}
+  const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if(video.dataset.autoplay==='true'&&!reduced&&!navigator.connection?.saveData){
+    const playback=video.play();
+    if(playback?.catch)playback.catch(()=>{});
+  }
+}
+function initLazyVideos(){
+  const videos=[...document.querySelectorAll('video[data-lazy-video]:not([data-video-observed])')];
+  if(!videos.length)return;
+  videos.forEach(video=>{
+    video.dataset.videoObserved='true';
+    video.addEventListener('play',()=>loadLazyVideo(video),{once:true});
+  });
+  if('IntersectionObserver' in window){
+    const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{
+      if(!entry.isIntersecting)return;
+      loadLazyVideo(entry.target);observer.unobserve(entry.target);
+    }),{rootMargin:'300px'});
+    videos.forEach(video=>observer.observe(video));
+  }else{
+    window.setTimeout(()=>videos.forEach(loadLazyVideo),1200);
+  }
+}
+function initFX(){
+  const header=document.getElementById('hdr'),hero=document.querySelector('.hero');
+  if(header&&hero&&!header.dataset.themeReady){
+    header.dataset.themeReady='true';
+    const update=()=>header.classList.toggle('dark',scrollY<hero.offsetHeight-120);
+    update();window.addEventListener('scroll',update,{passive:true});
+  }
+  initTilt();initViewer();initLazyVideos();
+}
+function onPageRefresh(callback){
+  window.GEMZ_PAGE_REFRESH=callback;
+  if(window.GEMZ_CONTENT_LOADED!==undefined||!window.GEMZ_CONTENT_PENDING)callback();
+}
+function boot(active){layout(active);initFX();applySiteSettings();return Promise.resolve();}
 function applySiteSettings(){
   const setText=(selector,value)=>{const node=document.querySelector(selector);if(node&&value)node.textContent=value};
   setText('.hero .eyebrow',SITE_SETTINGS.hero_eyebrow);
@@ -259,8 +349,25 @@ function applySiteSettings(){
   setText('.hero p',SITE_SETTINGS.hero_description);
   setText('.announce span',SITE_SETTINGS.announcement);
   const videoURL=publicMediaURL(SITE_SETTINGS.hero_video_url);
-  if(videoURL){document.querySelectorAll('#heroVideo source,.watch-clip video source,.promo-card video source').forEach(source=>{source.src=videoURL;source.parentElement.load?.()})}
+  if(videoURL)document.querySelectorAll('video[data-lazy-video] source').forEach(source=>{
+    if(source.dataset.src===videoURL)return;
+    source.dataset.src=videoURL;
+    if(source.src)loadLazyVideo(source.parentElement);
+  });
   setText('.promo-card-copy h3',SITE_SETTINGS.home_promo_title);
   const meta=document.querySelector('meta[name="description"]');if(meta&&SITE_SETTINGS.meta_description)meta.content=SITE_SETTINGS.meta_description;
   document.querySelectorAll('[data-setting]').forEach(node=>{const value=SITE_SETTINGS[node.dataset.setting];if(value!==undefined&&value!==null)node.textContent=String(value)});
 }
+window.addEventListener('gemz-content-updated',event=>{
+  if(!event.detail?.loaded){window.GEMZ_PAGE_REFRESH?.();return}
+  layout(ACTIVE_PAGE);
+  applySiteSettings();
+  window.GEMZ_PAGE_REFRESH?.();
+  initFX();
+});
+document.addEventListener('error',event=>{
+  const image=event.target;
+  if(!(image instanceof HTMLImageElement))return;
+  image.style.display='none';
+  image.parentElement?.setAttribute('data-image-error','true');
+},true);
