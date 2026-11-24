@@ -2,6 +2,33 @@
 
 Static website project for gemz.lk.
 
+## Project structure
+
+This is a no-build static site. Keep the HTML pages in the repository root so their URLs work directly on static hosting. Shared files are grouped by type:
+
+```text
+.
+├── index.html                 # Storefront home page
+├── about.html                 # Public pages
+├── collection.html
+├── contact.html
+├── insights.html
+├── cart.html
+├── gemstone.html              # Product detail pages
+├── jewellery-product.html
+├── login.html
+├── admin.html                 # Store admin
+├── css/                        # Shared and admin stylesheets
+├── js/                         # Storefront, admin, and browser config scripts
+├── supabase/
+│   └── schema.sql              # Database schema and policies
+└── README.md
+```
+
+No `.env` file is needed for this layout: the browser loads `js/supabase-config.js` directly. Keep only the Supabase project URL and public anon/publishable key in that file; secret keys and database passwords must stay server-side.
+
+To preview locally, serve the repository root with any static file server, for example `python3 -m http.server 8000`, then open `http://localhost:8000`.
+
 The homepage hero video is served from the public Vercel Blob store `gemz-hero-media` in Singapore (`sin1`). Its URL is set directly in `index.html`, so the static site does not need a Blob SDK or runtime token.
 
 The local `assets/hero.mp4` copy is ignored to keep it out of future deployments. To replace the video, upload a new file with a unique URL:

@@ -14,3 +14,7 @@ window.GEMZ_SUPABASE_READY = (async () => {
   });
   return window.GEMZ_SUPABASE;
 })();
+window.GEMZ_SUPABASE_CONFIG = {
+  url: 'https://yjpdoyrhaguaprtshigl.supabase.co',
+  anonKey: 'sb_publishable_k5hMwUvNIFo8CQccKZBXNw_J_y0zcHu'
+};
