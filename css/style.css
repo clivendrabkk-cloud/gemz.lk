@@ -81,7 +81,6 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .hero::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(7,8,12,.88) 0%,rgba(7,8,12,.45) 55%,rgba(7,8,12,.2) 100%),linear-gradient(0deg,rgba(7,8,12,.7),transparent 40%)}
 .hero-grid{display:block}
 .hero-grid>div{max-width:780px}
-.hero-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .hero-collection-links{position:absolute;z-index:2;left:50%;bottom:104px;transform:translateX(-50%);width:min(360px,calc(100% - 32px));display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:nowrap}
 .hero-collection-links .btn{flex:1 1 0;min-width:0;min-height:54px;padding:14px clamp(18px,2vw,28px);justify-content:center;line-height:1.2;letter-spacing:.14em;white-space:nowrap}
 .hero h1 em{font-style:italic;background:linear-gradient(100deg,#f3d391,#c98a2b 60%,#f3d391);-webkit-background-clip:text;background-clip:text;color:transparent}

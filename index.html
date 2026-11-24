@@ -23,9 +23,6 @@
       <span class="eyebrow" data-setting="hero_eyebrow">Sri Lanka · Est. 1985</span>
       <h1 data-setting="hero_title">Fine Gems &amp; Jewellery, <em>Made to Last</em></h1>
       <p data-setting="hero_description">Discover natural Ceylon gemstones, considered jewellery and exceptional pieces selected with care.</p>
-      <div class="hero-actions">
-        <a href="#new-arrivals" class="btn btn-gold">Discover More <span id="ar"></span></a>
-      </div>
     </div>
     <nav class="hero-collection-links" aria-label="Browse collections">
       <a href="collection.html?section=gem" class="btn btn-gold">Gemstones</a>
@@ -87,7 +84,6 @@
 <script src="js/app.js"></script>
 <script>
 window.GEMZ_READY.then(()=>{
-  document.getElementById('ar').innerHTML=icon.arrow;
   document.getElementById('promoGem').innerHTML=gemSVG(GEMS[2],'promo');
   const featuredGems=GEMS.filter(gem=>gem.featured);
   document.getElementById('arrivals').innerHTML=(featuredGems.length?featuredGems:GEMS).slice(0,4).map(cardHTML).join('');

@@ -230,7 +230,7 @@ function initFX(){
     gsap.to(o,{v:end,duration:2,ease:'power2.out',scrollTrigger:{trigger:el,start:'top 90%'},onUpdate:()=>el.textContent=Math.round(o.v)+suf});
   });
   /* hero text intro */
-  gsap.from('.hero .eyebrow,.hero h1,.hero p,.hero .btn',{y:60,opacity:0,duration:1.2,stagger:.14,ease:'power4.out',delay:.2});
+  gsap.from('.hero .eyebrow,.hero h1,.hero p',{y:60,opacity:0,duration:1.2,stagger:.14,ease:'power4.out',delay:.2});
   /* split visual 3D scroll */
   const sv=document.querySelector('.split-visual');
   if(sv){gsap.set(sv,{transformPerspective:1000});gsap.fromTo(sv,{rotationY:-18,rotationX:6},{rotationY:0,rotationX:0,ease:'none',scrollTrigger:{trigger:sv,start:'top 90%',end:'center 50%',scrub:true}});
