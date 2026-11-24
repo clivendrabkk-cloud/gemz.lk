@@ -185,7 +185,7 @@ function layout(active){
   const label=(key,fallback)=>htmlEscape(SITE_SETTINGS[key]||fallback);
   const L=(h,t,k)=>`<a href="${h}" class="${active===k?'active':''}">${t}</a>`;
   const storeName=htmlEscape(SITE_SETTINGS.store_name||'GEMZ');
-  const brandMark=()=>'<img class="logo-image" src="assets/gemz-logo.png" alt="" width="385" height="175" fetchpriority="high" decoding="sync">';
+  const brandMark=(variant='dark')=>`<img class="logo-image" src="${variant==='light'?'assets/gemz-logo-light.png':'assets/gemz-logo.png'}" data-dark-src="assets/gemz-logo.png" data-light-src="assets/gemz-logo-light.png" alt="" width="399" height="183" fetchpriority="high" decoding="sync">`;
   const email=htmlEscape(SITE_SETTINGS.contact_email||'info@gemz.lk');
   const phone=htmlEscape(SITE_SETTINGS.contact_phone||'+94 11 234 5678');
   const address=htmlEscape(SITE_SETTINGS.contact_address||'Colombo, Sri Lanka');
@@ -196,7 +196,7 @@ function layout(active){
   <header class="header" id="hdr"><div class="header-in">
     <nav class="nav" aria-label="Main navigation">${L('index.html',navHome,'home')}${L('collection.html',navCollection,'collection')}<a class="nav-gem ${active==='collection'?'active':''}" href="collection.html?section=gem">${navGems}</a><details class="nav-drop"><summary class="${active==='collection'?'active':''}">${navJewellery}</summary><div class="nav-dropdown"><a href="collection.html?section=jewellery">${navAllJewellery}</a>${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('')}</div></details>${L('collection.html?section=watch',navWatches,'collection')}${L('about.html',navAbout,'about')}</nav>
     <button class="burger" id="burger" aria-label="Open menu" aria-controls="mnav" aria-expanded="false"><i></i><i></i><i></i></button>
-    <a href="index.html" class="logo logo-only" aria-label="${storeName} home">${brandMark()}</a>
+    <a href="index.html" class="logo logo-only" aria-label="${storeName} home">${brandMark(active==='home'?'dark':'light')}</a>
     <div class="utils">
       <a href="insights.html" class="txt">${navInsights}</a><a href="contact.html" class="txt">${navContact}</a>
       <a class="ico opt" href="tel:${phone.replace(/[^+\d]/g,'')}" aria-label="${label('contact_phone_label','Call')}">${icon.phone}</a>
@@ -207,7 +207,7 @@ function layout(active){
     </div></div></header>
   <div class="mobile-nav" id="mnav" inert><a href="index.html">${navHome}</a><a href="collection.html">${navCollection}</a><a href="collection.html?section=gem">${navGems}</a><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=jewellery">${navJewellery}</a><div class="mobile-jewellery-subnav">${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('')}</div></div><a href="collection.html?section=watch">${navWatches}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a><a href="contact.html">${navContact}</a><a href="login.html">${navAccount}</a></div>`;
   document.getElementById('site-footer').innerHTML=`<footer class="footer"><div class="wrap"><div class="foot-grid">
-    <div class="foot-brand"><a href="index.html" class="logo logo-only footer-logo" aria-label="${storeName} home">${brandMark()}</a><p data-setting="footer_tagline">Authentic natural gemstones sourced in Sri Lanka and delivered worldwide. Established 1985.</p></div>
+    <div class="foot-brand"><a href="index.html" class="logo logo-only footer-logo" aria-label="${storeName} home">${brandMark('dark')}</a><p data-setting="footer_tagline">Authentic natural gemstones sourced in Sri Lanka and delivered worldwide. Established 1985.</p></div>
     <div><h4>${label('footer_explore_title','Explore')}</h4><a href="index.html">${navHome}</a><a href="collection.html">${navCollection}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a></div>
     <div><h4>${label('footer_account_title','Account')}</h4><a href="cart.html">Inquiry Cart</a><a href="login.html">${navAccount}</a><a href="contact.html">${navContact}</a></div>
     <div><h4>${label('footer_contact_title','Contact')}</h4><a href="mailto:${email}">${email}</a><a href="tel:${phone.replace(/[^+\d]/g,'')}">${phone}</a><a href="contact.html">${address}</a></div>
@@ -335,7 +335,13 @@ function initFX(){
   const header=document.getElementById('hdr'),hero=document.querySelector('.hero');
   if(header&&hero&&!header.dataset.themeReady){
     header.dataset.themeReady='true';
-    const update=()=>header.classList.toggle('dark',scrollY<hero.offsetHeight-120);
+    const update=()=>{
+      const dark=scrollY<hero.offsetHeight-120;
+      header.classList.toggle('dark',dark);
+      const logo=header.querySelector('.logo-image');
+      const src=dark?logo?.dataset.darkSrc:logo?.dataset.lightSrc;
+      if(logo&&src&&logo.getAttribute('src')!==src)logo.src=src;
+    };
     update();window.addEventListener('scroll',update,{passive:true});
   }
   initTilt();initViewer();initLazyVideos();

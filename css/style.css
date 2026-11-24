@@ -67,7 +67,6 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .logo.logo-only{gap:0;font-size:0;letter-spacing:0}
 .header-in>.logo.logo-only{width:clamp(132px,12vw,164px);height:58px;padding:0;border-radius:0;background:transparent;box-shadow:none;flex:none}
 .footer .logo.logo-only{width:clamp(152px,14vw,178px);height:72px;padding:0;max-width:100%;border-radius:0;background:transparent;flex:none}
-.header.dark .logo-image,.footer .logo-image{filter:brightness(0) invert(1)}
 .footer .footer-logo:hover{transform:none;filter:brightness(.97)}
 .ico{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;position:relative;transition:.35s var(--ease)}
 .ico:hover{background:rgba(201,138,43,.18);transform:translateY(-2px)}
