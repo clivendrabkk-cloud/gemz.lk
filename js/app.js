@@ -45,6 +45,7 @@ let ARTICLES = [
   {t:'Why natural gems hold value',k:'Insight',g:3,p:'Rarity, provenance and demand across three continents.'}
 ];
 let SITE_SETTINGS = {};
+let publicContentRequest=0;
 
 const htmlEscape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 function publicMediaURL(value){
@@ -69,9 +70,13 @@ async function fetchPublicTable(table,query){
   try{
     const params=new URLSearchParams(query);
     const response=await fetch(`${config.url.replace(/\/+$/,'')}/rest/v1/${table}?${params}`,{
-      headers:{apikey:config.anonKey},signal:controller.signal
+      headers:{apikey:config.anonKey,Accept:'application/json'},cache:'no-store',signal:controller.signal
     });
-    if(!response.ok)throw new Error(`Supabase ${table} request failed (${response.status}).`);
+    if(!response.ok){
+      let detail='';
+      try{const body=await response.json();detail=body.message||body.details||body.hint||''}catch{}
+      throw new Error(`Supabase ${table} request failed (${response.status})${detail?`: ${detail}`:''}.`);
+    }
     return await response.json();
   }finally{window.clearTimeout(timeout)}
 }
@@ -90,6 +95,7 @@ async function createInquiry(record){
   }finally{window.clearTimeout(timeout)}
 }
 async function loadPublicContent(){
+  const requestId=++publicContentRequest;
   try{
     const [productResult,articleResult,settingsResult]=await Promise.allSettled([
       fetchPublicTable('products',{select:'*',status:'eq.published',order:'sort_order.asc,created_at.asc'}),
@@ -99,6 +105,10 @@ async function loadPublicContent(){
     const products=productResult.status==='fulfilled'?productResult.value:null;
     const articles=articleResult.status==='fulfilled'?articleResult.value:null;
     const settings=settingsResult.status==='fulfilled'?settingsResult.value:null;
+    for(const [name,result] of [['products',productResult],['articles',articleResult],['site settings',settingsResult]]){
+      if(result.status==='rejected')console.warn(`Gemz ${name} could not be loaded from Supabase.`,result.reason);
+    }
+    if(requestId!==publicContentRequest)return null;
     if(products){
       const rows=products.map(productFromRow);
       GEMS=rows.filter(row=>row.type==='gem');
@@ -117,7 +127,8 @@ async function loadPublicContent(){
     const loaded=Boolean(products||articles||settings);
     if(!loaded)console.warn('Gemz public content could not be loaded from Supabase.');
     return loaded;
-  }catch(error){console.warn('Gemz public content could not be loaded from Supabase.',error)}
+  }catch(error){if(requestId===publicContentRequest)console.warn('Gemz public content could not be loaded from Supabase.',error)}
+  if(requestId!==publicContentRequest)return null;
   return false;
 }
 // Public pages render from the built-in content immediately. Supabase refreshes in the
@@ -126,7 +137,6 @@ window.GEMZ_READY=Promise.resolve();
 window.GEMZ_CONTENT_PENDING=true;
 let contentSettled=false;
 function announcePublicContent(loaded){
-  if(!window.GEMZ_CONTENT_PENDING&&window.GEMZ_CONTENT_LOADED===loaded)return;
   window.GEMZ_CONTENT_PENDING=false;
   window.GEMZ_CONTENT_LOADED=loaded;
   window.dispatchEvent(new CustomEvent('gemz-content-updated',{detail:{loaded}}));
@@ -137,8 +147,22 @@ const contentFallbackTimer=window.setTimeout(()=>{
 window.GEMZ_CONTENT_READY=loadPublicContent().then(loaded=>{
   contentSettled=true;
   window.clearTimeout(contentFallbackTimer);
-  announcePublicContent(loaded);
+  if(loaded!==null)announcePublicContent(loaded);
   return loaded;
+});
+let publicContentRefreshAt=Date.now();
+window.GEMZ_REFRESH_CONTENT=()=>{
+  publicContentRefreshAt=Date.now();
+  return loadPublicContent().then(loaded=>{
+    if(loaded!==null)announcePublicContent(loaded);
+    return loaded;
+  });
+};
+window.addEventListener('storage',event=>{
+  if(event.key==='gemz-public-content-updated')window.GEMZ_REFRESH_CONTENT();
+});
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden&&Date.now()-publicContentRefreshAt>30000)window.GEMZ_REFRESH_CONTENT();
 });
 
 /* Faceted gem SVG */

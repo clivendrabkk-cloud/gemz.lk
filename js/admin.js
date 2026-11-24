@@ -27,6 +27,7 @@
   function emptyState(title,message){return `<div class="empty-state"><b>${escapeHTML(title)}</b><p>${escapeHTML(message)}</p></div>`}
   function typeName(type){return ({gem:'Gemstone',jewellery:'Jewellery',watch:'Watch'})[type]||type}
   function badge(value){return `<span class="badge ${escapeHTML(value)}">${escapeHTML(String(value||'').replace('_',' '))}</span>`}
+  function announceStorefrontChange(){try{localStorage.setItem('gemz-public-content-updated',String(Date.now()))}catch{}}
 
   async function authorize(user){
     state.user=user;
@@ -38,17 +39,26 @@
   }
 
   async function loadAll(){
-    const [products,articles,inquiries,settings]=await Promise.all([
-      state.client.from('products').select('*').order('sort_order').order('created_at',{ascending:false}),
-      state.client.from('articles').select('*').order('created_at',{ascending:false}),
-      state.client.from('inquiries').select('*').order('created_at',{ascending:false}),
-      state.client.from('site_settings').select('*').order('setting_key')
-    ]);
-    const errors=[products,articles,inquiries,settings].filter(result=>result.error);
-    if(errors.length){notify(errors[0].error.message,'error');return}
-    state.products=products.data||[];state.articles=articles.data||[];state.inquiries=inquiries.data||[];
-    state.settings=Object.fromEntries((settings.data||[]).map(row=>[row.setting_key,row.setting_value]));
+    const resources={
+      products:state.client.from('products').select('*').order('sort_order').order('created_at',{ascending:false}),
+      articles:state.client.from('articles').select('*').order('created_at',{ascending:false}),
+      inquiries:state.client.from('inquiries').select('*').order('created_at',{ascending:false}),
+      settings:state.client.from('site_settings').select('*').order('setting_key')
+    };
+    let results;
+    try{results=await Promise.all(Object.entries(resources).map(async([name,request])=>[name,await request]))}
+    catch(error){notify(error.message||'Could not load store data.','error');return false}
+    const errors=[];
+    for(const [name,result] of results){
+      if(result.error){errors.push(`${name}: ${result.error.message}`);continue}
+      if(name==='products')state.products=result.data||[];
+      if(name==='articles')state.articles=result.data||[];
+      if(name==='inquiries')state.inquiries=result.data||[];
+      if(name==='settings')state.settings=Object.fromEntries((result.data||[]).map(row=>[row.setting_key,row.setting_value]));
+    }
     renderAll();
+    if(errors.length)notify(`Some admin data could not be refreshed. ${errors.join(' · ')}`,'error');
+    return errors.length===0;
   }
   function renderAll(){renderOverview();renderProducts();renderArticles();renderInquiries();populateSettings()}
   function renderOverview(){
@@ -102,20 +112,20 @@
     return `<label>Type<select name="product_type" required><option value="gem" ${row?.product_type==='gem'?'selected':''}>Gemstone</option><option value="jewellery" ${row?.product_type==='jewellery'?'selected':''}>Jewellery</option><option value="watch" ${row?.product_type==='watch'?'selected':''}>Watch</option></select></label>
       <label>Category<input name="category" value="${value('category')}" placeholder="Blue Sapphire, Rings…" required></label>
       <label class="full">Product name<input name="name" value="${value('name')}" required autocomplete="off"></label>
-      <label class="full">URL slug<input name="slug" value="${value('slug')}" required autocomplete="off"><span class="field-help">Lowercase letters and hyphens. Generated from the name if left blank.</span></label>
+      <label class="full">URL slug<input name="slug" value="${value('slug')}" autocomplete="off"><span class="field-help">Lowercase letters and hyphens. Generated from the name if left blank.</span></label>
       <label class="full">Description<textarea name="description" rows="3">${value('description')}</textarea></label>
       <label class="full">SEO title<input name="seo_title" value="${value('seo_title')}" maxlength="70"><span class="field-help">Optional page title for this product. Leave blank to use the product name and store name.</span></label>
       <label class="full">SEO description<textarea name="seo_description" rows="3" maxlength="320">${value('seo_description')}</textarea><span class="field-help">Optional search and social description. Leave blank to use the product description.</span></label>
       <label class="full">Image URL<input name="image_url" id="imageUrl" type="url" value="${value('image_url')}" placeholder="https://…"></label>
       <label class="full">Upload product image<div class="upload-inline"><input name="product_file" id="productFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><button class="small-button" type="button" data-upload-inline="product">Upload</button></div></label>
-      <label>Status<select name="status"><option value="draft" ${value('status','draft')==='draft'?'selected':''}>Draft</option><option value="published" ${value('status')==='published'?'selected':''}>Published</option><option value="archived" ${value('status')==='archived'?'selected':''}>Archived</option></select></label>
+      <label>Storefront status<select name="status"><option value="draft" ${value('status','published')==='draft'?'selected':''}>Draft</option><option value="published" ${value('status','published')==='published'?'selected':''}>Published</option><option value="archived" ${value('status')==='archived'?'selected':''}>Archived</option></select><span class="field-help">Published products appear on the customer storefront.</span></label>
       <label>Display order<input name="sort_order" type="number" value="${value('sort_order','0')}"></label>
       <label class="check-row"><input name="featured" type="checkbox" ${row?.featured?'checked':''}> Feature this item</label>
       <section class="full specifications-editor" aria-label="Product specifications"><div class="specifications-heading"><div><b>Specifications</b><span class="field-help">Add details such as origin, colour, weight, clarity or material.</span></div><button class="small-button" type="button" data-add-spec>Add specification</button></div><div class="specification-list">${specificationRows(row?.specs)}</div></section>`;
   }
   function articleFields(row){
     const value=key=>escapeHTML(row?.[key]||'');
-    return `<label class="full">Article title<input name="title" value="${value('title')}" required></label><label>Category<input name="category" value="${value('category')||'Insight'}"></label><label>URL slug<input name="slug" value="${value('slug')}" required><span class="field-help">Generated from the title if left blank.</span></label><label class="full">Short summary<textarea name="excerpt" rows="3">${value('excerpt')}</textarea></label><label class="full">Article content<textarea name="content" rows="8" required>${value('content')}</textarea></label><label class="full">Cover image URL<input name="cover_image" id="imageUrl" type="url" value="${value('cover_image')}" placeholder="https://…"></label><label class="full">Upload cover image<div class="upload-inline"><input name="article_file" id="articleFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><button class="small-button" type="button" data-upload-inline="article">Upload</button></div></label><label>Status<select name="status"><option value="draft" ${row?.status!=='published'&&row?.status!=='archived'?'selected':''}>Draft</option><option value="published" ${row?.status==='published'?'selected':''}>Published</option><option value="archived" ${row?.status==='archived'?'selected':''}>Archived</option></select></label>`;
+    return `<label class="full">Article title<input name="title" value="${value('title')}" required></label><label>Category<input name="category" value="${value('category')||'Insight'}"></label><label>URL slug<input name="slug" value="${value('slug')}"><span class="field-help">Generated from the title if left blank.</span></label><label class="full">Short summary<textarea name="excerpt" rows="3">${value('excerpt')}</textarea></label><label class="full">Article content<textarea name="content" rows="8" required>${value('content')}</textarea></label><label class="full">Cover image URL<input name="cover_image" id="imageUrl" type="url" value="${value('cover_image')}" placeholder="https://…"></label><label class="full">Upload cover image<div class="upload-inline"><input name="article_file" id="articleFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><button class="small-button" type="button" data-upload-inline="article">Upload</button></div></label><label>Storefront status<select name="status"><option value="draft" ${row?.status==='draft'?'selected':''}>Draft</option><option value="published" ${!row||row.status==='published'?'selected':''}>Published</option><option value="archived" ${row?.status==='archived'?'selected':''}>Archived</option></select><span class="field-help">Published articles appear on the customer storefront.</span></label>`;
   }
   async function uploadFile(file){
     if(!file)throw new Error('Choose a file first.');
@@ -158,16 +168,16 @@
     const query=state.editing.id?state.client.from(table).update(record).eq('id',state.editing.id):state.client.from(table).insert(record);
     const {error}=await query;
     if(error)throw error;
-    $('#editorDialog').close();await loadAll();notify(`${kind==='product'?'Product':'Article'} saved.`);
+    $('#editorDialog').close();notify(`${kind==='product'?'Product':'Article'} saved.`);announceStorefrontChange();await loadAll();
   }
   async function deleteRow(table,id,label){
     if(!confirm(`Delete this ${label}? This cannot be undone.`))return;
     const {error}=await state.client.from(table).delete().eq('id',id);
-    if(error){notify(error.message,'error');return}await loadAll();notify(`${label[0].toUpperCase()+label.slice(1)} deleted.`);
+    if(error){notify(error.message,'error');return}notify(`${label[0].toUpperCase()+label.slice(1)} deleted.`);if(table==='products'||table==='articles')announceStorefrontChange();await loadAll();
   }
   async function updateInquiryStatus(id,status){
     const {error}=await state.client.from('inquiries').update({status}).eq('id',id);
-    if(error){notify(error.message,'error');return}await loadAll();notify('Inquiry updated.');
+    if(error){notify(error.message,'error');return}notify('Inquiry updated.');await loadAll();
   }
   async function saveSettings(event){
     event.preventDefault();const fd=new FormData(event.currentTarget);
@@ -175,7 +185,7 @@
     const {error}=await state.client.from('site_settings').upsert(rows,{onConflict:'setting_key'});
     if(error){$('#settingsNotice').textContent=error.message;return}
     $('#settingsNotice').textContent='Settings saved. Changes are now live on the storefront.';$('#settingsNotice').classList.add('success');
-    await loadAll();notify('Site settings saved.');
+    notify('Site settings saved.');announceStorefrontChange();await loadAll();
   }
 
   async function loadMedia(){
