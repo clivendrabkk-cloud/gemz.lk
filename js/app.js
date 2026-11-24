@@ -202,8 +202,8 @@ function layout(active){
       <a class="ico opt" href="tel:${phone.replace(/[^+\d]/g,'')}" aria-label="${label('contact_phone_label','Call')}">${icon.phone}</a>
       <a class="ico opt" href="mailto:${email}" aria-label="${label('contact_email_label','Email')}">${icon.mail}</a>
       <a class="ico opt" href="contact.html" aria-label="${label('contact_location_label','Location')}">${icon.pin}</a>
-      <a class="ico" href="cart.html" aria-label="Inquiry cart">${icon.bag}<span class="cart-count">0</span></a>
       <a class="ico opt" href="login.html" aria-label="${navAccount}">${icon.user}</a>
+      <a class="ico" href="cart.html" aria-label="Inquiry cart">${icon.bag}<span class="cart-count">0</span></a>
     </div></div></header>
   <div class="mobile-nav" id="mnav" inert><a href="index.html">${navHome}</a><a href="collection.html">${navCollection}</a><a href="collection.html?section=gem">${navGems}</a><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=jewellery">${navJewellery}</a><div class="mobile-jewellery-subnav">${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('')}</div></div><a href="collection.html?section=watch">${navWatches}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a><a href="contact.html">${navContact}</a><a href="login.html">${navAccount}</a></div>`;
   document.getElementById('site-footer').innerHTML=`<footer class="footer"><div class="wrap"><div class="foot-grid">

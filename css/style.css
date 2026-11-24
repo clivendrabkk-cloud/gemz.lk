@@ -46,10 +46,10 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .nav{grid-column:1;grid-row:1;justify-content:flex-end}
 .nav-gem{display:none}
 .header-in>.logo.logo-only{grid-column:2;grid-row:1;justify-self:center;justify-content:center}
-.utils{grid-column:3;grid-row:1;justify-content:flex-start}
+.utils{grid-column:3;grid-row:1;justify-content:flex-end}
 .nav .only-md{display:none}
 .nav a{white-space:nowrap}
-.utils{justify-content:flex-start;gap:clamp(10px,1vw,14px)}
+.utils{justify-content:flex-end;gap:clamp(10px,1vw,14px)}
 .nav a,.utils .txt{font-size:.875rem;letter-spacing:.08em;text-transform:uppercase;font-weight:600;position:relative;padding:6px 0}
 .nav-drop{position:relative}
 .nav-drop summary{list-style:none;cursor:pointer;font-size:.875rem;letter-spacing:.08em;text-transform:uppercase;font-weight:600;position:relative;padding:6px 0;white-space:nowrap}
