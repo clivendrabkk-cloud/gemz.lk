@@ -8,7 +8,7 @@
 </head><body>
 <div id="site-header"></div>
 <main>
-<section style="padding-top:60px"><div class="wrap">
+<section><div class="wrap">
   <p style="font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;margin-bottom:30px"><a href="collection.html#gem" style="opacity:.6">← GEM</a></p>
   <div class="detail" id="detail"></div>
 </div></section>
@@ -36,6 +36,7 @@ window.GEMZ_READY.then(()=>{
       return;
     }
     document.title=g.name+' — Gemz.lk';
+    applySeoSettings({title:g.seo_title||`${g.name} | ${SITE_SETTINGS.store_name||'Gemz.lk'}`,description:g.seo_description||g.description||g.text,image:g.image_url,type:'product',product:g});
     const gemDetails=[
       ['Code No',g.codeNo||'—'],['Stone',g.name],['Weight',g.weight||'—'],['Clarity Grade',g.clarity||'—'],['Colour',g.colour||'—'],
       ['Origin',g.origin||'—'],['Hardness',g.hardness||'—'],['Dimensions',g.dimensions||'—'],['Shape',g.shape||'—'],['Cut',g.cut||'—'],['Treatment',g.treat||'—'],

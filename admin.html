@@ -85,8 +85,16 @@
         <section class="view" id="view-settings">
           <div class="toolbar"><div><span class="eyebrow">Storefront content</span><h2>Site settings</h2></div></div>
           <form id="settingsForm" class="settings-layout">
+            <div class="panel settings-group wide"><span class="eyebrow">Brand identity</span><h3>Store branding</h3>
+              <div class="brand-settings-grid">
+                <label>Store name<input name="store_name" placeholder="Gemz.lk"></label>
+                <label>Logo subtitle<input name="brand_subtitle" placeholder="SRI LANKA"></label>
+                <label class="brand-asset">Store logo URL<input name="store_logo_url" type="url" placeholder="https://…"><span class="field-help">The uploaded image appears beside the store name in the storefront header and footer.</span><div class="upload-inline"><input id="storeLogoFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><button class="small-button" type="button" data-settings-upload="store_logo_url" data-file-target="storeLogoFile">Upload logo</button></div><img class="setting-image-preview" id="storeLogoPreview" alt="Store logo preview" hidden></label>
+                <label class="brand-asset">Favicon URL<input name="store_favicon_url" type="url" placeholder="https://…"><span class="field-help">Use a square PNG or ICO image for browser tabs and bookmarks.</span><div class="upload-inline"><input id="storeFaviconFile" type="file" accept="image/png,image/x-icon,image/vnd.microsoft.icon,.ico"><button class="small-button" type="button" data-settings-upload="store_favicon_url" data-file-target="storeFaviconFile">Upload favicon</button></div><img class="setting-image-preview favicon-preview" id="storeFaviconPreview" alt="Favicon preview" hidden></label>
+              </div>
+            </div>
             <div class="panel settings-group"><span class="eyebrow">Homepage</span><h3>Hero and media</h3>
-              <label>Announcement strip<input name="announcement"></label><label>Hero eyebrow<input name="hero_eyebrow"></label><label>Hero headline<input name="hero_title"></label><label>Hero description<textarea name="hero_description" rows="3"></textarea></label><label>Hero video URL<input name="hero_video_url" type="url"></label><label>First video title<input name="home_video_title"></label><label>Heritage feature title<input name="home_promo_title"></label><label>Search description<textarea name="meta_description" rows="2"></textarea></label>
+              <label>Announcement strip<input name="announcement"></label><label>Hero eyebrow<input name="hero_eyebrow"></label><label>Hero headline<input name="hero_title"></label><label>Hero description<textarea name="hero_description" rows="3"></textarea></label><label>Hero video URL<input name="hero_video_url" type="url"></label><label>First video title<input name="home_video_title"></label><label>Heritage feature title<input name="home_promo_title"></label>
             </div>
             <div class="panel settings-group"><span class="eyebrow">Contact</span><h3>Store details</h3>
               <label>Public email<input name="contact_email" type="email"></label><label>Phone<input name="contact_phone" type="tel"></label><label>Address<input name="contact_address"></label><label>Contact page note<textarea name="contact_note" rows="3"></textarea></label>
@@ -106,6 +114,48 @@
               <fieldset><legend>About story</legend><label>Eyebrow<input name="about_story_eyebrow"></label><label>Heading<input name="about_story_title"></label><label>Paragraph one<textarea name="about_story_paragraph_1" rows="3"></textarea></label><label>Paragraph two<textarea name="about_story_paragraph_2" rows="3"></textarea></label></fieldset>
               <fieldset><legend>Footer</legend><label>Store description<textarea name="footer_tagline" rows="3"></textarea></label></fieldset>
             </div></div>
+            <div class="panel settings-group wide"><span class="eyebrow">Shared site copy</span><h3>Navigation and footer labels</h3><div class="settings-copy-grid">
+              <fieldset><legend>Navigation</legend><label>Home<input name="nav_home"></label><label>Collection<input name="nav_collection"></label><label>Gemstones<input name="nav_gemstones"></label><label>Jewellery<input name="nav_jewellery"></label><label>All jewellery<input name="nav_all_jewellery"></label><label>Watches<input name="nav_watches"></label><label>About<input name="nav_about"></label><label>Insights<input name="nav_insights"></label><label>Contact<input name="nav_contact"></label><label>Account<input name="nav_account"></label></fieldset>
+              <fieldset><legend>Footer links</legend><label>Explore column<input name="footer_explore_title"></label><label>Account column<input name="footer_account_title"></label><label>Contact column<input name="footer_contact_title"></label><label>Copyright text<input name="footer_copyright"></label><label>Footer motto<input name="footer_motto"></label></fieldset>
+              <fieldset><legend>Contact page labels</legend><label>Visit heading<input name="contact_visit_title"></label><label>Phone label<input name="contact_phone_label"></label><label>Email label<input name="contact_email_label"></label><label>Location label<input name="contact_location_label"></label></fieldset>
+            </div></div>
+            <div class="panel settings-group wide"><span class="eyebrow">Search visibility</span><h3>SEO defaults</h3>
+              <p class="settings-intro">These values apply across the storefront unless a page has its own override below. Metadata updates on each public page after the site settings load.</p>
+              <div class="settings-copy-grid seo-defaults-grid">
+                <label>Default title template<input name="seo_title_template" placeholder="{page} | {site}"><span class="field-help">Use {page} and {site} as placeholders.</span></label>
+                <label>Default meta description<textarea name="meta_description" rows="3"></textarea></label>
+                <label>Search keywords<input name="seo_keywords" placeholder="Ceylon sapphires, natural gemstones…"></label>
+                <label>Canonical site URL<input name="seo_site_url" type="url" placeholder="https://www.example.com"><span class="field-help">The public root URL, without a trailing slash.</span></label>
+                <label>Robots directive<select name="seo_robots"><option value="index,follow">Index and follow links</option><option value="noindex,follow">Do not index, follow links</option><option value="noindex,nofollow">Do not index or follow links</option></select></label>
+                <label>Twitter / X username<input name="seo_twitter_handle" placeholder="@yourstore"></label>
+                <label>Google Search Console verification<input name="seo_google_verification"></label>
+                <label>Bing Webmaster verification<input name="seo_bing_verification"></label>
+                <label class="seo-image-field">Default social share image URL<input name="seo_og_image" type="url" placeholder="https://…"><div class="upload-inline"><input id="seoOgImageFile" type="file" accept="image/jpeg,image/png,image/webp"><button class="small-button" type="button" data-settings-upload="seo_og_image" data-file-target="seoOgImageFile">Upload image</button></div><img class="setting-image-preview" id="seoOgImagePreview" alt="Social share image preview" hidden></label>
+                <label>Theme color<input name="seo_theme_color" type="color" value="#171b29"></label>
+              </div>
+            </div>
+            <div class="panel settings-group wide"><span class="eyebrow">Search snippets</span><h3>Page SEO overrides</h3>
+              <div class="settings-copy-grid seo-pages-grid">
+                <fieldset><legend>Homepage</legend><label>SEO title<input name="seo_home_title"></label><label>Meta description<textarea name="seo_home_description" rows="3"></textarea></label></fieldset>
+                <fieldset><legend>Collection</legend><label>SEO title<input name="seo_collection_title"></label><label>Meta description<textarea name="seo_collection_description" rows="3"></textarea></label></fieldset>
+                <fieldset><legend>Insights</legend><label>SEO title<input name="seo_insights_title"></label><label>Meta description<textarea name="seo_insights_description" rows="3"></textarea></label></fieldset>
+                <fieldset><legend>Contact</legend><label>SEO title<input name="seo_contact_title"></label><label>Meta description<textarea name="seo_contact_description" rows="3"></textarea></label></fieldset>
+                <fieldset><legend>About</legend><label>SEO title<input name="seo_about_title"></label><label>Meta description<textarea name="seo_about_description" rows="3"></textarea></label></fieldset>
+                <fieldset><legend>Product details</legend><label>SEO title<input name="seo_product_title"></label><label>Meta description<textarea name="seo_product_description" rows="3"></textarea></label></fieldset>
+                <fieldset><legend>Inquiry cart</legend><label>SEO title<input name="seo_cart_title"></label><label>Meta description<textarea name="seo_cart_description" rows="3"></textarea></label></fieldset>
+                <fieldset><legend>Account login</legend><label>SEO title<input name="seo_login_title"></label><label>Meta description<textarea name="seo_login_description" rows="3"></textarea></label></fieldset>
+              </div>
+            </div>
+            <div class="panel settings-group wide"><span class="eyebrow">Structured data</span><h3>Store information for search engines</h3>
+              <div class="settings-copy-grid seo-defaults-grid">
+                <label>Business / organization name<input name="seo_business_name"></label>
+                <label>Business type<select name="seo_schema_type"><option value="JewelryStore">Jewelry store</option><option value="Store">Store</option><option value="Organization">Organization</option></select></label>
+                <label>Business email<input name="seo_business_email" type="email"></label>
+                <label>Business phone<input name="seo_business_phone" type="tel"></label>
+                <label>Business address<input name="seo_business_address"></label>
+                <label>Country<input name="seo_business_country" placeholder="Sri Lanka"></label>
+              </div>
+            </div>
             <div class="settings-submit"><button class="button primary" type="submit">Save settings</button><p class="notice" id="settingsNotice" role="status"></p></div>
           </form>
         </section>

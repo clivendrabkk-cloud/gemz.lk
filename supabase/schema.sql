@@ -23,6 +23,8 @@ create table if not exists public.products (
   name text not null,
   category text not null default '',
   description text not null default '',
+  seo_title text not null default '',
+  seo_description text not null default '',
   image_url text,
   visual jsonb not null default '{"colors":["#fff3a8","#f2b705","#a86a00"],"background":["#3a2a08","#8a5a12"]}'::jsonb,
   specs jsonb not null default '{}'::jsonb,
@@ -32,6 +34,8 @@ create table if not exists public.products (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+alter table public.products add column if not exists seo_title text not null default '';
+alter table public.products add column if not exists seo_description text not null default '';
 
 create table if not exists public.articles (
   id uuid primary key default gen_random_uuid(),
@@ -188,8 +192,65 @@ insert into public.site_settings (setting_key,setting_value) values
 ('footer_tagline','"Authentic natural gemstones sourced in Sri Lanka and delivered worldwide. Established 1985."'::jsonb)
 on conflict (setting_key) do nothing;
 
+insert into public.site_settings (setting_key,setting_value) values
+('nav_home','"Home"'::jsonb),
+('nav_collection','"Our Gemstones"'::jsonb),
+('nav_gemstones','"GEM"'::jsonb),
+('nav_jewellery','"JEWELLERY"'::jsonb),
+('nav_all_jewellery','"All Jewellery"'::jsonb),
+('nav_watches','"WATCH"'::jsonb),
+('nav_about','"About us"'::jsonb),
+('nav_insights','"Insights"'::jsonb),
+('nav_contact','"Contact Us"'::jsonb),
+('nav_account','"Account"'::jsonb),
+('footer_explore_title','"Explore"'::jsonb),
+('footer_account_title','"Account"'::jsonb),
+('footer_contact_title','"Contact"'::jsonb),
+('footer_copyright','"All rights reserved."'::jsonb),
+('footer_motto','"Natural · Authentic · Ceylon"'::jsonb),
+('contact_visit_title','"Visit & Connect"'::jsonb),
+('contact_phone_label','"Call"'::jsonb),
+('contact_email_label','"Email"'::jsonb),
+('contact_location_label','"Location"'::jsonb),
+('store_name','"Gemz.lk"'::jsonb),
+('brand_subtitle','"SRI LANKA"'::jsonb),
+('store_logo_url','""'::jsonb),
+('store_favicon_url','""'::jsonb),
+('seo_title_template','"{page} | {site}"'::jsonb),
+('seo_keywords','"Ceylon gemstones, natural gemstones, Sri Lankan sapphires, fine jewellery"'::jsonb),
+('seo_site_url','""'::jsonb),
+('seo_robots','"index,follow"'::jsonb),
+('seo_twitter_handle','""'::jsonb),
+('seo_google_verification','""'::jsonb),
+('seo_bing_verification','""'::jsonb),
+('seo_og_image','""'::jsonb),
+('seo_theme_color','"#171b29"'::jsonb),
+('seo_schema_type','"JewelryStore"'::jsonb),
+('seo_business_name','"Gemz.lk"'::jsonb),
+('seo_business_email','"info@gemz.lk"'::jsonb),
+('seo_business_phone','"+94 11 234 5678"'::jsonb),
+('seo_business_address','"Colombo, Sri Lanka"'::jsonb),
+('seo_business_country','"Sri Lanka"'::jsonb),
+('seo_home_title','"Fine Gems & Jewellery from Sri Lanka | Gemz.lk"'::jsonb),
+('seo_home_description','"Discover natural gemstones and fine jewellery from Sri Lanka, with over 40 years of expertise."'::jsonb),
+('seo_collection_title','"Gemstones, Jewellery & Watches | Gemz.lk"'::jsonb),
+('seo_collection_description','"Explore natural Sri Lankan gemstones, fine jewellery and watches, selected with care by Gemz.lk."'::jsonb),
+('seo_insights_title','"Gemstone Guides & Insights | Gemz.lk"'::jsonb),
+('seo_insights_description','"Read gemstone guides, education and market stories from the world of natural Ceylon gems."'::jsonb),
+('seo_contact_title','"Contact Gemz.lk | Enquire About Natural Gems"'::jsonb),
+('seo_contact_description','"Contact Gemz.lk for help choosing natural gemstones, fine jewellery and watches from Sri Lanka."'::jsonb),
+('seo_about_title','"About Gemz.lk | Ceylon Gemstone Expertise Since 1985"'::jsonb),
+('seo_about_description','"Learn about Gemz.lk and our family history in natural Sri Lankan gemstones and fine jewellery."'::jsonb),
+('seo_product_title','"Gemstone & Jewellery Details | Gemz.lk"'::jsonb),
+('seo_product_description','"Explore product details and specifications for natural gemstones and fine jewellery from Gemz.lk."'::jsonb),
+('seo_cart_title','"Your Enquiry Selection | Gemz.lk"'::jsonb),
+('seo_cart_description','"Review your selected gemstones and jewellery, then send Gemz.lk an enquiry."'::jsonb),
+('seo_login_title','"Customer Account | Gemz.lk"'::jsonb),
+('seo_login_description','"Sign in to your Gemz.lk customer account."'::jsonb)
+on conflict (setting_key) do nothing;
+
 insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
-values ('gemz-media','gemz-media',true,52428800,array['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm'])
+values ('gemz-media','gemz-media',true,52428800,array['image/jpeg','image/png','image/webp','image/gif','image/x-icon','image/vnd.microsoft.icon','video/mp4','video/webm'])
 on conflict (id) do update set public=true, file_size_limit=excluded.file_size_limit, allowed_mime_types=excluded.allowed_mime_types;
 
 drop policy if exists "Gemz media public read" on storage.objects;

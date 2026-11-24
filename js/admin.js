@@ -75,7 +75,8 @@
     $('#inquiriesTable').innerHTML=items.length?inquiryTable(items):emptyState('No enquiries here','Website contact form submissions will appear in this list.');
   }
   function settingValue(key){const value=state.settings[key];return value==null?'':typeof value==='string'?value:String(value)}
-  function populateSettings(){for(const [key,value] of Object.entries(state.settings)){const field=$(`[name="${CSS.escape(key)}"]`,$('#settingsForm'));if(field)field.value=typeof value==='string'?value:String(value??'')}}
+  function refreshSettingPreviews(){[['store_logo_url','storeLogoPreview'],['store_favicon_url','storeFaviconPreview'],['seo_og_image','seoOgImagePreview']].forEach(([key,id])=>{const preview=$(`#${id}`),url=settingValue(key);preview.hidden=!url;if(url)preview.src=url;else preview.removeAttribute('src')})}
+  function populateSettings(){for(const [key,value] of Object.entries(state.settings)){const field=$(`[name="${CSS.escape(key)}"]`,$('#settingsForm'));if(field)field.value=typeof value==='string'?value:String(value??'')}refreshSettingPreviews()}
 
   function openEditor(kind,row=null){
     state.editing={kind,id:row?.id||null};
@@ -93,6 +94,8 @@
       <label class="full">Product name<input name="name" value="${value('name')}" required autocomplete="off"></label>
       <label class="full">URL slug<input name="slug" value="${value('slug')}" required autocomplete="off"><span class="field-help">Lowercase letters and hyphens. Generated from the name if left blank.</span></label>
       <label class="full">Description<textarea name="description" rows="3">${value('description')}</textarea></label>
+      <label class="full">SEO title<input name="seo_title" value="${value('seo_title')}" maxlength="70"><span class="field-help">Optional page title for this product. Leave blank to use the product name and store name.</span></label>
+      <label class="full">SEO description<textarea name="seo_description" rows="3" maxlength="320">${value('seo_description')}</textarea><span class="field-help">Optional search and social description. Leave blank to use the product description.</span></label>
       <label class="full">Image URL<input name="image_url" id="imageUrl" type="url" value="${value('image_url')}" placeholder="https://…"></label>
       <label class="full">Upload product image<div class="upload-inline"><input name="product_file" id="productFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><button class="small-button" type="button" data-upload-inline="product">Upload</button></div></label>
       <label>Status<select name="status"><option value="draft" ${value('status','draft')==='draft'?'selected':''}>Draft</option><option value="published" ${value('status')==='published'?'selected':''}>Published</option><option value="archived" ${value('status')==='archived'?'selected':''}>Archived</option></select></label>
@@ -123,7 +126,7 @@
     const form=event.currentTarget,fd=new FormData(form),kind=state.editing.kind;
     const record=kind==='product'?{
       product_type:fd.get('product_type'),category:fd.get('category').trim(),name:fd.get('name').trim(),slug:slugify(fd.get('slug')||fd.get('name')),
-      description:fd.get('description').trim(),image_url:fd.get('image_url')||null,status:fd.get('status'),featured:fd.has('featured'),
+      description:fd.get('description').trim(),seo_title:fd.get('seo_title').trim(),seo_description:fd.get('seo_description').trim(),image_url:fd.get('image_url')||null,status:fd.get('status'),featured:fd.has('featured'),
       sort_order:Number(fd.get('sort_order')||0),specs:readJSON(form,'specs',{}),visual:readJSON(form,'visual',{}) ,updated_at:new Date().toISOString()
     }:{title:fd.get('title').trim(),slug:slugify(fd.get('slug')||fd.get('title')),category:fd.get('category').trim()||'Insight',excerpt:fd.get('excerpt').trim(),content:fd.get('content').trim(),cover_image:fd.get('cover_image')||null,status:fd.get('status'),updated_at:new Date().toISOString()};
     if(!record.slug)throw new Error('Enter a name that can be used to create a URL slug.');
@@ -166,6 +169,10 @@
     event.preventDefault();const file=$('#mediaFile').files?.[0];
     try{await uploadFile(file);event.currentTarget.reset();await loadMedia();notify('File uploaded to Supabase Storage.')}catch(error){notify(error.message||'Upload failed.','error')}
   }
+  async function handleSettingsUpload(button){
+    const input=$(`#${button.dataset.fileTarget}`),field=$(`[name="${CSS.escape(button.dataset.settingsUpload)}"]`,$('#settingsForm'));
+    try{const url=await uploadFile(input.files?.[0]);field.value=url;const preview=$(`#${button.dataset.settingsUpload==='store_logo_url'?'storeLogoPreview':button.dataset.settingsUpload==='store_favicon_url'?'storeFaviconPreview':'seoOgImagePreview'}`);preview.src=url;preview.hidden=false;notify('Image uploaded. Save site settings to publish it.')}catch(error){notify(error.message||'Upload failed.','error')}
+  }
   async function deleteMedia(name){
     if(!confirm(`Delete ${name} from storage? Any page using its URL will stop showing it.`))return;
     const {error}=await state.client.storage.from('gemz-media').remove([name]);
@@ -191,6 +198,8 @@
     $('#editorFields').addEventListener('click',event=>{const button=event.target.closest('[data-upload-inline]');if(button)handleInlineUpload(button.dataset.uploadInline)});
     $('#closeDialog').addEventListener('click',()=>$('#editorDialog').close());$('#cancelDialog').addEventListener('click',()=>$('#editorDialog').close());
     $('#settingsForm').addEventListener('submit',event=>saveSettings(event).catch(error=>notify(error.message,'error')));
+    $('#settingsForm').addEventListener('click',event=>{const button=event.target.closest('[data-settings-upload]');if(button)handleSettingsUpload(button)});
+    $('#settingsForm').addEventListener('input',event=>{if(event.target.name==='store_logo_url'||event.target.name==='store_favicon_url'||event.target.name==='seo_og_image'){const preview=$(`#${event.target.name==='store_logo_url'?'storeLogoPreview':event.target.name==='store_favicon_url'?'storeFaviconPreview':'seoOgImagePreview'}`);preview.hidden=!event.target.value;if(event.target.value)preview.src=event.target.value;else preview.removeAttribute('src')}});
     $('#mediaUploadForm').addEventListener('submit',event=>uploadFromLibrary(event));
     $('#mediaGrid').addEventListener('click',event=>{const copy=event.target.closest('[data-copy-url]'),remove=event.target.closest('[data-delete-media]');if(copy)navigator.clipboard?.writeText(copy.dataset.copyUrl).then(()=>notify('Public URL copied.')).catch(()=>notify(copy.dataset.copyUrl));if(remove)deleteMedia(remove.dataset.deleteMedia)});
   }

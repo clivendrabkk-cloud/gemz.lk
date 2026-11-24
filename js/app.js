@@ -58,7 +58,7 @@ function productFromRow(row){
   const background=validColors(visual.background,['#3a2a08','#8a5a12']);
   return { ...specs, specs, slug:row.slug, name:row.name, type:row.product_type, category:row.category||'',
     text:row.description||'', description:row.description||'', image_url:publicMediaURL(row.image_url),
-    status:row.status, featured:row.featured, sort_order:row.sort_order,
+    seo_title:row.seo_title||'',seo_description:row.seo_description||'',status:row.status, featured:row.featured, sort_order:row.sort_order,
     c:colors,bg:background,visual:{colors,background} };
 }
 async function fetchPublicTable(table,query){
@@ -182,33 +182,38 @@ let ACTIVE_PAGE='home';
 function layout(active){
   ACTIVE_PAGE=active;
   document.body.style.overflow='';
+  const label=(key,fallback)=>htmlEscape(SITE_SETTINGS[key]||fallback);
   const L=(h,t,k)=>`<a href="${h}" class="${active===k?'active':''}">${t}</a>`;
   const logoGem=GEMS[5]||GEMS[0];
+  const storeName=htmlEscape(SITE_SETTINGS.store_name||'GEMZ');
+  const brandSubtitle=htmlEscape(SITE_SETTINGS.brand_subtitle||'SRI LANKA');
+  const brandMark=id=>publicMediaURL(SITE_SETTINGS.store_logo_url)?`<img class="logo-image" src="${htmlEscape(publicMediaURL(SITE_SETTINGS.store_logo_url))}" alt="">`:`<svg viewBox="0 0 200 200">${gemSVG(logoGem,id).replace(/<\/?svg[^>]*>/g,'')}</svg>`;
   const email=htmlEscape(SITE_SETTINGS.contact_email||'info@gemz.lk');
   const phone=htmlEscape(SITE_SETTINGS.contact_phone||'+94 11 234 5678');
   const address=htmlEscape(SITE_SETTINGS.contact_address||'Colombo, Sri Lanka');
   const announce=htmlEscape(SITE_SETTINGS.announcement||'Natural Gems & Fine Jewellery from Sri Lanka.');
+  const navHome=label('nav_home','Home'),navCollection=label('nav_collection','Our Gemstones'),navGems=label('nav_gemstones','GEM'),navJewellery=label('nav_jewellery','JEWELLERY'),navAllJewellery=label('nav_all_jewellery','All Jewellery'),navWatches=label('nav_watches','WATCH'),navAbout=label('nav_about','About us'),navInsights=label('nav_insights','Insights'),navContact=label('nav_contact','Contact Us'),navAccount=label('nav_account','Account');
   document.getElementById('site-header').innerHTML=`
   <div class="announce"><span class="sr-only">${announce}</span><div class="announce-track" aria-hidden="true">${Array(8).fill(`<span>${announce}</span><span>Over 40 Years of Ceylon Gem Expertise.</span>`).join('')}</div></div>
   <header class="header" id="hdr"><div class="header-in">
-    <nav class="nav" aria-label="Main navigation">${L('index.html','Home','home')}${L('collection.html','Our Gemstones','collection')}<a class="nav-gem ${active==='collection'?'active':''}" href="collection.html?section=gem">GEM</a><details class="nav-drop"><summary class="${active==='collection'?'active':''}">JEWELLERY</summary><div class="nav-dropdown"><a href="collection.html?section=jewellery">All Jewellery</a>${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('')}</div></details>${L('collection.html?section=watch','WATCH','collection')}${L('about.html','About us','about')}</nav>
+    <nav class="nav" aria-label="Main navigation">${L('index.html',navHome,'home')}${L('collection.html',navCollection,'collection')}<a class="nav-gem ${active==='collection'?'active':''}" href="collection.html?section=gem">${navGems}</a><details class="nav-drop"><summary class="${active==='collection'?'active':''}">${navJewellery}</summary><div class="nav-dropdown"><a href="collection.html?section=jewellery">${navAllJewellery}</a>${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('')}</div></details>${L('collection.html?section=watch',navWatches,'collection')}${L('about.html',navAbout,'about')}</nav>
     <button class="burger" id="burger" aria-label="Open menu" aria-controls="mnav" aria-expanded="false"><i></i><i></i><i></i></button>
-    <a href="index.html" class="logo" aria-label="Gemz.lk home"><svg viewBox="0 0 200 200">${gemSVG(logoGem,'logo').replace(/<\/?svg[^>]*>/g,'')}</svg><span>GEMZ<small>SRI LANKA</small></span></a>
+    <a href="index.html" class="logo" aria-label="${storeName} home">${brandMark('header-logo')}<span>${storeName}<small>${brandSubtitle}</small></span></a>
     <div class="utils">
-      <a href="insights.html" class="txt">Insights</a><a href="contact.html" class="txt">Contact Us</a>
-      <a class="ico opt" href="tel:${phone.replace(/[^+\d]/g,'')}" aria-label="Call">${icon.phone}</a>
-      <a class="ico opt" href="mailto:${email}" aria-label="Email">${icon.mail}</a>
-      <a class="ico opt" href="contact.html" aria-label="Location">${icon.pin}</a>
+      <a href="insights.html" class="txt">${navInsights}</a><a href="contact.html" class="txt">${navContact}</a>
+      <a class="ico opt" href="tel:${phone.replace(/[^+\d]/g,'')}" aria-label="${label('contact_phone_label','Call')}">${icon.phone}</a>
+      <a class="ico opt" href="mailto:${email}" aria-label="${label('contact_email_label','Email')}">${icon.mail}</a>
+      <a class="ico opt" href="contact.html" aria-label="${label('contact_location_label','Location')}">${icon.pin}</a>
       <a class="ico" href="cart.html" aria-label="Inquiry cart">${icon.bag}<span class="cart-count">0</span></a>
-      <a class="ico opt" href="login.html" aria-label="Account">${icon.user}</a>
+      <a class="ico opt" href="login.html" aria-label="${navAccount}">${icon.user}</a>
     </div></div></header>
-  <div class="mobile-nav" id="mnav" inert><a href="index.html">Home</a><a href="collection.html">Our Gemstones</a><a href="collection.html?section=gem">GEM</a><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=jewellery">JEWELLERY</a><div class="mobile-jewellery-subnav">${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('')}</div></div><a href="collection.html?section=watch">WATCH</a><a href="about.html">About us</a><a href="insights.html">Insights</a><a href="contact.html">Contact Us</a><a href="login.html">Account</a></div>`;
+  <div class="mobile-nav" id="mnav" inert><a href="index.html">${navHome}</a><a href="collection.html">${navCollection}</a><a href="collection.html?section=gem">${navGems}</a><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=jewellery">${navJewellery}</a><div class="mobile-jewellery-subnav">${JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('')}</div></div><a href="collection.html?section=watch">${navWatches}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a><a href="contact.html">${navContact}</a><a href="login.html">${navAccount}</a></div>`;
   document.getElementById('site-footer').innerHTML=`<footer class="footer"><div class="wrap"><div class="foot-grid">
-    <div><div class="logo" style="color:#fff;margin-bottom:16px">GEMZ<small>.LK</small></div><p data-setting="footer_tagline" style="max-width:34ch;font-size:.92rem">Authentic natural gemstones sourced in Sri Lanka and delivered worldwide. Established 1985.</p></div>
-    <div><h4>Explore</h4><a href="index.html">Home</a><a href="collection.html">Our Gemstones</a><a href="about.html">About us</a><a href="insights.html">Insights</a></div>
-    <div><h4>Account</h4><a href="cart.html">Inquiry Cart</a><a href="login.html">Login</a><a href="contact.html">Contact Us</a></div>
-    <div><h4>Contact</h4><a href="mailto:${email}">${email}</a><a href="tel:${phone.replace(/[^+\d]/g,'')}">${phone}</a><a href="contact.html">${address}</a></div>
-  </div><div class="foot-bot"><span>© ${new Date().getFullYear()} Gemz.lk. All rights reserved.</span><span>Natural · Authentic · Ceylon</span></div></div></footer>`;
+    <div><div class="logo" style="color:#fff;margin-bottom:16px">${brandMark('footer-logo')}<span>${storeName}<small>${brandSubtitle}</small></span></div><p data-setting="footer_tagline" style="max-width:34ch;font-size:.92rem">Authentic natural gemstones sourced in Sri Lanka and delivered worldwide. Established 1985.</p></div>
+    <div><h4>${label('footer_explore_title','Explore')}</h4><a href="index.html">${navHome}</a><a href="collection.html">${navCollection}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a></div>
+    <div><h4>${label('footer_account_title','Account')}</h4><a href="cart.html">Inquiry Cart</a><a href="login.html">${navAccount}</a><a href="contact.html">${navContact}</a></div>
+    <div><h4>${label('footer_contact_title','Contact')}</h4><a href="mailto:${email}">${email}</a><a href="tel:${phone.replace(/[^+\d]/g,'')}">${phone}</a><a href="contact.html">${address}</a></div>
+  </div><div class="foot-bot"><span>© ${new Date().getFullYear()} ${storeName}. ${label('footer_copyright','All rights reserved.')}</span><span>${label('footer_motto','Natural · Authentic · Ceylon')}</span></div></div></footer>`;
   const b=document.getElementById('burger'),m=document.getElementById('mnav');
   const setMenuOpen=open=>{
     b.classList.toggle('open',open);
@@ -357,6 +362,74 @@ function applySiteSettings(){
   setText('.promo-card-copy h3',SITE_SETTINGS.home_promo_title);
   const meta=document.querySelector('meta[name="description"]');if(meta&&SITE_SETTINGS.meta_description)meta.content=SITE_SETTINGS.meta_description;
   document.querySelectorAll('[data-setting]').forEach(node=>{const value=SITE_SETTINGS[node.dataset.setting];if(value!==undefined&&value!==null)node.textContent=String(value)});
+  const phone=String(SITE_SETTINGS.contact_phone||'+94 11 234 5678'),email=String(SITE_SETTINGS.contact_email||'info@gemz.lk');
+  const phoneLink=document.getElementById('contactPhoneInfo'),emailLink=document.getElementById('contactEmailInfo');
+  if(phoneLink)phoneLink.href=`tel:${phone.replace(/[^+\d]/g,'')}`;
+  if(emailLink)emailLink.href=`mailto:${email}`;
+  applySeoSettings();
+}
+function applySeoSettings(overrides={}){
+  const pathname=location.pathname.split('/').pop().toLowerCase();
+  const page=pathname==='index.html'||pathname===''?'home':pathname==='collection.html'?'collection':pathname==='insights.html'?'insights':pathname==='contact.html'?'contact':pathname==='about.html'?'about':pathname==='cart.html'?'cart':pathname==='login.html'?'login':pathname==='gemstone.html'||pathname==='jewellery-product.html'?'product':'home';
+  const siteName=String(SITE_SETTINGS.store_name||'Gemz.lk');
+  const pageNames={home:String(SITE_SETTINGS.hero_title||'Fine Gems & Jewellery from Sri Lanka'),collection:'Gemstones, Jewellery & Watches',insights:'Gemstone Guides & Insights',contact:'Contact Us',about:'About Us',product:'Gemstone & Jewellery Details',cart:'Your Enquiry Selection',login:'Customer Account'};
+  const titleTemplate=String(SITE_SETTINGS.seo_title_template||'{page} | {site}');
+  const fallbackTitle=page==='home'?(document.title||`${siteName} — Fine Gems & Jewellery`):document.title.split(/\s+[—|]\s+/)[0];
+  const title=String(overrides.title||SITE_SETTINGS[`seo_${page}_title`]|| (page==='home'&&SITE_SETTINGS.seo_title) || titleTemplate.replaceAll('{page}',pageNames[page]||fallbackTitle).replaceAll('{site}',siteName));
+  const description=String(overrides.description||SITE_SETTINGS[`seo_${page}_description`]||SITE_SETTINGS.meta_description||'');
+  const setMeta=(selector,attributes,value)=>{
+    let node=document.head.querySelector(selector);
+    if(!node){node=document.createElement('meta');Object.entries(attributes).forEach(([key,attrValue])=>node.setAttribute(key,attrValue));document.head.append(node)}
+    node.content=value;
+  };
+  document.title=title;
+  setMeta('meta[name="description"]',{name:'description'},description);
+  setMeta('meta[name="keywords"]',{name:'keywords'},String(SITE_SETTINGS.seo_keywords||''));
+  if(SITE_SETTINGS.seo_google_verification)setMeta('meta[name="google-site-verification"]',{name:'google-site-verification'},String(SITE_SETTINGS.seo_google_verification));
+  if(SITE_SETTINGS.seo_bing_verification)setMeta('meta[name="msvalidate.01"]',{name:'msvalidate.01'},String(SITE_SETTINGS.seo_bing_verification));
+  const robots=['index,follow','noindex,follow','noindex,nofollow'].includes(SITE_SETTINGS.seo_robots)?SITE_SETTINGS.seo_robots:'index,follow';
+  setMeta('meta[name="robots"]',{name:'robots'},robots);
+  const theme=String(SITE_SETTINGS.seo_theme_color||'#171b29');
+  setMeta('meta[name="theme-color"]',{name:'theme-color'},/^#[0-9a-f]{6}$/i.test(theme)?theme:'#171b29');
+  setMeta('meta[property="og:title"]',{property:'og:title'},title);
+  setMeta('meta[property="og:description"]',{property:'og:description'},description);
+  setMeta('meta[property="og:type"]',{property:'og:type'},overrides.type||'website');
+  setMeta('meta[property="og:site_name"]',{property:'og:site_name'},siteName);
+  setMeta('meta[name="twitter:title"]',{name:'twitter:title'},title);
+  setMeta('meta[name="twitter:description"]',{name:'twitter:description'},description);
+  const handle=String(SITE_SETTINGS.seo_twitter_handle||'').trim();
+  if(handle)setMeta('meta[name="twitter:site"]',{name:'twitter:site'},handle.startsWith('@')?handle:`@${handle}`);
+  const rawBase=String(SITE_SETTINGS.seo_site_url||'').trim();
+  let baseURL='';
+  try{const parsed=new URL(rawBase||location.origin);if(/^https?:$/.test(parsed.protocol))baseURL=parsed.origin}catch{}
+  let canonicalURL='';
+  if(baseURL){
+    const canonicalPath=page==='home'?'/':`/${pathname}`;
+    const canonical=new URL(canonicalPath,baseURL);
+    if(page==='product'){const slug=new URLSearchParams(location.search).get('slug');if(slug)canonical.searchParams.set('slug',slug)}
+    canonicalURL=canonical.href;
+    let link=document.head.querySelector('link[rel="canonical"]');if(!link){link=document.createElement('link');link.rel='canonical';document.head.append(link)}link.href=canonicalURL;
+    setMeta('meta[property="og:url"]',{property:'og:url'},canonicalURL);
+  }
+  const assetURL=value=>{try{const url=new URL(String(value||''),location.href);return /^https?:$/.test(url.protocol)?url.href:''}catch{return''}};
+  const shareImage=assetURL(overrides.image||SITE_SETTINGS.seo_og_image);
+  setMeta('meta[name="twitter:card"]',{name:'twitter:card'},shareImage?'summary_large_image':'summary');
+  if(shareImage){setMeta('meta[property="og:image"]',{property:'og:image'},shareImage);setMeta('meta[name="twitter:image"]',{name:'twitter:image'},shareImage)}
+  const faviconURL=assetURL(SITE_SETTINGS.store_favicon_url);
+  if(faviconURL){let iconLink=document.head.querySelector('link[rel="icon"]');if(!iconLink){iconLink=document.createElement('link');iconLink.rel='icon';document.head.append(iconLink)}iconLink.href=faviconURL}
+  const schemaType=['JewelryStore','Store','Organization'].includes(SITE_SETTINGS.seo_schema_type)?SITE_SETTINGS.seo_schema_type:'JewelryStore';
+  const schema={
+    '@context':'https://schema.org','@type':schemaType,'name':String(SITE_SETTINGS.seo_business_name||siteName),
+    ...(baseURL?{url:baseURL}:{}),...(assetURL(SITE_SETTINGS.store_logo_url)?{logo:assetURL(SITE_SETTINGS.store_logo_url)}:{}),
+    ...(SITE_SETTINGS.seo_business_email?{email:String(SITE_SETTINGS.seo_business_email)}:{}),
+    ...(SITE_SETTINGS.seo_business_phone?{telephone:String(SITE_SETTINGS.seo_business_phone)}:{}),
+    ...(SITE_SETTINGS.seo_business_address?{address:{'@type':'PostalAddress',streetAddress:String(SITE_SETTINGS.seo_business_address),addressCountry:String(SITE_SETTINGS.seo_business_country||'Sri Lanka')}}:{})
+  };
+  let schemaTag=document.getElementById('gemz-site-schema');if(!schemaTag){schemaTag=document.createElement('script');schemaTag.type='application/ld+json';schemaTag.id='gemz-site-schema';document.head.append(schemaTag)}schemaTag.textContent=JSON.stringify(schema);
+  if(overrides.product){
+    const productSchema={'@context':'https://schema.org','@type':'Product','name':String(overrides.product.name||''),...(description?{description}:{}),...(shareImage?{image:shareImage}:{}),...(overrides.product.category?{category:String(overrides.product.category)}:{})};
+    let productTag=document.getElementById('gemz-product-schema');if(!productTag){productTag=document.createElement('script');productTag.type='application/ld+json';productTag.id='gemz-product-schema';document.head.append(productTag)}productTag.textContent=JSON.stringify(productSchema);
+  }else document.getElementById('gemz-product-schema')?.remove();
 }
 window.addEventListener('gemz-content-updated',event=>{
   if(!event.detail?.loaded){window.GEMZ_PAGE_REFRESH?.();return}

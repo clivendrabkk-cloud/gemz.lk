@@ -53,6 +53,7 @@ window.GEMZ_READY.then(()=>{
     const title=product?.name||category;
     const inquiryId=product?.slug||`jewellery-${category.toLowerCase()}`;
     document.title=`${title} — Gemz.lk`;
+    applySeoSettings(product?{title:product.seo_title||`${title} | ${SITE_SETTINGS.store_name||'Gemz.lk'}`,description:product.seo_description||product.description,image:product.image_url,type:'product',product}:{title:`${title} | ${SITE_SETTINGS.store_name||'Gemz.lk'}`,description:`Explore ${title.toLowerCase()} from ${SITE_SETTINGS.store_name||'Gemz.lk'}.`});
     document.getElementById('productBack').href=`collection.html?section=${section}`;
     document.getElementById('productBack').textContent=`← ${section.toUpperCase()}`;
     document.getElementById('productEyebrow').textContent=`${type==='watch'?'Watch':'Jewellery'} features & specifications`;
