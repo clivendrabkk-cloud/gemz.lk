@@ -2,6 +2,7 @@
   const $ = (selector, root=document) => root.querySelector(selector);
   const $$ = (selector, root=document) => [...root.querySelectorAll(selector)];
   const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const defaultVisual={colors:['#fff3a8','#f2b705','#a86a00'],background:['#3a2a08','#8a5a12']};
   const state={client:null,user:null,products:[],articles:[],inquiries:[],settings:{},view:'overview',editing:null,toastTimer:null};
   const viewTitles={overview:'Overview',catalog:'Catalog',articles:'Insights',inquiries:'Inquiries',media:'Media library',settings:'Site settings'};
 
@@ -85,10 +86,19 @@
     $('#editorFields').innerHTML=kind==='product'?productFields(row):articleFields(row);
     $('#editorDialog').showModal();
   }
+  function formatSpecLabel(value){
+    const aliases={treat:'Treatment',colour:'Colour',codeNo:'Code No'};
+    if(Object.hasOwn(aliases,value))return aliases[value];
+    return String(value||'').replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/[_-]+/g,' ').replace(/\b\w/g,letter=>letter.toUpperCase()).trim();
+  }
+  function specificationRows(specs){
+    const entries=specs&&typeof specs==='object'&&!Array.isArray(specs)
+      ?Object.entries(specs).filter(([,value])=>value==null||typeof value!=='object').map(([label,value])=>({label:formatSpecLabel(label),value:String(value??'')}))
+      :[];
+    return (entries.length?entries:[{label:'',value:''},{label:'',value:''}]).map(({label,value})=>`<div class="specification-row"><label>Specification<input name="spec_name" value="${escapeHTML(label)}" placeholder="e.g. Origin"></label><label>Details<input name="spec_value" value="${escapeHTML(value)}" placeholder="e.g. Ratnapura, Sri Lanka"></label><button class="small-button remove-spec" type="button" data-remove-spec aria-label="Remove specification">Remove</button></div>`).join('');
+  }
   function productFields(row){
     const value=(key,fallback='')=>escapeHTML(row?.[key]??fallback);
-    const specs=escapeHTML(JSON.stringify(row?.specs||{},null,2));
-    const visual=escapeHTML(JSON.stringify(row?.visual||{colors:['#fff3a8','#f2b705','#a86a00'],background:['#3a2a08','#8a5a12']},null,2));
     return `<label>Type<select name="product_type" required><option value="gem" ${row?.product_type==='gem'?'selected':''}>Gemstone</option><option value="jewellery" ${row?.product_type==='jewellery'?'selected':''}>Jewellery</option><option value="watch" ${row?.product_type==='watch'?'selected':''}>Watch</option></select></label>
       <label>Category<input name="category" value="${value('category')}" placeholder="Blue Sapphire, Rings…" required></label>
       <label class="full">Product name<input name="name" value="${value('name')}" required autocomplete="off"></label>
@@ -101,8 +111,7 @@
       <label>Status<select name="status"><option value="draft" ${value('status','draft')==='draft'?'selected':''}>Draft</option><option value="published" ${value('status')==='published'?'selected':''}>Published</option><option value="archived" ${value('status')==='archived'?'selected':''}>Archived</option></select></label>
       <label>Display order<input name="sort_order" type="number" value="${value('sort_order','0')}"></label>
       <label class="check-row"><input name="featured" type="checkbox" ${row?.featured?'checked':''}> Feature this item</label>
-      <label class="full">Specifications JSON<textarea name="specs" class="json-field" rows="6">${specs}</textarea><span class="field-help">For gemstones, keys such as origin, clarity, colour, weight and treat appear in the detail view.</span></label>
-      <label class="full">Artwork palette JSON<textarea name="visual" class="json-field" rows="4">${visual}</textarea><span class="field-help">Use colors with three hex values and background with two values for the decorative gem art.</span></label>`;
+      <section class="full specifications-editor" aria-label="Product specifications"><div class="specifications-heading"><div><b>Specifications</b><span class="field-help">Add details such as origin, colour, weight, clarity or material.</span></div><button class="small-button" type="button" data-add-spec>Add specification</button></div><div class="specification-list">${specificationRows(row?.specs)}</div></section>`;
   }
   function articleFields(row){
     const value=key=>escapeHTML(row?.[key]||'');
@@ -120,14 +129,29 @@
     const input=$(`#${kind==='product'?'productFile':'articleFile'}`);
     try{const url=await uploadFile(input.files?.[0]);$('#imageUrl').value=url;notify('Upload complete. Save the record to use this file.')}catch(error){notify(error.message||'Upload failed.','error')}
   }
-  function readJSON(form,name,fallback){const raw=new FormData(form).get(name);if(!raw)return fallback;try{return JSON.parse(raw)}catch{throw new Error(`${name} must be valid JSON.`)}}
+  function readSpecifications(form){
+    const names=[...form.querySelectorAll('[name="spec_name"]')],values=[...form.querySelectorAll('[name="spec_value"]')],specs={};
+    names.forEach((field,index)=>{
+      const label=field.value.trim(),value=values[index]?.value.trim()||'';
+      if(!label||!value)return;
+      let key=label.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+      if(['color','colour'].includes(key))key='colour';
+      if(['treatment','treatments'].includes(key))key='treat';
+      if(['clarity_grade'].includes(key))key='clarity';
+      if(key==='code_no')key='codeNo';
+      if(Object.hasOwn(specs,key))throw new Error(`“${label}” is listed more than once. Each specification name must be unique.`);
+      specs[key]=value;
+    });
+    return specs;
+  }
   async function saveRecord(event){
     event.preventDefault();if(!state.editing)return;
     const form=event.currentTarget,fd=new FormData(form),kind=state.editing.kind;
+    const currentProduct=state.products.find(item=>item.id===state.editing.id);
     const record=kind==='product'?{
       product_type:fd.get('product_type'),category:fd.get('category').trim(),name:fd.get('name').trim(),slug:slugify(fd.get('slug')||fd.get('name')),
       description:fd.get('description').trim(),seo_title:fd.get('seo_title').trim(),seo_description:fd.get('seo_description').trim(),image_url:fd.get('image_url')||null,status:fd.get('status'),featured:fd.has('featured'),
-      sort_order:Number(fd.get('sort_order')||0),specs:readJSON(form,'specs',{}),visual:readJSON(form,'visual',{}) ,updated_at:new Date().toISOString()
+      sort_order:Number(fd.get('sort_order')||0),specs:readSpecifications(form),visual:currentProduct?.visual||defaultVisual,updated_at:new Date().toISOString()
     }:{title:fd.get('title').trim(),slug:slugify(fd.get('slug')||fd.get('title')),category:fd.get('category').trim()||'Insight',excerpt:fd.get('excerpt').trim(),content:fd.get('content').trim(),cover_image:fd.get('cover_image')||null,status:fd.get('status'),updated_at:new Date().toISOString()};
     if(!record.slug)throw new Error('Enter a name that can be used to create a URL slug.');
     const table=kind==='product'?'products':'articles';
@@ -198,7 +222,11 @@
     $('#inquiriesTable').addEventListener('change',event=>{const field=event.target.closest('[data-inquiry-status]');if(field)updateInquiryStatus(field.dataset.inquiryStatus,field.value)});
     $('#recentInquiries').addEventListener('change',event=>{const field=event.target.closest('[data-inquiry-status]');if(field)updateInquiryStatus(field.dataset.inquiryStatus,field.value)});
     $('#editorForm').addEventListener('submit',event=>saveRecord(event).catch(error=>notify(error.message||'Could not save record.','error')));
-    $('#editorFields').addEventListener('click',event=>{const button=event.target.closest('[data-upload-inline]');if(button)handleInlineUpload(button.dataset.uploadInline)});
+    $('#editorFields').addEventListener('click',event=>{
+      const upload=event.target.closest('[data-upload-inline]');if(upload){handleInlineUpload(upload.dataset.uploadInline);return}
+      if(event.target.closest('[data-add-spec]')){$('.specification-list').insertAdjacentHTML('beforeend',specificationRows({}));return}
+      if(event.target.closest('[data-remove-spec]'))event.target.closest('.specification-row').remove();
+    });
     $('#closeDialog').addEventListener('click',()=>$('#editorDialog').close());$('#cancelDialog').addEventListener('click',()=>$('#editorDialog').close());
     $('#settingsForm').addEventListener('submit',event=>saveSettings(event).catch(error=>notify(error.message,'error')));
     $('#settingsForm').addEventListener('click',event=>{const button=event.target.closest('[data-settings-upload]');if(button)handleSettingsUpload(button);if(event.target.closest('[data-settings-video-upload]'))handleSettingsVideoUpload()});

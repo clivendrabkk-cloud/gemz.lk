@@ -42,7 +42,8 @@ window.GEMZ_READY.then(()=>{
       ['Origin',g.origin||'—'],['Hardness',g.hardness||'—'],['Dimensions',g.dimensions||'—'],['Shape',g.shape||'—'],['Cut',g.cut||'—'],['Treatment',g.treat||'—'],
       ['Certificate',g.certificate||'—'],['Comment',g.comment||'—']
     ];
-    const extraDetails=Object.entries(g.specs||{}).filter(([key])=>!['origin','hardness','clarity','treat','colour'].includes(key)).map(([key,value])=>[key.replace(/([A-Z])/g,' $1').replace(/^./,letter=>letter.toUpperCase()),value]);
+    const standardGemFields=new Set(['codeNo','weight','clarity','colour','origin','hardness','dimensions','shape','cut','treat','certificate','comment']);
+    const extraDetails=Object.entries(g.specs||{}).filter(([key,value])=>value&&!standardGemFields.has(key)).map(([key,value])=>[key.replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/[_-]+/g,' ').replace(/^./,letter=>letter.toUpperCase()),value]);
     gemDetails.push(...extraDetails);
     const detailRows=rows=>rows.map(([label,value])=>`<tr><td>${htmlEscape(label)}</td><td>${htmlEscape(value)}</td></tr>`).join('');
     const visual=g.image_url?`<img src="${htmlEscape(g.image_url)}" alt="${htmlEscape(g.name)}">`:gemSVG(g,'d');

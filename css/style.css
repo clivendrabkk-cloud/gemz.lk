@@ -58,11 +58,15 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .nav a:hover::after,.nav a.active::after,.utils .txt:hover::after{transform:scaleX(1);transform-origin:left}
 .logo{display:flex;align-items:center;gap:10px;font-family:var(--serif);font-size:1.9rem;letter-spacing:.28em;font-weight:600}
 .logo svg{width:30px;height:30px}
-.logo .logo-image{width:30px;height:30px;object-fit:contain}
+.logo .logo-image{display:block;width:auto;height:30px;max-width:100%;object-fit:contain}
 .logo small{display:block;font-family:var(--sans);font-size:.5rem;letter-spacing:.4em;margin-top:-2px;opacity:.6;font-weight:600}
 .logo.logo-only{gap:0;font-size:0;letter-spacing:0}
-.logo.logo-only svg,.logo.logo-only .logo-image{width:40px;height:40px}
-.footer .logo.logo-only svg,.footer .logo.logo-only .logo-image{width:44px;height:44px}
+.header-in>.logo.logo-only{width:clamp(100px,18vw,220px);height:100%;justify-self:center;justify-content:center}
+.header-in>.logo.logo-only svg{width:clamp(48px,4.6vw,60px);height:clamp(48px,4.6vw,60px);flex:none}
+.header-in>.logo.logo-only .logo-image{width:auto;height:clamp(48px,4.6vw,60px);max-width:100%;padding:5px 10px;border-radius:9px;background:#0c0e13;flex:none}
+.footer .logo.logo-only{width:fit-content;max-width:100%}
+.footer .logo.logo-only svg{width:64px;height:64px;flex:none}
+.footer .logo.logo-only .logo-image{width:auto;height:clamp(58px,5vw,76px);max-width:min(300px,92vw);padding:7px 12px;border-radius:9px;background:#fff;flex:none}
 .ico{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;position:relative;transition:.35s var(--ease)}
 .ico:hover{background:rgba(201,138,43,.18);transform:translateY(-2px)}
 .ico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
@@ -273,7 +277,7 @@ button:disabled{opacity:.58;cursor:wait}
   .nav-gem{display:none}
   .header-in{grid-template-columns:auto 1fr auto}
   .nav{display:none}.burger{display:block}
-  .logo{justify-self:center}
+  .header-in>.logo.logo-only{width:min(190px,100%)}
   .header{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(255,255,255,.96)}
   .header.dark{background:transparent}
   .split,.detail,.contact-grid{grid-template-columns:1fr}
@@ -294,7 +298,7 @@ button:disabled{opacity:.58;cursor:wait}
   .header-in{grid-template-columns:auto 1fr auto;height:68px}
   .nav{display:none}.burger{display:block}
   .hero{min-height:calc(100vh - 42px);min-height:calc(100svh - 42px);margin-top:-68px;padding:148px 0 202px}
-  .logo{font-size:1.5rem;justify-self:center}
+  .header-in>.logo.logo-only{width:min(190px,100%)}
   .utils .ico.opt{display:none}
   .row2{grid-template-columns:1fr}
   .track .card{width:240px}
