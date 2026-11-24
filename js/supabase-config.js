@@ -1,8 +1,8 @@
 /* Public browser configuration only. Add your Supabase project URL and anon/public key.
    Never put a service_role key or other secret in this file. */
 window.GEMZ_SUPABASE_CONFIG = {
-  url: '',
-  anonKey: ''
+  url: 'https://yjpdoyrhaguaprtshigl.supabase.co',
+  anonKey: 'sb_publishable_k5hMwUvNIFo8CQccKZBXNw_J_y0zcHu'
 };
 
 window.GEMZ_SUPABASE_READY = (async () => {
@@ -14,7 +14,3 @@ window.GEMZ_SUPABASE_READY = (async () => {
   });
   return window.GEMZ_SUPABASE;
 })();
-window.GEMZ_SUPABASE_CONFIG = {
-  url: 'https://yjpdoyrhaguaprtshigl.supabase.co',
-  anonKey: 'sb_publishable_k5hMwUvNIFo8CQccKZBXNw_J_y0zcHu'
-};
