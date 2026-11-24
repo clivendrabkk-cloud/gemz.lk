@@ -147,13 +147,19 @@ insert into public.site_settings (setting_key,setting_value) values
 ('hero_eyebrow','"Sri Lanka · Est. 1985"'::jsonb),
 ('hero_title','"Fine Gems & Jewellery, Made to Last"'::jsonb),
 ('hero_description','"Discover natural Ceylon gemstones, considered jewellery and exceptional pieces selected with care."'::jsonb),
-('hero_video_url','"https://iseknah2nmm0rxln.public.blob.vercel-storage.com/hero-tPEhcYlV4OTW4kBOsUQDDHLu83QLRz.mp4"'::jsonb),
+('hero_video_url','""'::jsonb),
 ('home_promo_title','"Over 40 Years in Gems"'::jsonb),
 ('contact_email','"info@gemz.lk"'::jsonb),
 ('contact_phone','"+94 11 234 5678"'::jsonb),
 ('contact_address','"Colombo, Sri Lanka"'::jsonb),
 ('meta_description','"Discover natural gemstones and fine jewellery from Sri Lanka, with over 40 years of expertise."'::jsonb)
 on conflict (setting_key) do nothing;
+
+-- Clear the retired Vercel Blob hero URL when this schema is reapplied.
+update public.site_settings
+set setting_value = '""'::jsonb, updated_at = now()
+where setting_key = 'hero_video_url'
+  and setting_value::text like '%blob.vercel-storage.com%';
 
 insert into public.site_settings (setting_key,setting_value) values
 ('home_arrivals_eyebrow','"Just selected"'::jsonb),

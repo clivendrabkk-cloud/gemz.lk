@@ -173,6 +173,9 @@
     const input=$(`#${button.dataset.fileTarget}`),field=$(`[name="${CSS.escape(button.dataset.settingsUpload)}"]`,$('#settingsForm'));
     try{const url=await uploadFile(input.files?.[0]);field.value=url;const preview=$(`#${button.dataset.settingsUpload==='store_logo_url'?'storeLogoPreview':button.dataset.settingsUpload==='store_favicon_url'?'storeFaviconPreview':'seoOgImagePreview'}`);preview.src=url;preview.hidden=false;notify('Image uploaded. Save site settings to publish it.')}catch(error){notify(error.message||'Upload failed.','error')}
   }
+  async function handleSettingsVideoUpload(){
+    try{const url=await uploadFile($('#heroVideoFile').files?.[0]);$('#settingsForm [name="hero_video_url"]').value=url;notify('Video uploaded to Supabase Storage. Save site settings to publish it.')}catch(error){notify(error.message||'Upload failed.','error')}
+  }
   async function deleteMedia(name){
     if(!confirm(`Delete ${name} from storage? Any page using its URL will stop showing it.`))return;
     const {error}=await state.client.storage.from('gemz-media').remove([name]);
@@ -198,7 +201,7 @@
     $('#editorFields').addEventListener('click',event=>{const button=event.target.closest('[data-upload-inline]');if(button)handleInlineUpload(button.dataset.uploadInline)});
     $('#closeDialog').addEventListener('click',()=>$('#editorDialog').close());$('#cancelDialog').addEventListener('click',()=>$('#editorDialog').close());
     $('#settingsForm').addEventListener('submit',event=>saveSettings(event).catch(error=>notify(error.message,'error')));
-    $('#settingsForm').addEventListener('click',event=>{const button=event.target.closest('[data-settings-upload]');if(button)handleSettingsUpload(button)});
+    $('#settingsForm').addEventListener('click',event=>{const button=event.target.closest('[data-settings-upload]');if(button)handleSettingsUpload(button);if(event.target.closest('[data-settings-video-upload]'))handleSettingsVideoUpload()});
     $('#settingsForm').addEventListener('input',event=>{if(event.target.name==='store_logo_url'||event.target.name==='store_favicon_url'||event.target.name==='seo_og_image'){const preview=$(`#${event.target.name==='store_logo_url'?'storeLogoPreview':event.target.name==='store_favicon_url'?'storeFaviconPreview':'seoOgImagePreview'}`);preview.hidden=!event.target.value;if(event.target.value)preview.src=event.target.value;else preview.removeAttribute('src')}});
     $('#mediaUploadForm').addEventListener('submit',event=>uploadFromLibrary(event));
     $('#mediaGrid').addEventListener('click',event=>{const copy=event.target.closest('[data-copy-url]'),remove=event.target.closest('[data-delete-media]');if(copy)navigator.clipboard?.writeText(copy.dataset.copyUrl).then(()=>notify('Public URL copied.')).catch(()=>notify(copy.dataset.copyUrl));if(remove)deleteMedia(remove.dataset.deleteMedia)});

@@ -357,7 +357,9 @@ function applySiteSettings(){
   if(videoURL)document.querySelectorAll('video[data-lazy-video] source').forEach(source=>{
     if(source.dataset.src===videoURL)return;
     source.dataset.src=videoURL;
-    if(source.src)loadLazyVideo(source.parentElement);
+    const pathname=new URL(videoURL,document.baseURI).pathname.toLowerCase();
+    source.type=pathname.endsWith('.webm')?'video/webm':'video/mp4';
+    loadLazyVideo(source.parentElement);
   });
   setText('.promo-card-copy h3',SITE_SETTINGS.home_promo_title);
   const meta=document.querySelector('meta[name="description"]');if(meta&&SITE_SETTINGS.meta_description)meta.content=SITE_SETTINGS.meta_description;

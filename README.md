@@ -29,15 +29,7 @@ No `.env` file is needed for this layout: the browser loads `js/supabase-config.
 
 To preview locally, serve the repository root with any static file server, for example `python3 -m http.server 8000`, then open `http://localhost:8000`.
 
-The homepage hero video is served from the public Vercel Blob store `gemz-hero-media` in Singapore (`sin1`). Its URL is set directly in `index.html`, so the static site does not need a Blob SDK or runtime token.
-
-The local `assets/hero.mp4` copy is ignored to keep it out of future deployments. To replace the video, upload a new file with a unique URL:
-
-```sh
-vercel blob put ./path/to/new-hero.mp4 --access public --pathname hero.mp4 --add-random-suffix --content-type video/mp4 --cache-control-max-age 31536000
-```
-
-Then update the hero `<source>` URL in `index.html` with the URL returned by the command.
+Homepage videos are served from the public Supabase Storage bucket `gemz-media`. In `/admin.html`, open **Site settings**, upload an MP4 or WebM under **Hero and media**, then save site settings. The uploaded URL is used by the homepage video placements. The bucket allows files up to 50 MB; larger videos need to be compressed before uploading.
 
 ## Supabase and the admin panel
 
@@ -45,7 +37,7 @@ The storefront uses Supabase for its catalog, insights, contact enquiries, site 
 
 1. Create a Supabase project.
 2. Add the project URL and anon/public key to `js/supabase-config.js`. The anon key is intended for browser use; never put a `service_role` key in the website.
-3. Run `supabase/schema.sql` in the project SQL editor. It creates the tables, public/admin row-level security policies, the `gemz-media` storage bucket, and starter products and articles. If the project is already set up, run the updated SQL again to add product SEO fields and allow favicon image types; existing setting values are kept.
+3. Run `supabase/schema.sql` in the project SQL editor. It creates the tables, public/admin row-level security policies, the `gemz-media` storage bucket, and starter products and articles. If the project is already set up, run the updated SQL again to add product SEO fields and allow favicon image types; existing setting values are kept, except a retired Vercel Blob URL in `hero_video_url` is cleared.
 4. Create or invite your administrator in Supabase Authentication. Then run the final commented SQL snippet from `supabase/schema.sql` with that user’s email to grant admin access.
 5. Open `/admin.html` and sign in. The admin can manage the product catalog, articles, enquiries, media, page content, store branding, and SEO settings. Store logos and favicons are uploaded through the public-read `gemz-media` bucket. Site settings are public-read so the storefront can display them; do not store private information there.
 
