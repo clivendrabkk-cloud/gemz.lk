@@ -35,9 +35,18 @@
 <script src="js/supabase-config.js"></script>
 <script src="js/app.js"></script>
 <script>
-window.GEMZ_CONTENT_READY.then(()=>{
+window.GEMZ_CONTENT_READY.then(async()=>{
   const params=new URLSearchParams(location.search);
   const slug=params.get('slug');
+  if(slug&&![...JEWELLERY_PRODUCTS,...WATCH_PRODUCTS].some(item=>item.slug===slug)&&window.GEMZ_FETCH_PRODUCT_BY_SLUG){
+    try{
+      const product=await window.GEMZ_FETCH_PRODUCT_BY_SLUG(slug);
+      if(product){
+        if(product.type==='watch')WATCH_PRODUCTS.push(product);
+        else if(product.type==='jewellery')JEWELLERY_PRODUCTS.push(product);
+      }
+    }catch(error){console.warn('Gemz product details could not be loaded.',error)}
+  }
   function renderJewelleryProduct(){
     const product=[...JEWELLERY_PRODUCTS,...WATCH_PRODUCTS].find(item=>item.slug===slug);
     if(slug&&!product){
@@ -81,6 +90,11 @@ window.GEMZ_CONTENT_READY.then(()=>{
   renderJewelleryProduct();
   boot('collection');
   onPageRefresh(renderJewelleryProduct);
+}).catch(error=>{
+  console.error('Gemz product page could not be initialized.',error);
+  document.getElementById('productLoading').hidden=true;
+  const detail=document.querySelector('.detail');detail.hidden=false;
+  detail.innerHTML='<div class="empty"><h2>Product details are unavailable</h2><p>Please try again or contact us for help.</p><a class="btn btn-dark" href="collection.html">Browse the collection</a></div>';
 });
 </script>
 </body></html>

@@ -3,8 +3,8 @@
   const $$ = (selector, root=document) => [...root.querySelectorAll(selector)];
   const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const defaultVisual={colors:['#fff3a8','#f2b705','#a86a00'],background:['#3a2a08','#8a5a12']};
-  const state={client:null,user:null,products:[],categories:[],articles:[],inquiries:[],settings:{},view:'overview',editing:null,editingCategory:null,toastTimer:null};
-  const viewTitles={overview:'Overview',catalog:'Catalog',categories:'Categories',articles:'Insights',inquiries:'Inquiries',media:'Media library',settings:'Site settings'};
+  const state={client:null,user:null,products:[],categories:[],articles:[],inquiries:[],settings:{},privateSettings:[],view:'overview',editing:null,editingCategory:null,toastTimer:null,sitemapText:''};
+  const viewTitles={overview:'Overview',catalog:'Catalog',categories:'Categories',articles:'Insights',inquiries:'Inquiries',media:'Media library',settings:'Site settings',seo:'SEO Dashboard'};
 
   function notify(message,type='success'){
     const toast=$('#toast');toast.textContent=message;toast.className=`toast show${type==='error'?' error':''}`;
@@ -49,7 +49,8 @@
       categories:state.client.from('product_categories').select('*').order('product_type').order('sort_order').order('name'),
       articles:state.client.from('articles').select('*').order('created_at',{ascending:false}),
       inquiries:state.client.from('inquiries').select('*').order('created_at',{ascending:false}),
-      settings:state.client.from('site_settings').select('*').order('setting_key')
+      settings:state.client.from('site_settings').select('*').order('setting_key'),
+      privateSettings:state.client.from('private_site_settings').select('secret_key')
     };
     let results;
     try{results=await Promise.all(Object.entries(resources).map(async([name,request])=>[name,await request]))}
@@ -62,6 +63,7 @@
       if(name==='articles')state.articles=result.data||[];
       if(name==='inquiries')state.inquiries=result.data||[];
       if(name==='settings')state.settings=Object.fromEntries((result.data||[]).map(row=>[row.setting_key,row.setting_value]));
+      if(name==='privateSettings')state.privateSettings=(result.data||[]).map(row=>row.secret_key);
     }
     renderAll();
     if(errors.length)notify(`Some admin data could not be refreshed. ${errors.join(' · ')}`,'error');
@@ -98,7 +100,16 @@
   }
   function settingValue(key){const value=state.settings[key];return value==null?'':typeof value==='string'?value:String(value)}
   function refreshSettingPreviews(){[['store_logo_url','storeLogoPreview'],['store_favicon_url','storeFaviconPreview'],['seo_og_image','seoOgImagePreview']].forEach(([key,id])=>{const preview=$(`#${id}`),url=settingValue(key);preview.hidden=!url;if(url)preview.src=url;else preview.removeAttribute('src')})}
-  function populateSettings(){for(const [key,value] of Object.entries(state.settings)){const field=$(`[name="${CSS.escape(key)}"]`,$('#settingsForm'));if(field)field.value=typeof value==='string'?value:String(value??'')}refreshSettingPreviews()}
+  function populateSettings(){
+    for(const [key,value] of Object.entries(state.settings)){
+      const field=$(`[name="${CSS.escape(key)}"]`,document);
+      if(field&&field.type!=='file'&&field.type!=='checkbox')field.value=typeof value==='string'?value:String(value??'');
+    }
+    refreshSettingPreviews();
+    const secretStatus=$('#seoSecretStatus');
+    if(secretStatus)secretStatus.textContent=state.privateSettings.includes('seo_capi_access_token')?'A Conversions API token is stored in the admin-only settings table.':'No Conversions API token is stored.';
+    updateSeoPreviews();updateRobotsPreview();updateAdsTxtPreview();
+  }
 
   function openEditor(kind,row=null){
     state.editing={kind,id:row?.id||null};
@@ -118,15 +129,35 @@
     $('#categoryDialog').showModal();
   }
   function formatSpecLabel(value){
-    const aliases={treat:'Treatment',colour:'Colour',codeNo:'Code No'};
+    const aliases={treat:'Treatment',colour:'Colour',codeNo:'Code No',code_no:'Code No',setting_type:'Setting type',final_finishing:'Final finishing',diamond_colour:'Diamond Colour',clarity_grade:'Clarity Grade'};
     if(Object.hasOwn(aliases,value))return aliases[value];
     return String(value||'').replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/[_-]+/g,' ').replace(/\b\w/g,letter=>letter.toUpperCase()).trim();
   }
-  function specificationRows(specs){
+  function canonicalSpecKey(label){
+    let key=String(label||'').replace(/([a-z0-9])([A-Z])/g,'$1_$2').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+    if(['color','colour'].includes(key))key='colour';
+    if(['treatment','treatments','treat'].includes(key))key='treat';
+    if(['clarity','clarity_grade'].includes(key))key='clarity_grade';
+    if(['code_no','codeno'].includes(key))key='code_no';
+    return key;
+  }
+  const specificationTemplates={
+    jewellery:['Metal','Weight','Gemstones','Gemstone Weight','Number of Diamonds','Diamond Weight','Diamond Colour','Diamond Clarity','Setting type','Final finishing','Dimensions','Comment'],
+    gem:['Code No','Stone','Weight','Clarity Grade','Colour','Origin','Dimensions','Shape','Cut','Treatment','Certificate','Comment']
+  };
+  function specificationRows(specs,type='gem'){
     const entries=specs&&typeof specs==='object'&&!Array.isArray(specs)
-      ?Object.entries(specs).filter(([,value])=>value==null||typeof value!=='object').map(([label,value])=>({label:formatSpecLabel(label),value:String(value??'')}))
+      ?Object.entries(specs).filter(([,value])=>value==null||typeof value!=='object').map(([label,value])=>({label:formatSpecLabel(label),key:canonicalSpecKey(label),value:String(value??'')}))
       :[];
-    return (entries.length?entries:[{label:'',value:''},{label:'',value:''}]).map(({label,value})=>`<div class="specification-row"><label>Specification<input name="spec_name" value="${escapeHTML(label)}" placeholder="e.g. Origin"></label><label>Details<input name="spec_value" value="${escapeHTML(value)}" placeholder="e.g. Ratnapura, Sri Lanka"></label><button class="small-button remove-spec" type="button" data-remove-spec aria-label="Remove specification">Remove</button></div>`).join('');
+    const defaultLabels=specificationTemplates[type]||[];
+    const defaultKeys=new Set(defaultLabels.map(canonicalSpecKey));
+    const rows=defaultLabels.map(label=>({label,value:entries.find(item=>item.key===canonicalSpecKey(label))?.value||''}));
+    rows.push(...entries.filter(item=>!defaultKeys.has(item.key)));
+    const displayRows=rows.length?rows:[{label:'',value:''},{label:'',value:''}];
+    return displayRows.map(({label,value})=>specificationRowHTML(label,value)).join('');
+  }
+  function specificationRowHTML(label='',value=''){
+    return `<div class="specification-row"><label>Specification<input name="spec_name" value="${escapeHTML(label)}" placeholder="e.g. Origin"></label><label>Details<input name="spec_value" value="${escapeHTML(value)}" placeholder="Enter a value"></label><button class="small-button remove-spec" type="button" data-remove-spec aria-label="Remove specification">Remove</button></div>`;
   }
   function productFields(row){
     const value=(key,fallback='')=>escapeHTML(row?.[key]??fallback);
@@ -142,7 +173,7 @@
       <label>Storefront status<select name="status"><option value="draft" ${value('status','published')==='draft'?'selected':''}>Draft</option><option value="published" ${value('status','published')==='published'?'selected':''}>Published</option><option value="archived" ${value('status')==='archived'?'selected':''}>Archived</option></select><span class="field-help">Published products appear on the customer storefront.</span></label>
       <label>Display order<input name="sort_order" type="number" value="${value('sort_order','0')}"></label>
       <label class="check-row"><input name="featured" type="checkbox" ${row?.featured?'checked':''}> Feature this item</label>
-      <section class="full specifications-editor" aria-label="Product specifications"><div class="specifications-heading"><div><b>Specifications</b><span class="field-help">Add details such as origin, colour, weight, clarity or material.</span></div><button class="small-button" type="button" data-add-spec>Add specification</button></div><div class="specification-list">${specificationRows(row?.specs)}</div></section>`;
+      <section class="full specifications-editor" aria-label="Product specifications"><div class="specifications-heading"><div><b>Specifications</b><span class="field-help">Product type loads its standard fields. Leave unused values blank or add your own specifications.</span></div><button class="small-button" type="button" data-add-spec>Add specification</button></div><div class="specification-list">${specificationRows(row?.specs,row?.product_type||'gem')}</div></section>`;
   }
   function articleFields(row){
     const value=key=>escapeHTML(row?.[key]||'');
@@ -168,7 +199,6 @@
       let key=label.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
       if(['color','colour'].includes(key))key='colour';
       if(['treatment','treatments'].includes(key))key='treat';
-      if(['clarity_grade'].includes(key))key='clarity';
       if(key==='code_no')key='codeNo';
       if(Object.hasOwn(specs,key))throw new Error(`“${label}” is listed more than once. Each specification name must be unique.`);
       specs[key]=value;
@@ -221,12 +251,22 @@
     if(error){notify(error.message,'error');return}notify('Inquiry updated.');await loadAll();
   }
   async function saveSettings(event){
-    event.preventDefault();const fd=new FormData(event.currentTarget);
-    const rows=[...fd.entries()].map(([setting_key,setting_value])=>({setting_key,setting_value,updated_at:new Date().toISOString()}));
+    event.preventDefault();const form=event.currentTarget,fd=new FormData(form),isSeo=form.id==='seoForm';
+    const token=String(fd.get('seo_capi_access_token')||'').trim(),clearToken=fd.has('seo_capi_clear_token');
+    const rows=[...fd.entries()].filter(([key])=>!['seo_capi_access_token','seo_capi_clear_token'].includes(key)&&!key.endsWith('File')).map(([setting_key,setting_value])=>({setting_key,setting_value,updated_at:new Date().toISOString()}));
     const {error}=await state.client.from('site_settings').upsert(rows,{onConflict:'setting_key'});
-    if(error){$('#settingsNotice').textContent=error.message;return}
-    $('#settingsNotice').textContent='Settings saved. Changes are now live on the storefront.';$('#settingsNotice').classList.add('success');
-    notify('Site settings saved.');announceStorefrontChange();await loadAll();
+    const notice=$(isSeo?'#seoNoticeGlobal':'#settingsNotice');
+    if(error){notice.textContent=error.message;notice.classList.remove('success');return}
+    if(isSeo&&(token||clearToken)){
+      const secretResult=clearToken
+        ?await state.client.from('private_site_settings').delete().eq('secret_key','seo_capi_access_token')
+        :await state.client.from('private_site_settings').upsert({secret_key:'seo_capi_access_token',secret_value:token,updated_at:new Date().toISOString()},{onConflict:'secret_key'});
+      if(secretResult.error){notice.textContent=`Public SEO settings saved, but the private token could not be saved. ${secretResult.error.message}`;notice.classList.remove('success');return}
+      $('#seoCapiClearToken').checked=false;
+      $('#seoCapiToken').value='';
+    }
+    notice.textContent=isSeo?'SEO settings saved. Public metadata and enabled integrations are live.':'Site settings saved. Changes are now live on the storefront.';notice.classList.add('success');
+    notify(isSeo?'SEO settings saved.':'Site settings saved.');announceStorefrontChange();await loadAll();
   }
 
   async function loadMedia(){
@@ -245,11 +285,11 @@
     try{await uploadFile(file);event.currentTarget.reset();await loadMedia();notify('File uploaded to Supabase Storage.')}catch(error){notify(error.message||'Upload failed.','error')}
   }
   async function handleSettingsUpload(button){
-    const input=$(`#${button.dataset.fileTarget}`),field=$(`[name="${CSS.escape(button.dataset.settingsUpload)}"]`,$('#settingsForm'));
-    try{const url=await uploadFile(input.files?.[0]);field.value=url;const preview=$(`#${button.dataset.settingsUpload==='store_logo_url'?'storeLogoPreview':button.dataset.settingsUpload==='store_favicon_url'?'storeFaviconPreview':'seoOgImagePreview'}`);preview.src=url;preview.hidden=false;notify('Image uploaded. Save site settings to publish it.')}catch(error){notify(error.message||'Upload failed.','error')}
+    const form=button.closest('form'),input=$(`#${button.dataset.fileTarget}`),field=$(`[name="${CSS.escape(button.dataset.settingsUpload)}"]`,form);
+    try{const url=await uploadFile(input.files?.[0]);field.value=url;const preview=$(`#${button.dataset.settingsUpload==='store_logo_url'?'storeLogoPreview':button.dataset.settingsUpload==='store_favicon_url'?'storeFaviconPreview':'seoOgImagePreview'}`);preview.src=url;preview.hidden=false;updateSeoPreviews();notify('Image uploaded. Save site settings to publish it.')}catch(error){notify(error.message||'Upload failed.','error')}
   }
-  async function handleSettingsVideoUpload(){
-    try{const url=await uploadFile($('#heroVideoFile').files?.[0]);$('#settingsForm [name="hero_video_url"]').value=url;notify('Video uploaded to Supabase Storage. Save site settings to publish it.')}catch(error){notify(error.message||'Upload failed.','error')}
+  async function handleSettingsVideoUpload(button){
+    try{const url=await uploadFile($(`#${button.dataset.fileTarget}`).files?.[0]);button.closest('form').elements[button.dataset.settingsVideoUpload].value=url;notify('Video uploaded to Supabase Storage. Save site settings to publish it.')}catch(error){notify(error.message||'Upload failed.','error')}
   }
   async function deleteMedia(name){
     if(!confirm(`Delete ${name} from storage? Any page using its URL will stop showing it.`))return;
@@ -257,8 +297,78 @@
     if(error){notify(error.message,'error');return}await loadMedia();notify('Media file deleted.');
   }
 
+  function setSeoTab(name){
+    const allowed=['overview','technical','offpage','tools','sitemap'];
+    if(!allowed.includes(name))return;
+    $$('[data-seo-tab]').forEach(button=>{
+      const active=button.dataset.seoTab===name;
+      button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));
+    });
+    $$('[data-seo-panel]').forEach(panel=>panel.hidden=panel.dataset.seoPanel!==name);
+  }
+  function seoBaseURL(){
+    try{const value=new URL($('#seoForm [name="seo_site_url"]').value.trim()||location.origin);return /^https?:$/.test(value.protocol)?value.origin:location.origin}catch{return location.origin}
+  }
+  function updateSeoPreviews(){
+    const form=$('#seoForm');if(!form)return;
+    const title=form.elements.seo_home_title?.value.trim()||settingValue('store_name')||'Gemz.lk';
+    const description=form.elements.meta_description?.value.trim()||'Add a concise description of the store.';
+    const siteUrl=seoBaseURL(),domain=new URL(siteUrl).host;
+    $('#seoTitleCount').textContent=String(form.elements.seo_home_title?.value.length||0);
+    $('#seoDescriptionCount').textContent=String(form.elements.meta_description?.value.length||0);
+    $('#seoSearchTitle').textContent=title;$('#seoSearchURL').textContent=siteUrl;$('#seoSearchDescription').textContent=description;
+    $('#seoOgDomain').textContent=domain;
+    $('#seoOgTitlePreview').textContent=form.elements.seo_og_title?.value.trim()||title;
+    $('#seoOgDescriptionPreview').textContent=form.elements.seo_og_description?.value.trim()||description;
+    const image=String(form.elements.seo_og_image?.value||'').trim(),imageCard=$('#seoOgImagePreviewCard');
+    let safeImage='';try{const parsed=new URL(image,location.href);if(/^https?:$/.test(parsed.protocol))safeImage=parsed.href}catch{}
+    imageCard.style.backgroundImage=safeImage?`linear-gradient(#0c0e1366,#0c0e1366),url("${safeImage.replace(/["\\]/g,'')}")`:'';
+    imageCard.textContent=safeImage?'':'Gemz.lk';
+    $('#seoBacklinkURL').value=siteUrl;
+  }
+  function updateRobotsPreview(){
+    const field=$('#robotsText');if(!field)return;
+    $('#robotsPreview').textContent=field.value.trim()||`User-agent: *\nAllow: /\nSitemap: ${seoBaseURL()}/sitemap.xml`;
+  }
+  function downloadText(filename,contents,type='text/plain'){
+    const blob=new Blob([contents],{type:`${type};charset=utf-8`}),url=URL.createObjectURL(blob),link=document.createElement('a');
+    link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  function xmlEscape(value){return String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[char]))}
+  function generateSitemap(){
+    const base=seoBaseURL(),now=new Date().toISOString().slice(0,10),paths=['/','/collection.html','/about.html','/insights.html','/contact.html'];
+    const urls=paths.map(path=>({loc:new URL(path,base).href,lastmod:now}));
+    for(const category of state.categories){
+      const url=new URL('/collection.html',base);url.searchParams.set('section',category.product_type);url.searchParams.set('category',category.name);
+      urls.push({loc:url.href,lastmod:String(category.updated_at||category.created_at||now).slice(0,10)});
+    }
+    for(const product of state.products.filter(item=>item.status==='published')){
+      const file=product.product_type==='gem'?'gemstone.html':'jewellery-product.html',url=new URL(`/${file}`,base);url.searchParams.set('slug',product.slug);
+      urls.push({loc:url.href,lastmod:String(product.updated_at||product.created_at||now).slice(0,10)});
+    }
+    const lastmodRegex=/^\d{4}-\d{2}-\d{2}$/;
+    state.sitemapText=`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(item=>`  <url><loc>${xmlEscape(item.loc)}</loc><lastmod>${lastmodRegex.test(item.lastmod)?item.lastmod:now}</lastmod></url>`).join('\n')}\n</urlset>`;
+    $('#sitemapPreview').textContent=state.sitemapText;$('#sitemapCount').textContent=`${urls.length} URLs`;$('#downloadSitemap').disabled=false;
+  }
+  function downloadRobots(){updateRobotsPreview();downloadText('robots.txt',$('#robotsPreview').textContent.trim()+'\n')}
+  function adsTxtContents(){
+    const raw=String($('#seoForm').elements.seo_adsense_id.value||'').trim(),publisher=raw.replace(/^ca-/i,'');
+    const lines=/^pub-\d{10,20}$/.test(publisher)?[`google.com, ${publisher}, DIRECT, f08c47fec0942fa0`]:[];
+    const extras=String($('#seoForm').elements.seo_ads_txt_lines.value||'').split(/\r?\n/).map(line=>line.trim()).filter(Boolean);
+    return [...new Set([...lines,...extras])].join('\n');
+  }
+  function updateAdsTxtPreview(){
+    const contents=adsTxtContents();
+    $('#adsTxtPreview').textContent=contents||'Enter a valid AdSense publisher ID or additional seller lines to preview ads.txt.';
+  }
+  function downloadAdsTxt(){
+    const contents=adsTxtContents();
+    if(!contents){notify('Enter a valid AdSense publisher ID or additional seller lines.','error');return}
+    downloadText('ads.txt',contents+'\n');
+  }
+
   function bindEvents(){
-    $$('.side-nav button').forEach(button=>button.addEventListener('click',()=>{setView(button.dataset.view);if(button.dataset.view==='media')loadMedia()}));
+    $$('.side-nav button').forEach(button=>button.addEventListener('click',()=>{setView(button.dataset.view);if(button.dataset.view==='media')loadMedia();if(button.dataset.view==='seo')updateSeoPreviews()}));
     $$('[data-jump]').forEach(button=>button.addEventListener('click',()=>setView(button.dataset.jump)));
     $('#menuToggle').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
     $('#refreshButton').addEventListener('click',()=>loadAll().then(()=>state.view==='media'?loadMedia():null));
@@ -277,18 +387,36 @@
     $('#editorForm').addEventListener('submit',event=>saveRecord(event).catch(error=>notify(error.message||'Could not save record.','error')));
     $('#editorFields').addEventListener('click',event=>{
       const upload=event.target.closest('[data-upload-inline]');if(upload){handleInlineUpload(upload.dataset.uploadInline);return}
-      if(event.target.closest('[data-add-spec]')){$('.specification-list').insertAdjacentHTML('beforeend',specificationRows({}));return}
+      if(event.target.closest('[data-add-spec]')){$('.specification-list').insertAdjacentHTML('beforeend',specificationRowHTML());return}
       if(event.target.closest('[data-remove-spec]'))event.target.closest('.specification-row').remove();
     });
     $('#editorFields').addEventListener('change',event=>{
-      if(event.target.name==='product_type')$('#editorFields [name="category"]').innerHTML=categoryOptions(event.target.value);
+      if(event.target.name==='product_type'){
+        $('#editorFields [name="category"]').innerHTML=categoryOptions(event.target.value);
+        $('.specification-list').innerHTML=specificationRows({},event.target.value);
+      }
     });
     $('#closeDialog').addEventListener('click',()=>$('#editorDialog').close());$('#cancelDialog').addEventListener('click',()=>$('#editorDialog').close());
     $('#categoryForm').addEventListener('submit',event=>saveCategory(event).catch(error=>notify(error.message||'Could not save category.','error')));
     $('#closeCategoryDialog').addEventListener('click',()=>$('#categoryDialog').close());$('#cancelCategoryDialog').addEventListener('click',()=>$('#categoryDialog').close());
     $('#settingsForm').addEventListener('submit',event=>saveSettings(event).catch(error=>notify(error.message,'error')));
-    $('#settingsForm').addEventListener('click',event=>{const button=event.target.closest('[data-settings-upload]');if(button)handleSettingsUpload(button);if(event.target.closest('[data-settings-video-upload]'))handleSettingsVideoUpload()});
-    $('#settingsForm').addEventListener('input',event=>{if(event.target.name==='store_logo_url'||event.target.name==='store_favicon_url'||event.target.name==='seo_og_image'){const preview=$(`#${event.target.name==='store_logo_url'?'storeLogoPreview':event.target.name==='store_favicon_url'?'storeFaviconPreview':'seoOgImagePreview'}`);preview.hidden=!event.target.value;if(event.target.value)preview.src=event.target.value;else preview.removeAttribute('src')}});
+    $('#seoForm').addEventListener('submit',event=>saveSettings(event).catch(error=>notify(error.message,'error')));
+    $('#settingsForm').addEventListener('click',event=>{const button=event.target.closest('[data-settings-upload]'),video=event.target.closest('[data-settings-video-upload]');if(button)handleSettingsUpload(button);if(video)handleSettingsVideoUpload(video)});
+    $('#seoForm').addEventListener('click',event=>{const button=event.target.closest('[data-settings-upload]');if(button)handleSettingsUpload(button)});
+    $('#settingsForm').addEventListener('input',event=>{if(event.target.name==='store_logo_url'||event.target.name==='store_favicon_url'){const preview=$(`#${event.target.name==='store_logo_url'?'storeLogoPreview':'storeFaviconPreview'}`);preview.hidden=!event.target.value;if(event.target.value)preview.src=event.target.value;else preview.removeAttribute('src')}});
+    $('#seoForm').addEventListener('input',event=>{
+      updateSeoPreviews();
+      if(event.target.name==='seo_og_image'){const preview=$('#seoOgImagePreview');preview.hidden=!event.target.value;if(event.target.value)preview.src=event.target.value;else preview.removeAttribute('src')}
+      if(event.target.name==='seo_robots_txt'||event.target.name==='seo_site_url')updateRobotsPreview();
+      if(event.target.name==='seo_adsense_id'||event.target.name==='seo_ads_txt_lines')updateAdsTxtPreview();
+    });
+    $$('[data-seo-tab]').forEach(button=>button.addEventListener('click',()=>setSeoTab(button.dataset.seoTab)));
+    $('#generateSitemap').addEventListener('click',generateSitemap);
+    $('#downloadSitemap').addEventListener('click',()=>{if(state.sitemapText)downloadText('sitemap.xml',state.sitemapText,'application/xml')});
+    $('#previewRobots').addEventListener('click',updateRobotsPreview);
+    $('#downloadRobots').addEventListener('click',downloadRobots);
+    $('#downloadAdsTxt').addEventListener('click',downloadAdsTxt);
+    $('#copyBacklinkURL').addEventListener('click',()=>navigator.clipboard?.writeText($('#seoBacklinkURL').value).then(()=>notify('Store URL copied.')).catch(()=>notify($('#seoBacklinkURL').value)));
     $('#mediaUploadForm').addEventListener('submit',event=>uploadFromLibrary(event));
     $('#mediaGrid').addEventListener('click',event=>{const copy=event.target.closest('[data-copy-url]'),remove=event.target.closest('[data-delete-media]');if(copy)navigator.clipboard?.writeText(copy.dataset.copyUrl).then(()=>notify('Public URL copied.')).catch(()=>notify(copy.dataset.copyUrl));if(remove)deleteMedia(remove.dataset.deleteMedia)});
   }

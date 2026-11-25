@@ -45,13 +45,18 @@ let ARTICLES = [
   {t:'Caring for your fine gemstones',k:'Care',g:1,p:'Cleaning, storage and setting advice to keep stones brilliant for generations.'},
   {t:'Why natural gems hold value',k:'Insight',g:3,p:'Rarity, provenance and demand across three continents.'}
 ];
-let SITE_SETTINGS = {};
+let SITE_SETTINGS = (()=>{try{const saved=JSON.parse(localStorage.getItem('gemz-public-site-settings')||'{}');return saved&&typeof saved==='object'&&!Array.isArray(saved)?saved:{}}catch{return{}}})();
 let publicContentRequest=0;
 
 const htmlEscape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 function publicMediaURL(value){
   const url=String(value||'').trim();
   return /^(https?:\/\/|\/)/i.test(url)&&!/^javascript:/i.test(url)?url:'';
+}
+function safeWhatsAppURL(value){
+  const raw=String(value||'').trim();
+  if(/^https?:\/\//i.test(raw)){try{const url=new URL(raw);return /^https?:$/.test(url.protocol)?url.href:''}catch{return''}}
+  const digits=raw.replace(/\D/g,'');return digits.length>=8&&digits.length<=15?`https://wa.me/${digits}`:'';
 }
 function productFromRow(row){
   const specs=row.specs||{},visual=row.visual||{};
@@ -134,7 +139,10 @@ async function loadPublicContent(){
       t:row.title,k:row.category||'Insight',g:0,p:row.excerpt||'',slug:row.slug,content:row.content||'',
       image_url:publicMediaURL(row.cover_image)
     }));
-    if(settings) SITE_SETTINGS=Object.fromEntries(settings.map(row=>[row.setting_key,row.setting_value]));
+    if(settings){
+      SITE_SETTINGS=Object.fromEntries(settings.map(row=>[row.setting_key,row.setting_value]));
+      try{localStorage.setItem('gemz-public-site-settings',JSON.stringify(SITE_SETTINGS))}catch{}
+    }
     const loaded=Boolean(products||categories||articles||settings);
     if(!loaded)console.warn('Gemz public content could not be loaded from Supabase.');
     return loaded;
@@ -142,23 +150,22 @@ async function loadPublicContent(){
   if(requestId!==publicContentRequest)return null;
   return false;
 }
-// Public pages render from the built-in content immediately. Supabase refreshes in the
-// background and notifies pages when it is ready, so network latency never blocks first paint.
+window.GEMZ_FETCH_PRODUCT_BY_SLUG=async slug=>{
+  if(!slug)return null;
+  const rows=await fetchPublicTable('products',{select:'*',slug:`eq.${slug}`,status:'eq.published',limit:'1'});
+  return rows[0]?productFromRow(rows[0]):null;
+};
 window.GEMZ_READY=Promise.resolve();
 window.GEMZ_CONTENT_PENDING=true;
-let contentSettled=false;
 function announcePublicContent(loaded){
   window.GEMZ_CONTENT_PENDING=false;
   window.GEMZ_CONTENT_LOADED=loaded;
   window.dispatchEvent(new CustomEvent('gemz-content-updated',{detail:{loaded}}));
+  document.documentElement.classList.add('gemz-content-ready');
 }
-const contentFallbackTimer=window.setTimeout(()=>{
-  if(!contentSettled)announcePublicContent(false);
-},2500);
 window.GEMZ_CONTENT_READY=loadPublicContent().then(loaded=>{
-  contentSettled=true;
-  window.clearTimeout(contentFallbackTimer);
   if(loaded!==null)announcePublicContent(loaded);
+  else announcePublicContent(false);
   return loaded;
 });
 let publicContentRefreshAt=Date.now();
@@ -228,6 +235,12 @@ function layout(active){
   const navHome=label('nav_home','Home'),navCollection=label('nav_collection','Our Gemstones'),navGems=label('nav_gemstones','GEM'),navJewellery=label('nav_jewellery','JEWELLERY'),navAllJewellery=label('nav_all_jewellery','All Jewellery'),navWatches=label('nav_watches','WATCH'),navAbout=label('nav_about','About us'),navInsights=label('nav_insights','Insights'),navContact=label('nav_contact','Contact Us'),navAccount=label('nav_account','Account');
   const gemNavLinks=GEM_CATEGORIES.map(category=>`<a href="${categoryBrowseURL('gem',category.label)}">${htmlEscape(category.label)}</a>`).join('');
   const jewelleryNavLinks=JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('');
+  const socialProfiles=[['seo_social_facebook','Facebook'],['seo_social_instagram','Instagram'],['seo_social_x','X'],['seo_social_youtube','YouTube'],['seo_social_linkedin','LinkedIn'],['seo_social_pinterest','Pinterest'],['seo_social_tiktok','TikTok']];
+  const socialMarkup=socialProfiles.map(([key,name])=>{
+    try{const url=new URL(String(SITE_SETTINGS[key]||''));return /^https?:$/.test(url.protocol)?`<a href="${htmlEscape(url.href)}" target="_blank" rel="me noopener noreferrer">${name}</a>`:''}catch{return''}
+  }).join('');
+  const whatsAppURL=safeWhatsAppURL(SITE_SETTINGS.seo_social_whatsapp);
+  const whatsAppMarkup=whatsAppURL?`<a href="${htmlEscape(whatsAppURL)}" target="_blank" rel="me noopener noreferrer">WhatsApp</a>`:'';
   document.getElementById('site-header').innerHTML=`
   <div class="announce"><span class="sr-only">${announce}</span><div class="announce-track" aria-hidden="true">${Array(8).fill(`<span>${announce}</span><span>Over 40 Years of Ceylon Gem Expertise.</span>`).join('')}</div></div>
   <header class="header" id="hdr"><div class="header-in">
@@ -244,11 +257,14 @@ function layout(active){
     </div></div></header>
   <div class="mobile-nav" id="mnav" inert><a href="index.html">${navHome}</a><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=gem">${navCollection}</a><div class="mobile-jewellery-subnav"><a href="collection.html?section=gem">${navGems}</a>${gemNavLinks}</div></div><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=jewellery">${navJewellery}</a><div class="mobile-jewellery-subnav"><a href="collection.html?section=jewellery">${navAllJewellery}</a>${jewelleryNavLinks}</div></div><a href="collection.html?section=watch">${navWatches}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a><a href="contact.html">${navContact}</a><a href="login.html">${navAccount}</a></div>`;
   document.getElementById('site-footer').innerHTML=`<footer class="footer"><div class="wrap"><div class="foot-grid">
-    <div class="foot-brand"><a href="index.html" class="logo logo-only footer-logo" aria-label="${storeName} home">${brandMark('dark')}</a><p data-setting="footer_tagline">Authentic natural gemstones sourced in Sri Lanka and delivered worldwide. Established 1985.</p></div>
+    <div class="foot-brand"><a href="index.html" class="logo logo-only footer-logo" aria-label="${storeName} home">${brandMark('dark')}</a><p data-setting="footer_tagline">Authentic natural gemstones sourced in Sri Lanka and delivered worldwide. Established 1985.</p>${socialMarkup||whatsAppMarkup?`<nav class="foot-social" aria-label="Social profiles">${socialMarkup}${whatsAppMarkup}</nav>`:''}</div>
     <div><h4>${label('footer_explore_title','Explore')}</h4><a href="index.html">${navHome}</a><a href="collection.html">${navCollection}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a></div>
     <div><h4>${label('footer_account_title','Account')}</h4><a href="cart.html">Inquiry Cart</a><a href="login.html">${navAccount}</a><a href="contact.html">${navContact}</a></div>
     <div><h4>${label('footer_contact_title','Contact')}</h4><a href="mailto:${email}">${email}</a><a href="tel:${phone.replace(/[^+\d]/g,'')}">${phone}</a><a href="contact.html">${address}</a></div>
   </div><div class="foot-bot"><span>© ${new Date().getFullYear()} · ${label('footer_copyright','All rights reserved.')}</span><span>${label('footer_motto','Natural · Authentic · Ceylon')}</span></div></div></footer>`;
+  let quickNav=document.getElementById('mobile-bottom-nav');
+  if(!quickNav){quickNav=document.createElement('nav');quickNav.className='mobile-bottom-nav';quickNav.id='mobile-bottom-nav';quickNav.setAttribute('aria-label','Quick navigation');document.body.append(quickNav)}
+  quickNav.innerHTML=`<a href="index.html"><span aria-hidden="true">⌂</span>${navHome}</a><a href="collection.html?section=gem"><span aria-hidden="true">◇</span>${navGems}</a><a href="collection.html?section=jewellery"><span aria-hidden="true">✧</span>${navJewellery}</a><a href="cart.html"><span aria-hidden="true">▱</span>Inquiry</a>`;
   const b=document.getElementById('burger'),m=document.getElementById('mnav');
   const setMenuOpen=open=>{
     b.classList.toggle('open',open);
@@ -397,13 +413,15 @@ function applySiteSettings(){
   setText('.hero h1',SITE_SETTINGS.hero_title);
   setText('.hero p',SITE_SETTINGS.hero_description);
   setText('.announce span',SITE_SETTINGS.announcement);
-  const videoURL=publicMediaURL(SITE_SETTINGS.hero_video_url);
-  if(videoURL)document.querySelectorAll('video[data-lazy-video] source').forEach(source=>{
+  document.querySelectorAll('video[data-video-setting] source').forEach(source=>{
+    const video=source.parentElement;
+    const videoURL=publicMediaURL(SITE_SETTINGS[video.dataset.videoSetting]);
     if(source.dataset.src===videoURL)return;
     source.dataset.src=videoURL;
+    if(!videoURL){source.removeAttribute('src');video.load();return}
     const pathname=new URL(videoURL,document.baseURI).pathname.toLowerCase();
     source.type=pathname.endsWith('.webm')?'video/webm':'video/mp4';
-    loadLazyVideo(source.parentElement);
+    loadLazyVideo(video);
   });
   setText('.promo-card-copy h3',SITE_SETTINGS.home_promo_title);
   const meta=document.querySelector('meta[name="description"]');if(meta&&SITE_SETTINGS.meta_description)meta.content=SITE_SETTINGS.meta_description;
@@ -421,30 +439,34 @@ function applySeoSettings(overrides={}){
   const pageNames={home:String(SITE_SETTINGS.hero_title||'Fine Gems & Jewellery from Sri Lanka'),collection:'Gemstones, Jewellery & Watches',insights:'Gemstone Guides & Insights',contact:'Contact Us',about:'About Us',product:'Gemstone & Jewellery Details',cart:'Your Enquiry Selection',login:'Customer Account'};
   const titleTemplate=String(SITE_SETTINGS.seo_title_template||'{page} | {site}');
   const fallbackTitle=page==='home'?(document.title||`${siteName} — Fine Gems & Jewellery`):document.title.split(/\s+[—|]\s+/)[0];
-  const title=String(overrides.title||SITE_SETTINGS[`seo_${page}_title`]|| (page==='home'&&SITE_SETTINGS.seo_title) || titleTemplate.replaceAll('{page}',pageNames[page]||fallbackTitle).replaceAll('{site}',siteName));
+  const title=String(overrides.title||SITE_SETTINGS[`seo_${page}_title`]||(page==='home'&&SITE_SETTINGS.seo_title)||titleTemplate.replaceAll('{page}',pageNames[page]||fallbackTitle).replaceAll('{site}',siteName));
   const description=String(overrides.description||SITE_SETTINGS[`seo_${page}_description`]||SITE_SETTINGS.meta_description||'');
   const setMeta=(selector,attributes,value)=>{
     let node=document.head.querySelector(selector);
     if(!node){node=document.createElement('meta');Object.entries(attributes).forEach(([key,attrValue])=>node.setAttribute(key,attrValue));document.head.append(node)}
     node.content=value;
   };
+  const language=String(SITE_SETTINGS.seo_language||'en').trim();
+  if(/^[a-z]{2,3}(?:-[a-zA-Z0-9]{2,8})*$/.test(language))document.documentElement.lang=language;
   document.title=title;
   setMeta('meta[name="description"]',{name:'description'},description);
   setMeta('meta[name="keywords"]',{name:'keywords'},String(SITE_SETTINGS.seo_keywords||''));
-  if(SITE_SETTINGS.seo_google_verification)setMeta('meta[name="google-site-verification"]',{name:'google-site-verification'},String(SITE_SETTINGS.seo_google_verification));
-  if(SITE_SETTINGS.seo_bing_verification)setMeta('meta[name="msvalidate.01"]',{name:'msvalidate.01'},String(SITE_SETTINGS.seo_bing_verification));
+  if(SITE_SETTINGS.seo_google_verification)setMeta('meta[name="google-site-verification"]',{name:'google-site-verification'},String(SITE_SETTINGS.seo_google_verification));else document.head.querySelector('meta[name="google-site-verification"]')?.remove();
+  if(SITE_SETTINGS.seo_bing_verification)setMeta('meta[name="msvalidate.01"]',{name:'msvalidate.01'},String(SITE_SETTINGS.seo_bing_verification));else document.head.querySelector('meta[name="msvalidate.01"]')?.remove();
   const robots=['index,follow','noindex,follow','noindex,nofollow'].includes(SITE_SETTINGS.seo_robots)?SITE_SETTINGS.seo_robots:'index,follow';
   setMeta('meta[name="robots"]',{name:'robots'},robots);
   const theme=String(SITE_SETTINGS.seo_theme_color||'#171b29');
   setMeta('meta[name="theme-color"]',{name:'theme-color'},/^#[0-9a-f]{6}$/i.test(theme)?theme:'#171b29');
-  setMeta('meta[property="og:title"]',{property:'og:title'},title);
-  setMeta('meta[property="og:description"]',{property:'og:description'},description);
+  const ogTitle=String(overrides.ogTitle||(overrides.type==='product'?title:SITE_SETTINGS.seo_og_title||title));
+  const ogDescription=String(overrides.ogDescription||(overrides.type==='product'?description:SITE_SETTINGS.seo_og_description||description));
+  setMeta('meta[property="og:title"]',{property:'og:title'},ogTitle);
+  setMeta('meta[property="og:description"]',{property:'og:description'},ogDescription);
   setMeta('meta[property="og:type"]',{property:'og:type'},overrides.type||'website');
   setMeta('meta[property="og:site_name"]',{property:'og:site_name'},siteName);
-  setMeta('meta[name="twitter:title"]',{name:'twitter:title'},title);
-  setMeta('meta[name="twitter:description"]',{name:'twitter:description'},description);
+  setMeta('meta[name="twitter:title"]',{name:'twitter:title'},ogTitle);
+  setMeta('meta[name="twitter:description"]',{name:'twitter:description'},ogDescription);
   const handle=String(SITE_SETTINGS.seo_twitter_handle||'').trim();
-  if(handle)setMeta('meta[name="twitter:site"]',{name:'twitter:site'},handle.startsWith('@')?handle:`@${handle}`);
+  if(handle)setMeta('meta[name="twitter:site"]',{name:'twitter:site'},handle.startsWith('@')?handle:`@${handle}`);else document.head.querySelector('meta[name="twitter:site"]')?.remove();
   const rawBase=String(SITE_SETTINGS.seo_site_url||'').trim();
   let baseURL='';
   try{const parsed=new URL(rawBase||location.origin);if(/^https?:$/.test(parsed.protocol))baseURL=parsed.origin}catch{}
@@ -461,21 +483,81 @@ function applySeoSettings(overrides={}){
   const shareImage=assetURL(overrides.image||SITE_SETTINGS.seo_og_image);
   setMeta('meta[name="twitter:card"]',{name:'twitter:card'},shareImage?'summary_large_image':'summary');
   if(shareImage){setMeta('meta[property="og:image"]',{property:'og:image'},shareImage);setMeta('meta[name="twitter:image"]',{name:'twitter:image'},shareImage)}
+  else{document.head.querySelector('meta[property="og:image"]')?.remove();document.head.querySelector('meta[name="twitter:image"]')?.remove()}
   const faviconURL=assetURL(SITE_SETTINGS.store_favicon_url);
   if(faviconURL){let iconLink=document.head.querySelector('link[rel="icon"]');if(!iconLink){iconLink=document.createElement('link');iconLink.rel='icon';document.head.append(iconLink)}iconLink.href=faviconURL}
   const schemaType=['JewelryStore','Store','Organization'].includes(SITE_SETTINGS.seo_schema_type)?SITE_SETTINGS.seo_schema_type:'JewelryStore';
   const schema={
     '@context':'https://schema.org','@type':schemaType,'name':String(SITE_SETTINGS.seo_business_name||siteName),
     ...(baseURL?{url:baseURL}:{}),...(assetURL(SITE_SETTINGS.store_logo_url)?{logo:assetURL(SITE_SETTINGS.store_logo_url)}:{}),
+    sameAs:[...['facebook','instagram','x','youtube','linkedin','pinterest','tiktok'].map(name=>assetURL(SITE_SETTINGS[`seo_social_${name}`])).filter(Boolean),safeWhatsAppURL(SITE_SETTINGS.seo_social_whatsapp)].filter(Boolean),
     ...(SITE_SETTINGS.seo_business_email?{email:String(SITE_SETTINGS.seo_business_email)}:{}),
     ...(SITE_SETTINGS.seo_business_phone?{telephone:String(SITE_SETTINGS.seo_business_phone)}:{}),
     ...(SITE_SETTINGS.seo_business_address?{address:{'@type':'PostalAddress',streetAddress:String(SITE_SETTINGS.seo_business_address),addressCountry:String(SITE_SETTINGS.seo_business_country||'Sri Lanka')}}:{})
   };
   let schemaTag=document.getElementById('gemz-site-schema');if(!schemaTag){schemaTag=document.createElement('script');schemaTag.type='application/ld+json';schemaTag.id='gemz-site-schema';document.head.append(schemaTag)}schemaTag.textContent=JSON.stringify(schema);
+  if(baseURL){
+    const pageLabel=page==='product'?String(overrides.product?.name||document.querySelector('h1')?.textContent||pageNames.product):pageNames[page]||pageNames.home;
+    const trail=[{'@type':'ListItem',position:1,name:'Home',item:baseURL+'/'}];
+    if(page!=='home')trail.push({'@type':'ListItem',position:2,name:pageLabel,item:canonicalURL||baseURL+`/${pathname}`});
+    let crumbs=document.getElementById('gemz-breadcrumb-schema');if(!crumbs){crumbs=document.createElement('script');crumbs.type='application/ld+json';crumbs.id='gemz-breadcrumb-schema';document.head.append(crumbs)}
+    crumbs.textContent=JSON.stringify({'@context':'https://schema.org','@type':'BreadcrumbList',itemListElement:trail});
+  }
   if(overrides.product){
     const productSchema={'@context':'https://schema.org','@type':'Product','name':String(overrides.product.name||''),...(description?{description}:{}),...(shareImage?{image:shareImage}:{}),...(overrides.product.category?{category:String(overrides.product.category)}:{})};
     let productTag=document.getElementById('gemz-product-schema');if(!productTag){productTag=document.createElement('script');productTag.type='application/ld+json';productTag.id='gemz-product-schema';document.head.append(productTag)}productTag.textContent=JSON.stringify(productSchema);
   }else document.getElementById('gemz-product-schema')?.remove();
+  applyPublicSeoTools();
+}
+function replacePublicIntegration(name,signature,build){
+  const selector=`[data-gemz-integration="${name}"]`,existing=[...document.querySelectorAll(selector)];
+  if(existing.some(node=>node.dataset.gemzSignature===signature))return;
+  existing.forEach(node=>node.remove());
+  if(signature)build(node=>{node.dataset.gemzIntegration=name;node.dataset.gemzSignature=signature;return node});
+}
+function appendMarkedScript(name,signature,parent,source,inline=''){
+  const script=document.createElement('script');
+  if(source){script.src=source;script.async=true}else script.textContent=inline;
+  script.dataset.gemzIntegration=name;script.dataset.gemzSignature=signature;
+  parent.append(script);
+}
+function applyCustomPublicCode(position,code){
+  const text=String(code||''),stateKey=`gemzCustom${position}`;
+  if(window[stateKey]===text)return;
+  document.querySelectorAll(`[data-gemz-custom-code="${position}"]`).forEach(node=>node.remove());
+  window[stateKey]=text;
+  if(!text.trim())return;
+  const target=position==='head'?document.head:document.body,parsed=new DOMParser().parseFromString(text,'text/html');
+  [...parsed.body.childNodes].filter(node=>node.nodeType===Node.ELEMENT_NODE).forEach(node=>{
+    const clone=node.cloneNode(true);clone.dataset.gemzCustomCode=position;target.append(clone);
+    const scripts=[...(clone.matches?.('script')?[clone]:[]),...clone.querySelectorAll('script')];
+    scripts.forEach(oldScript=>{
+      const live=document.createElement('script');
+      [...oldScript.attributes].forEach(attribute=>live.setAttribute(attribute.name,attribute.value));
+      live.dataset.gemzCustomCode=position;live.textContent=oldScript.textContent;oldScript.replaceWith(live);
+    });
+  });
+}
+function applyPublicSeoTools(){
+  const ga4=String(SITE_SETTINGS.seo_ga4_id||'').trim(),gtm=String(SITE_SETTINGS.seo_gtm_id||'').trim();
+  const ga4Valid=/^G-[A-Z0-9]+$/i.test(ga4),gtmValid=/^GTM-[A-Z0-9]+$/i.test(gtm);
+  replacePublicIntegration('ga4',ga4Valid?ga4:'',append=>{
+    appendMarkedScript('ga4',ga4,document.head,null,`window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){dataLayer.push(arguments)};gtag('js',new Date());gtag('config','${ga4}');`);
+    appendMarkedScript('ga4',ga4,document.head,`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(ga4)}`);
+  });
+  replacePublicIntegration('gtm',gtmValid?gtm:'',()=>{
+    appendMarkedScript('gtm',gtm,document.head,null,`window.dataLayer=window.dataLayer||[];window.dataLayer.push({'gtm.start':new Date().getTime(),event:'gtm.js'});`);
+    appendMarkedScript('gtm',gtm,document.head,`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(gtm)}`);
+  });
+  const pixel=String(SITE_SETTINGS.seo_facebook_pixel_id||'').trim(),pixelValid=/^\d{5,25}$/.test(pixel);
+  replacePublicIntegration('pixel',pixelValid?pixel:'',()=>appendMarkedScript('pixel',pixel,document.head,null,`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${pixel}');fbq('track','PageView');`));
+  const publisher=String(SITE_SETTINGS.seo_adsense_id||'').trim().replace(/^ca-/i,'');
+  const adsValid=/^pub-\d{10,20}$/.test(publisher);
+  replacePublicIntegration('adsense',adsValid?publisher:'',()=>{
+    const script=document.createElement('script');script.async=true;script.crossOrigin='anonymous';script.src=`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-${encodeURIComponent(publisher)}`;script.dataset.gemzIntegration='adsense';script.dataset.gemzSignature=publisher;document.head.append(script);
+  });
+  applyCustomPublicCode('head',SITE_SETTINGS.seo_custom_head);
+  applyCustomPublicCode('footer',SITE_SETTINGS.seo_custom_footer);
 }
 window.addEventListener('gemz-content-updated',event=>{
   if(!event.detail?.loaded){window.GEMZ_PAGE_REFRESH?.();return}

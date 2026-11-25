@@ -45,11 +45,11 @@ window.GEMZ_CONTENT_READY.then(()=>{
     document.title=g.name+' — Gemz.lk';
     applySeoSettings({title:g.seo_title||`${g.name} | ${SITE_SETTINGS.store_name||'Gemz.lk'}`,description:g.seo_description||g.description||g.text,image:g.image_url,type:'product',product:g});
     const gemDetails=[
-      ['Code No',g.codeNo||'—'],['Stone',g.name],['Weight',g.weight||'—'],['Clarity Grade',g.clarity||'—'],['Colour',g.colour||'—'],
-      ['Origin',g.origin||'—'],['Hardness',g.hardness||'—'],['Dimensions',g.dimensions||'—'],['Shape',g.shape||'—'],['Cut',g.cut||'—'],['Treatment',g.treat||'—'],
+      ['Code No',g.codeNo||'—'],['Stone',g.stone||g.name],['Weight',g.weight||'—'],['Clarity Grade',g.clarity_grade||g.clarity||'—'],['Colour',g.colour||'—'],
+      ['Origin',g.origin||'—'],['Dimensions',g.dimensions||'—'],['Shape',g.shape||'—'],['Cut',g.cut||'—'],['Treatment',g.treat||'—'],
       ['Certificate',g.certificate||'—'],['Comment',g.comment||'—']
     ];
-    const standardGemFields=new Set(['codeNo','weight','clarity','colour','origin','hardness','dimensions','shape','cut','treat','certificate','comment']);
+    const standardGemFields=new Set(['codeNo','weight','stone','clarity','clarity_grade','colour','origin','hardness','dimensions','shape','cut','treat','certificate','comment']);
     const extraDetails=Object.entries(g.specs||{}).filter(([key,value])=>value&&!standardGemFields.has(key)).map(([key,value])=>[key.replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/[_-]+/g,' ').replace(/^./,letter=>letter.toUpperCase()),value]);
     gemDetails.push(...extraDetails);
     const detailRows=rows=>rows.map(([label,value])=>`<tr><td>${htmlEscape(label)}</td><td>${htmlEscape(value)}</td></tr>`).join('');

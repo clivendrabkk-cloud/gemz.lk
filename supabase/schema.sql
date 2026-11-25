@@ -116,12 +116,20 @@ create table if not exists public.site_settings (
   updated_at timestamptz not null default now()
 );
 
+-- Integration secrets are admin-only and are never loaded by public storefront pages.
+create table if not exists public.private_site_settings (
+  secret_key text primary key,
+  secret_value text not null,
+  updated_at timestamptz not null default now()
+);
+
 alter table public.gemz_admins enable row level security;
 alter table public.product_categories enable row level security;
 alter table public.products enable row level security;
 alter table public.articles enable row level security;
 alter table public.inquiries enable row level security;
 alter table public.site_settings enable row level security;
+alter table public.private_site_settings enable row level security;
 
 drop policy if exists "admins can read own membership" on public.gemz_admins;
 create policy "admins can read own membership" on public.gemz_admins
@@ -161,6 +169,12 @@ create policy "settings are public to read" on public.site_settings
 drop policy if exists "admins manage settings" on public.site_settings;
 create policy "admins manage settings" on public.site_settings
   for all to authenticated using (public.is_gemz_admin()) with check (public.is_gemz_admin());
+
+drop policy if exists "admins manage private site settings" on public.private_site_settings;
+create policy "admins manage private site settings" on public.private_site_settings
+  for all to authenticated using (public.is_gemz_admin()) with check (public.is_gemz_admin());
+revoke all on table public.private_site_settings from public, anon;
+grant select, insert, update, delete on public.private_site_settings to authenticated;
 
 grant select on public.products, public.product_categories, public.articles, public.site_settings to anon, authenticated;
 grant insert on public.inquiries to anon, authenticated;
@@ -213,6 +227,8 @@ insert into public.site_settings (setting_key,setting_value) values
 ('hero_title','"Fine Gems & Jewellery, Made to Last"'::jsonb),
 ('hero_description','"Discover natural Ceylon gemstones, considered jewellery and exceptional pieces selected with care."'::jsonb),
 ('hero_video_url','""'::jsonb),
+('home_watch_video_url','""'::jsonb),
+('home_promo_video_url','""'::jsonb),
 ('home_promo_title','"Over 40 Years in Gems"'::jsonb),
 ('contact_email','"info@gemz.lk"'::jsonb),
 ('contact_phone','"+94 11 234 5678"'::jsonb),
@@ -288,14 +304,34 @@ insert into public.site_settings (setting_key,setting_value) values
 ('store_logo_url','""'::jsonb),
 ('store_favicon_url','""'::jsonb),
 ('seo_title_template','"{page} | {site}"'::jsonb),
+('seo_og_title','""'::jsonb),
+('seo_og_description','""'::jsonb),
 ('seo_keywords','"Ceylon gemstones, natural gemstones, Sri Lankan sapphires, fine jewellery"'::jsonb),
 ('seo_site_url','""'::jsonb),
+('seo_language','"en"'::jsonb),
 ('seo_robots','"index,follow"'::jsonb),
+('seo_robots_txt','""'::jsonb),
 ('seo_twitter_handle','""'::jsonb),
 ('seo_google_verification','""'::jsonb),
 ('seo_bing_verification','""'::jsonb),
 ('seo_og_image','""'::jsonb),
 ('seo_theme_color','"#171b29"'::jsonb),
+('seo_ga4_id','""'::jsonb),
+('seo_gtm_id','""'::jsonb),
+('seo_adsense_id','""'::jsonb),
+('seo_facebook_pixel_id','""'::jsonb),
+('seo_capi_test_code','""'::jsonb),
+('seo_ads_txt_lines','""'::jsonb),
+('seo_custom_head','""'::jsonb),
+('seo_custom_footer','""'::jsonb),
+('seo_social_facebook','""'::jsonb),
+('seo_social_instagram','""'::jsonb),
+('seo_social_x','""'::jsonb),
+('seo_social_youtube','""'::jsonb),
+('seo_social_linkedin','""'::jsonb),
+('seo_social_pinterest','""'::jsonb),
+('seo_social_tiktok','""'::jsonb),
+('seo_social_whatsapp','""'::jsonb),
 ('seo_schema_type','"JewelryStore"'::jsonb),
 ('seo_business_name','"Gemz.lk"'::jsonb),
 ('seo_business_email','"info@gemz.lk"'::jsonb),

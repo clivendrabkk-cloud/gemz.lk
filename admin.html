@@ -43,6 +43,7 @@
         <button data-view="articles"><span>▤</span>Insights</button>
         <button data-view="inquiries"><span>✉</span>Inquiries</button>
         <button data-view="media"><span>▧</span>Media library</button>
+        <button data-view="seo"><span>⌕</span>SEO Dashboard</button>
         <button data-view="settings"><span>⚙</span>Site settings</button>
       </nav>
       <div class="sidebar-bottom"><a href="index.html" target="_blank" rel="noreferrer">View storefront ↗</a><button class="signout" id="signout">Sign out</button></div>
@@ -101,7 +102,11 @@
               </div>
             </div>
             <div class="panel settings-group"><span class="eyebrow">Homepage</span><h3>Hero and media</h3>
-              <label>Announcement strip<input name="announcement"></label><label>Hero eyebrow<input name="hero_eyebrow"></label><label>Hero headline<input name="hero_title"></label><label>Hero description<textarea name="hero_description" rows="3"></textarea></label><label>Hero video URL<input name="hero_video_url" type="url" placeholder="https://…"><span class="field-help">Upload an MP4 or WebM to Supabase Storage, or paste its public URL.</span><div class="upload-inline"><input id="heroVideoFile" type="file" accept="video/mp4,video/webm"><button class="small-button" type="button" data-settings-video-upload>Upload video</button></div></label><label>First video title<input name="home_video_title"></label><label>Heritage feature title<input name="home_promo_title"></label>
+              <label>Announcement strip<input name="announcement"></label><label>Hero eyebrow<input name="hero_eyebrow"></label><label>Hero headline<input name="hero_title"></label><label>Hero description<textarea name="hero_description" rows="3"></textarea></label>
+              <label>Hero video URL<input name="hero_video_url" type="url" placeholder="https://…"><span class="field-help">Upload an MP4 or WebM to Supabase Storage, or paste its public URL.</span><div class="upload-inline"><input id="heroVideoFile" type="file" accept="video/mp4,video/webm"><button class="small-button" type="button" data-settings-video-upload="hero_video_url" data-file-target="heroVideoFile">Upload video</button></div></label>
+              <label>Watch feature video URL<input name="home_watch_video_url" type="url" placeholder="https://…"><div class="upload-inline"><input id="watchVideoFile" type="file" accept="video/mp4,video/webm"><button class="small-button" type="button" data-settings-video-upload="home_watch_video_url" data-file-target="watchVideoFile">Upload video</button></div></label>
+              <label>Promotional video URL<input name="home_promo_video_url" type="url" placeholder="https://…"><div class="upload-inline"><input id="promoVideoFile" type="file" accept="video/mp4,video/webm"><button class="small-button" type="button" data-settings-video-upload="home_promo_video_url" data-file-target="promoVideoFile">Upload video</button></div></label>
+              <label>First video title<input name="home_video_title"></label><label>Heritage feature title<input name="home_promo_title"></label>
             </div>
             <div class="panel settings-group"><span class="eyebrow">Contact</span><h3>Store details</h3>
               <label>Public email<input name="contact_email" type="email"></label><label>Phone<input name="contact_phone" type="tel"></label><label>Address<input name="contact_address"></label><label>Contact page note<textarea name="contact_note" rows="3"></textarea></label>
@@ -126,44 +131,137 @@
               <fieldset><legend>Footer links</legend><label>Explore column<input name="footer_explore_title"></label><label>Account column<input name="footer_account_title"></label><label>Contact column<input name="footer_contact_title"></label><label>Copyright text<input name="footer_copyright"></label><label>Footer motto<input name="footer_motto"></label></fieldset>
               <fieldset><legend>Contact page labels</legend><label>Visit heading<input name="contact_visit_title"></label><label>Phone label<input name="contact_phone_label"></label><label>Email label<input name="contact_email_label"></label><label>Location label<input name="contact_location_label"></label></fieldset>
             </div></div>
-            <div class="panel settings-group wide"><span class="eyebrow">Search visibility</span><h3>SEO defaults</h3>
-              <p class="settings-intro">These values apply across the storefront unless a page has its own override below. Metadata updates on each public page after the site settings load.</p>
-              <div class="settings-copy-grid seo-defaults-grid">
-                <label>Default title template<input name="seo_title_template" placeholder="{page} | {site}"><span class="field-help">Use {page} and {site} as placeholders.</span></label>
-                <label>Default meta description<textarea name="meta_description" rows="3"></textarea></label>
-                <label>Search keywords<input name="seo_keywords" placeholder="Ceylon sapphires, natural gemstones…"></label>
-                <label>Canonical site URL<input name="seo_site_url" type="url" placeholder="https://www.example.com"><span class="field-help">The public root URL, without a trailing slash.</span></label>
-                <label>Robots directive<select name="seo_robots"><option value="index,follow">Index and follow links</option><option value="noindex,follow">Do not index, follow links</option><option value="noindex,nofollow">Do not index or follow links</option></select></label>
-                <label>Twitter / X username<input name="seo_twitter_handle" placeholder="@yourstore"></label>
-                <label>Google Search Console verification<input name="seo_google_verification"></label>
-                <label>Bing Webmaster verification<input name="seo_bing_verification"></label>
-                <label class="seo-image-field">Default social share image URL<input name="seo_og_image" type="url" placeholder="https://…"><div class="upload-inline"><input id="seoOgImageFile" type="file" accept="image/jpeg,image/png,image/webp"><button class="small-button" type="button" data-settings-upload="seo_og_image" data-file-target="seoOgImageFile">Upload image</button></div><img class="setting-image-preview" id="seoOgImagePreview" alt="Social share image preview" hidden></label>
-                <label>Theme color<input name="seo_theme_color" type="color" value="#171b29"></label>
-              </div>
-            </div>
-            <div class="panel settings-group wide"><span class="eyebrow">Search snippets</span><h3>Page SEO overrides</h3>
-              <div class="settings-copy-grid seo-pages-grid">
-                <fieldset><legend>Homepage</legend><label>SEO title<input name="seo_home_title"></label><label>Meta description<textarea name="seo_home_description" rows="3"></textarea></label></fieldset>
-                <fieldset><legend>Collection</legend><label>SEO title<input name="seo_collection_title"></label><label>Meta description<textarea name="seo_collection_description" rows="3"></textarea></label></fieldset>
-                <fieldset><legend>Insights</legend><label>SEO title<input name="seo_insights_title"></label><label>Meta description<textarea name="seo_insights_description" rows="3"></textarea></label></fieldset>
-                <fieldset><legend>Contact</legend><label>SEO title<input name="seo_contact_title"></label><label>Meta description<textarea name="seo_contact_description" rows="3"></textarea></label></fieldset>
-                <fieldset><legend>About</legend><label>SEO title<input name="seo_about_title"></label><label>Meta description<textarea name="seo_about_description" rows="3"></textarea></label></fieldset>
-                <fieldset><legend>Product details</legend><label>SEO title<input name="seo_product_title"></label><label>Meta description<textarea name="seo_product_description" rows="3"></textarea></label></fieldset>
-                <fieldset><legend>Inquiry cart</legend><label>SEO title<input name="seo_cart_title"></label><label>Meta description<textarea name="seo_cart_description" rows="3"></textarea></label></fieldset>
-                <fieldset><legend>Account login</legend><label>SEO title<input name="seo_login_title"></label><label>Meta description<textarea name="seo_login_description" rows="3"></textarea></label></fieldset>
-              </div>
-            </div>
-            <div class="panel settings-group wide"><span class="eyebrow">Structured data</span><h3>Store information for search engines</h3>
-              <div class="settings-copy-grid seo-defaults-grid">
-                <label>Business / organization name<input name="seo_business_name"></label>
-                <label>Business type<select name="seo_schema_type"><option value="JewelryStore">Jewelry store</option><option value="Store">Store</option><option value="Organization">Organization</option></select></label>
-                <label>Business email<input name="seo_business_email" type="email"></label>
-                <label>Business phone<input name="seo_business_phone" type="tel"></label>
-                <label>Business address<input name="seo_business_address"></label>
-                <label>Country<input name="seo_business_country" placeholder="Sri Lanka"></label>
-              </div>
-            </div>
             <div class="settings-submit"><button class="button primary" type="submit">Save settings</button><p class="notice" id="settingsNotice" role="status"></p></div>
+          </form>
+        </section>
+
+        <section class="view" id="view-seo">
+          <div class="toolbar"><div><span class="eyebrow">Search and social visibility</span><h2>SEO Dashboard</h2><p class="settings-intro">Manage how Gemz.lk appears in search results, social previews, and analytics.</p></div></div>
+          <nav class="seo-tabs" aria-label="SEO dashboard sections" role="tablist">
+            <button type="button" class="active" role="tab" aria-selected="true" data-seo-tab="overview">📊 Overview</button>
+            <button type="button" role="tab" aria-selected="false" data-seo-tab="technical">⚡ Technical SEO</button>
+            <button type="button" role="tab" aria-selected="false" data-seo-tab="offpage">🔗 Off-Page SEO</button>
+            <button type="button" role="tab" aria-selected="false" data-seo-tab="tools">🛠️ Tools &amp; Analytics</button>
+            <button type="button" role="tab" aria-selected="false" data-seo-tab="sitemap">📄 Sitemap &amp; Robots</button>
+          </nav>
+          <form id="seoForm" class="settings-layout seo-layout">
+            <div class="seo-panel" data-seo-panel="overview">
+              <div class="panel settings-group wide"><span class="eyebrow">🏷️ Meta tags</span><h3>Search result preview</h3><p class="settings-intro">These values apply to the homepage by default. Page specific titles and descriptions can be set below.</p>
+                <div class="settings-copy-grid seo-defaults-grid">
+                  <label>Meta title<input name="seo_home_title" id="seoMetaTitle" maxlength="70" placeholder="Gemz.lk | Fine Gems & Jewellery"><span class="field-help"><span id="seoTitleCount">0</span>/60 characters (ideal: 50–60)</span></label>
+                  <label>Meta description<textarea name="meta_description" id="seoMetaDescription" maxlength="320" rows="3" placeholder="Describe the store and what customers can find."></textarea><span class="field-help"><span id="seoDescriptionCount">0</span>/160 characters (ideal: 150–160)</span></label>
+                </div>
+                <article class="seo-preview"><span class="eyebrow">Search Result Preview</span><b id="seoSearchTitle">Gemz.lk</b><small id="seoSearchURL">https://gemz.lk</small><p id="seoSearchDescription">Add a concise description of the store.</p></article>
+              </div>
+              <div class="panel settings-group wide"><span class="eyebrow">🖼️ Open Graph</span><h3>Social preview</h3><p class="settings-intro">Controls how a page looks when shared on Facebook, WhatsApp, X, and other platforms.</p>
+                <div class="settings-copy-grid seo-defaults-grid">
+                  <label>OG title<input name="seo_og_title" placeholder="Same as meta title"></label>
+                  <label>OG description<textarea name="seo_og_description" rows="3" placeholder="Same as meta description"></textarea></label>
+                  <label class="seo-image-field">OG image URL<input name="seo_og_image" type="url" placeholder="https://…"><span class="field-help">Recommended size: 1200 × 630 pixels.</span><div class="upload-inline"><input id="seoOgImageFile" type="file" accept="image/jpeg,image/png,image/webp"><button class="small-button" type="button" data-settings-upload="seo_og_image" data-file-target="seoOgImageFile">Upload image</button></div><img class="setting-image-preview" id="seoOgImagePreview" alt="Social share image preview" hidden></label>
+                </div>
+                <article class="seo-preview og-preview"><span class="eyebrow">Open Graph Preview</span><div id="seoOgImagePreviewCard" class="og-image-placeholder">Gemz.lk</div><small id="seoOgDomain">gemz.lk</small><b id="seoOgTitlePreview">Gemz.lk</b><p id="seoOgDescriptionPreview">Add a concise description of the store.</p></article>
+              </div>
+            </div>
+
+            <div class="seo-panel" data-seo-panel="technical" hidden>
+              <div class="panel settings-group wide"><span class="eyebrow">🌐 Site configuration</span><h3>Canonical and language settings</h3>
+                <div class="settings-copy-grid seo-defaults-grid">
+                  <label>Site URL (production)<input name="seo_site_url" type="url" placeholder="https://gemz.lk"><span class="field-help">Used for canonical links and generated sitemap links.</span></label>
+                  <label>Language<input name="seo_language" maxlength="12" placeholder="en"><span class="field-help">ISO language code, such as en or en-LK.</span></label>
+                  <label>Default title template<input name="seo_title_template" placeholder="{page} | {site}"><span class="field-help">Use {page} and {site} as placeholders.</span></label>
+                  <label>Search keywords<input name="seo_keywords" placeholder="Ceylon sapphires, natural gemstones…"></label>
+                  <label>Robots directive<select name="seo_robots"><option value="index,follow">Index and follow links</option><option value="noindex,follow">Do not index, follow links</option><option value="noindex,nofollow">Do not index or follow links</option></select></label>
+                  <label>Theme color<input name="seo_theme_color" type="color" value="#171b29"></label>
+                </div>
+              </div>
+              <div class="panel settings-group wide"><span class="eyebrow">📱 Mobile responsiveness &amp; speed</span><h3>Storefront checks</h3><div class="seo-check-grid">
+                <article><b>✓ Responsive viewport</b><p>All storefront pages include a mobile viewport declaration.</p><code>&lt;meta name="viewport" content="width=device-width,initial-scale=1"&gt;</code></article>
+                <article><b>✓ Mobile navigation and safe area</b><p>Fixed bottom navigation respects the device safe area.</p></article>
+                <article><b>✓ Touch-friendly controls and inputs</b><p>Mobile controls have 44px or larger targets; form text uses a 16px base size to avoid iOS zoom.</p></article>
+                <article><b>✓ Responsive product grid</b><p>Catalog grid uses two columns on phones, three on tablets and four on wide screens.</p></article>
+                <article><b>○ Slide-up inquiry cart</b><p>The cart opens as a responsive page; a drawer is not enabled.</p></article>
+                <article><b>✓ Lazy product images and video</b><p>Product images load as they approach the viewport; homepage videos load near view.</p></article>
+                <article><b>✓ GPU-friendly motion and font preconnect</b><p>Motion uses transform and opacity; Google Fonts use preconnect hints.</p></article>
+                <article><b>⚠ Image compression</b><p>Use WebP or compressed images to reduce transfer size.</p></article>
+                <article><b>⚠ Server compression and CDN</b><p>Configure Brotli or gzip and a CDN in the hosting provider.</p></article>
+              </div></div>
+              <div class="panel settings-group wide"><span class="eyebrow">Structured data</span><h3>Store information for search engines</h3>
+                <div class="settings-copy-grid seo-defaults-grid">
+                  <label>Business / organization name<input name="seo_business_name"></label>
+                  <label>Business type<select name="seo_schema_type"><option value="JewelryStore">Jewellery store</option><option value="Store">Store</option><option value="Organization">Organization</option></select></label>
+                  <label>Business email<input name="seo_business_email" type="email"></label>
+                  <label>Business phone<input name="seo_business_phone" type="tel"></label>
+                  <label>Business address<input name="seo_business_address"></label>
+                  <label>Country<input name="seo_business_country" placeholder="Sri Lanka"></label>
+                </div>
+                <div class="seo-schema-status"><span>✓ Organization / store data</span><span>✓ Product data on product pages</span><span>✓ Breadcrumb data</span><span>○ Review ratings require a review system</span><span>○ Local business details require a verified address</span></div>
+              </div>
+              <div class="panel settings-group wide"><span class="eyebrow">Page search snippets</span><h3>Page SEO overrides</h3>
+                <div class="settings-copy-grid seo-pages-grid">
+                  <fieldset><legend>Collection</legend><label>SEO title<input name="seo_collection_title"></label><label>Meta description<textarea name="seo_collection_description" rows="3"></textarea></label></fieldset>
+                  <fieldset><legend>Insights</legend><label>SEO title<input name="seo_insights_title"></label><label>Meta description<textarea name="seo_insights_description" rows="3"></textarea></label></fieldset>
+                  <fieldset><legend>Contact</legend><label>SEO title<input name="seo_contact_title"></label><label>Meta description<textarea name="seo_contact_description" rows="3"></textarea></label></fieldset>
+                  <fieldset><legend>About</legend><label>SEO title<input name="seo_about_title"></label><label>Meta description<textarea name="seo_about_description" rows="3"></textarea></label></fieldset>
+                  <fieldset><legend>Product details</legend><label>SEO title<input name="seo_product_title"></label><label>Meta description<textarea name="seo_product_description" rows="3"></textarea></label></fieldset>
+                  <fieldset><legend>Inquiry cart</legend><label>SEO title<input name="seo_cart_title"></label><label>Meta description<textarea name="seo_cart_description" rows="3"></textarea></label></fieldset>
+                  <fieldset><legend>Account login</legend><label>SEO title<input name="seo_login_title"></label><label>Meta description<textarea name="seo_login_description" rows="3"></textarea></label></fieldset>
+                </div>
+              </div>
+            </div>
+
+            <div class="seo-panel" data-seo-panel="offpage" hidden>
+              <div class="panel settings-group wide"><span class="eyebrow">📣 Social media signals</span><h3>Social profile links</h3><p class="settings-intro">Saved profile links are displayed in the storefront footer and can be shared with search visitors.</p>
+                <div class="settings-copy-grid seo-defaults-grid">
+                  <label>Facebook page URL<input name="seo_social_facebook" type="url" placeholder="https://facebook.com/your-page"></label>
+                  <label>Instagram profile URL<input name="seo_social_instagram" type="url" placeholder="https://instagram.com/your-profile"></label>
+                  <label>X profile URL<input name="seo_social_x" type="url" placeholder="https://x.com/your-profile"></label>
+                  <label>Twitter / X username<input name="seo_twitter_handle" placeholder="@yourstore"></label>
+                  <label>YouTube channel URL<input name="seo_social_youtube" type="url" placeholder="https://youtube.com/@your-channel"></label>
+                  <label>LinkedIn page URL<input name="seo_social_linkedin" type="url" placeholder="https://linkedin.com/company/your-page"></label>
+                  <label>Pinterest profile URL<input name="seo_social_pinterest" type="url" placeholder="https://pinterest.com/your-profile"></label>
+                  <label>TikTok profile URL<input name="seo_social_tiktok" type="url" placeholder="https://tiktok.com/@your-profile"></label>
+                  <label>WhatsApp Business URL or number<input name="seo_social_whatsapp" placeholder="https://wa.me/94… or +94…"></label>
+                </div>
+              </div>
+              <div class="panel settings-group wide"><span class="eyebrow">🔗 Backlink strategy</span><h3>Build useful links to your store</h3><div class="seo-check-grid">
+                <article><b>📝 Blog &amp; content</b><p>Publish gemstone guides, care advice, and buying information.</p></article>
+                <article><b>🤝 Business directories</b><p>Keep verified business listings consistent with your public contact details.</p></article>
+                <article><b>🎯 Collaborations</b><p>Work with relevant gem and jewellery publishers on useful features.</p></article>
+                <article><b>💬 Communities</b><p>Answer real questions and share relevant pages where they help readers.</p></article>
+              </div><label>Store URL to share<input id="seoBacklinkURL" readonly></label><button class="small-button" type="button" id="copyBacklinkURL">Copy URL</button><p class="settings-intro">Social sharing can help people discover the store. Search rankings depend on many factors.</p></div>
+            </div>
+
+            <div class="seo-panel" data-seo-panel="tools" hidden>
+              <div class="panel settings-group wide"><span class="eyebrow">📊 Tools &amp; analytics</span><h3>Connect measurement tools</h3>
+                <div class="settings-copy-grid seo-defaults-grid">
+                  <label>Google Analytics 4 measurement ID<input name="seo_ga4_id" placeholder="G-XXXXXXXXXX"><span class="field-help">Optional when Google Tag Manager manages GA4.</span></label>
+                  <label>Google Tag Manager container ID<input name="seo_gtm_id" placeholder="GTM-XXXXXXX"></label>
+                  <label>Google Search Console verification<input name="seo_google_verification"></label>
+                  <label>Bing Webmaster verification<input name="seo_bing_verification"></label>
+                  <label>AdSense publisher ID<input name="seo_adsense_id" id="seoAdsenseId" placeholder="ca-pub-0000000000000000"><span class="field-help">Loads the AdSense library and creates its standard ads.txt seller line; ad placements still need AdSense unit code.</span></label>
+                  <label>Facebook / Meta Pixel ID<input name="seo_facebook_pixel_id" placeholder="Numeric pixel ID"></label>
+                  <label class="full">Additional ads.txt lines<textarea name="seo_ads_txt_lines" rows="4" placeholder="Add any other complete seller declaration lines, one per line."></textarea><span class="field-help">These lines are added to the generated AdSense publisher line when you download ads.txt.</span></label>
+                  <label class="full">Conversions API access token<input name="seo_capi_access_token" id="seoCapiToken" type="password" autocomplete="new-password" placeholder="Enter token to save or rotate"><span class="field-help">Stored in an admin-only database table. It is never sent to public storefront pages. Purchase events need a server-side checkout/event endpoint.</span></label>
+                  <label class="check-row"><input type="checkbox" name="seo_capi_clear_token" id="seoCapiClearToken"> Remove the saved Conversions API token</label>
+                  <label>Test event code<input name="seo_capi_test_code" placeholder="Optional test-only code"><span class="field-help">Remove after testing. No purchase checkout is connected on this storefront.</span></label>
+                  <label class="full">Custom header code<textarea name="seo_custom_head" rows="5" placeholder="Analytics or verification snippets only. Do not paste private tokens."></textarea><span class="field-help">This code is public and runs on storefront pages after you save.</span></label>
+                  <label class="full">Custom footer code<textarea name="seo_custom_footer" rows="5" placeholder="Public chat widgets or other page scripts."></textarea><span class="field-help">This code is public and runs on storefront pages after you save.</span></label>
+                </div>
+                <div class="seo-check-grid">
+                  <article><b>Google Analytics and Tag Manager</b><p>Create a web stream in Analytics and paste its Measurement ID, or create a Tag Manager container and enter its container ID. Avoid configuring the same tag in both places.</p></article>
+                  <article><b>Search Console</b><p>Add the production URL as a property, select HTML tag verification, then paste only the verification content value above. Submit the generated sitemap after uploading it.</p></article>
+                  <article><b>AdSense</b><p>Verify and approve the site in AdSense first. Add the publisher ID and ads.txt seller lines; create ad units separately before expecting ads to appear.</p></article>
+                  <article><b>Facebook Conversions API</b><p>The private token is stored for administrators. Sending purchase events requires a server endpoint and a checkout event source; neither is connected to this enquiry-only storefront.</p></article>
+                </div><p class="notice" id="seoSecretStatus" role="status"></p>
+              </div>
+            </div>
+
+            <div class="seo-panel" data-seo-panel="sitemap" hidden>
+              <div class="panel settings-group wide"><span class="eyebrow">🗺️ Sitemap.xml</span><h3>Generate a sitemap file</h3><p class="settings-intro">Builds a downloadable XML snapshot from the current published catalog and pages. This static site cannot publish a database-backed sitemap automatically; upload the downloaded file to the site root after catalog updates.</p><div class="seo-action-row"><button class="button primary" type="button" id="generateSitemap">Generate sitemap</button><button class="button quiet" type="button" id="downloadSitemap" disabled>Download sitemap.xml</button><span id="sitemapCount" class="field-help"></span></div><pre class="seo-file-preview" id="sitemapPreview">Generate a sitemap to preview its contents.</pre></div>
+              <div class="panel settings-group wide"><span class="eyebrow">🤖 Robots.txt</span><h3>Prepare crawler rules</h3><p class="settings-intro">Edit rules, then download robots.txt and upload it to the site root. Static hosting does not publish browser-generated files by itself.</p><label>Robots file contents<textarea name="seo_robots_txt" id="robotsText" rows="7" placeholder="User-agent: *&#10;Allow: /"></textarea></label><div class="seo-action-row"><button class="button quiet" type="button" id="previewRobots">Update preview</button><button class="button quiet" type="button" id="downloadRobots">Download robots.txt</button></div><pre class="seo-file-preview" id="robotsPreview"></pre></div>
+              <div class="panel settings-group wide"><span class="eyebrow">📣 Ads.txt</span><h3>Download seller declarations</h3><p class="settings-intro">Creates an ads.txt file from your AdSense publisher ID and any additional seller lines. Upload the file to the site root after downloading.</p><div class="seo-action-row"><button class="button quiet" type="button" id="downloadAdsTxt">Download ads.txt</button></div><pre class="seo-file-preview" id="adsTxtPreview">Enter a publisher ID or additional seller lines to preview ads.txt.</pre></div>
+            </div>
+            <div class="seo-submit-global"><button class="button primary" type="submit">Save SEO settings</button><p class="notice" id="seoNoticeGlobal" role="status"></p></div>
           </form>
         </section>
       </div>
