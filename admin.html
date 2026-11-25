@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css">
   <link rel="stylesheet" href="css/admin-product-fields.css">
-  <link rel="stylesheet" href="css/admin-settings.css?v=about-repeaters-1">
+  <link rel="stylesheet" href="css/admin-settings.css?v=announcement-speed-1">
 </head>
 <body>
   <section class="admin-loading" id="adminLoading" role="status" aria-live="polite"><span class="admin-loader" aria-hidden="true"></span><span>Checking admin session…</span></section>
@@ -110,7 +110,7 @@
 
             <div class="site-page-panel active" id="sitePageHome" role="tabpanel" data-site-page-panel="home">
               <div class="panel settings-group wide"><span class="eyebrow">Homepage</span><h3>Hero content and video</h3>
-                <label>Announcement strip<input name="announcement"></label><label>Hero eyebrow<input name="hero_eyebrow"></label><label>Hero headline<input name="hero_title"></label><label>Hero description<textarea name="hero_description" rows="3"></textarea></label>
+                <label>Announcement strip<input name="announcement"></label><fieldset class="carousel-speed-control"><legend>Announcement banner speed</legend><label for="announcementSpeed">Scroll speed<input id="announcementSpeed" name="announcement_speed" type="range" min="10" max="150" step="5" value="50"><output id="announcementSpeedOutput" for="announcementSpeed">50 px per second</output></label><span class="field-help">Controls the running banner beside the navigation. Save page changes to apply.</span></fieldset><label>Hero eyebrow<input name="hero_eyebrow"></label><label>Hero headline<input name="hero_title"></label><label>Hero description<textarea name="hero_description" rows="3"></textarea></label>
                 <label>Hero video URL<input name="hero_video_url" type="url" placeholder="https://…"><span class="field-help">Use a direct H.264 MP4 file URL for iPhone, Android, and desktop compatibility.</span><input id="heroVideoFile" type="file" accept="video/mp4" data-settings-video-upload="hero_video_url" data-feedback-id="heroVideoUpload"><div class="upload-feedback" id="heroVideoUpload" role="status" aria-live="polite" hidden></div></label>
               </div>
               <div class="panel settings-group wide"><span class="eyebrow">Homepage sections</span><h3>Section labels and copy</h3><div class="settings-copy-grid">
@@ -308,6 +308,6 @@
   <dialog id="categoryDialog" class="editor-dialog"><form id="categoryForm" method="dialog"><div class="dialog-head"><div><span class="eyebrow">Product organization</span><h2 id="categoryDialogTitle">Add category</h2></div><button type="button" class="close-button" id="closeCategoryDialog" aria-label="Close">×</button></div><div class="editor-fields"><label>Product type<select name="product_type" required><option value="gem">Gemstone</option><option value="jewellery">Jewellery</option><option value="watch">Watch</option></select></label><label>Category name<input name="name" required maxlength="80" autocomplete="off"></label><label>Display order<input name="sort_order" type="number" value="0"></label><p class="field-help full">Categories appear in product forms and storefront navigation. A category in use cannot be deleted.</p></div><div class="dialog-actions"><button type="button" class="button quiet" id="cancelCategoryDialog">Cancel</button><button type="submit" class="button primary">Save category</button></div></form></dialog>
 
   <script src="js/supabase-config.js"></script>
-  <script src="js/admin.js?v=about-repeaters-1"></script>
+  <script src="js/admin.js?v=announcement-speed-1"></script>
 </body>
 </html>

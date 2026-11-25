@@ -223,6 +223,7 @@ on conflict (slug) do nothing;
 
 insert into public.site_settings (setting_key,setting_value) values
 ('announcement','"Natural Gems & Fine Jewellery from Sri Lanka."'::jsonb),
+('announcement_speed','50'::jsonb),
 ('hero_eyebrow','"Sri Lanka · Est. 1985"'::jsonb),
 ('hero_title','"Fine Gems & Jewellery, Made to Last"'::jsonb),
 ('hero_description','"Discover natural Ceylon gemstones, considered jewellery and exceptional pieces selected with care."'::jsonb),

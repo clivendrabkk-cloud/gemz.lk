@@ -256,6 +256,7 @@ function layout(active){
       <a class="ico" href="cart.html" aria-label="Inquiry cart">${icon.bag}<span class="cart-count">0</span></a>
     </div></div></header>
   <div class="mobile-nav" id="mnav" inert><a href="index.html">${navHome}</a><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=gem">${navCollection}</a><div class="mobile-jewellery-subnav"><a href="collection.html?section=gem">${navGems}</a>${gemNavLinks}</div></div><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=jewellery">${navJewellery}</a><div class="mobile-jewellery-subnav"><a href="collection.html?section=jewellery">${navAllJewellery}</a>${jewelleryNavLinks}</div></div><a href="collection.html?section=watch">${navWatches}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a><a href="contact.html">${navContact}</a><a href="login.html">${navAccount}</a></div>`;
+  applyAnnouncementSpeed();
   const categoryMenus=[...document.querySelectorAll('.nav-drop')];
   categoryMenus.forEach(menu=>menu.addEventListener('toggle',()=>{if(menu.open)categoryMenus.forEach(other=>{if(other!==menu)other.open=false})}));
   document.getElementById('site-footer').innerHTML=`<footer class="footer"><div class="wrap"><div class="foot-grid">
@@ -280,6 +281,15 @@ function layout(active){
   m.onclick=event=>{if(event.target.closest('a'))setMenuOpen(false)};
   document.onkeydown=event=>{if(event.key==='Escape'&&b.getAttribute('aria-expanded')==='true')setMenuOpen(false)};
   Cart.badge();
+}
+
+function applyAnnouncementSpeed(){
+  const track=document.querySelector('.announce-track');if(!track)return;
+  const rawSpeed=Number(SITE_SETTINGS.announcement_speed),speed=Number.isFinite(rawSpeed)?Math.max(10,Math.min(150,rawSpeed)):50;
+  const update=()=>{const cycleWidth=track.scrollWidth/2;if(cycleWidth>0)track.style.animationDuration=`${cycleWidth/speed}s`};
+  update();document.fonts?.ready.then(update);
+  const marquee=track.parentElement;
+  if(marquee&&'ResizeObserver' in window){marquee._announcementResizeObserver?.disconnect();marquee._announcementResizeObserver=new ResizeObserver(update);marquee._announcementResizeObserver.observe(track)}
 }
 
 function productDetailURL(product){
