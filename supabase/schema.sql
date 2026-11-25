@@ -243,6 +243,7 @@ where setting_key = 'hero_video_url'
   and setting_value::text like '%blob.vercel-storage.com%';
 
 insert into public.site_settings (setting_key,setting_value) values
+('home_carousel_speed','50'::jsonb),
 ('home_arrivals_eyebrow','"Just selected"'::jsonb),
 ('home_arrivals_title','"New Arrivals"'::jsonb),
 ('home_arrivals_description','"Discover a few of the natural stones now available to enquire about."'::jsonb),

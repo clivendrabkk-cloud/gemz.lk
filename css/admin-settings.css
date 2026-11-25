@@ -22,6 +22,8 @@
 .settings-copy-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .settings-copy-grid fieldset{min-width:0;display:grid;gap:13px;padding:14px;border:1px solid var(--line);border-radius:10px}
 .settings-copy-grid legend{padding:0 6px;font-size:.75rem;font-weight:700;color:#5d6069}
+.carousel-speed-control input[type=range]{width:100%;padding:0;border:0;background:transparent;accent-color:#c58b3d}
+.carousel-speed-control output{font-size:.76rem;font-weight:700;color:#202942}
 .settings-group input[type=color]{width:72px;height:46px;padding:4px}
 .settings-submit{grid-column:1/-1;display:flex;align-items:center;gap:14px}
 .settings-submit .notice{margin:0}

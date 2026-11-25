@@ -294,6 +294,10 @@ function cardHTML(g,i){
   <div class="card-body"><h3>${htmlEscape(g.name)}</h3><span class="tag">Price on Request</span></div></a>`;
 }
 
+function homeCarouselSpeed(){
+  const speed=Number(SITE_SETTINGS.home_carousel_speed);
+  return Number.isFinite(speed)?Math.max(10,Math.min(120,speed)):50;
+}
 function setupHomeScroller(viewportId,trackId,items,renderItem,emptyHTML){
   const viewport=document.getElementById(viewportId),track=document.getElementById(trackId);
   if(!viewport||!track)return;
@@ -337,7 +341,7 @@ function setupHomeScroller(viewportId,trackId,items,renderItem,emptyHTML){
     const cycleWidth=Number(track.dataset.cycleWidth||0);
     if(cycleWidth>0&&!state.interacting&&now>state.pauseUntil){
       if(state.lastTime){
-        state.scrollRemainder+=Math.min(now-state.lastTime,50)*.05;
+        state.scrollRemainder+=Math.min(now-state.lastTime,50)*homeCarouselSpeed()/1000;
         const step=Math.floor(state.scrollRemainder);
         if(step>0){viewport.scrollLeft+=step;state.scrollRemainder-=step}
       }
