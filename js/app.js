@@ -132,11 +132,19 @@ async function createInquiry(record){
 async function loadPublicContent(){
   const requestId=++publicContentRequest;
   try{
+    const settingsRequest=fetchPublicTable('site_settings',{select:'setting_key,setting_value'}).then(rows=>{
+      if(requestId===publicContentRequest){
+        SITE_SETTINGS=Object.fromEntries(rows.map(row=>[row.setting_key,row.setting_value]));
+        try{localStorage.setItem('gemz-public-site-settings',JSON.stringify(SITE_SETTINGS))}catch{}
+        if(window.GEMZ_APP_BOOTED){layout(ACTIVE_PAGE);applySiteSettings()}
+      }
+      return rows;
+    });
     const [productResult,categoryResult,articleResult,settingsResult]=await Promise.allSettled([
       fetchPublicTable('products',{select:'*',status:'eq.published',order:'sort_order.asc,created_at.asc'}),
       fetchPublicTable('product_categories',{select:'*',order:'product_type.asc,sort_order.asc,name.asc'}),
       fetchPublicTable('articles',{select:'*',status:'eq.published',order:'created_at.desc'}),
-      fetchPublicTable('site_settings',{select:'setting_key,setting_value'})
+      settingsRequest
     ]);
     const products=productResult.status==='fulfilled'?productResult.value:null;
     const categories=categoryResult.status==='fulfilled'?categoryResult.value:null;
@@ -168,10 +176,6 @@ async function loadPublicContent(){
       t:row.title,k:row.category||'Insight',g:0,p:row.excerpt||'',slug:row.slug,content:row.content||'',
       image_url:publicMediaURL(row.cover_image)
     }));
-    if(settings){
-      SITE_SETTINGS=Object.fromEntries(settings.map(row=>[row.setting_key,row.setting_value]));
-      try{localStorage.setItem('gemz-public-site-settings',JSON.stringify(SITE_SETTINGS))}catch{}
-    }
     const loaded=Boolean(products||categories||articles||settings);
     if(!loaded)console.warn('Gemz public content could not be loaded from Supabase.');
     return loaded;
@@ -500,6 +504,43 @@ function initViewer(){
   viewer.addEventListener('pointerup',stop);
   viewer.addEventListener('pointercancel',stop);
 }
+function markConfiguredVideoReady(video){
+  const source=video.querySelector('source'),url=source?.dataset.src;
+  if(!url||video.dataset.loadedVideoURL!==url||video.readyState<2)return false;
+  video.dataset.mediaReadyURL=url;video.classList.add('media-ready');
+  const hero=video.closest('.hero');
+  if(hero&&hero.dataset.configuredMediaUrl===url){hero.classList.remove('hero-video-error');hero.classList.add('hero-video-ready')}
+  const card=video.closest('[data-home-video-enabled]');
+  if(card&&card.dataset.configuredMediaUrl===url){card.classList.remove('media-pending');card.hidden=card.dataset.configuredEnabled!=='true'}
+  video.dataset.mediaRetryCount='0';video.dataset.mediaFailedUrl='';
+  return true;
+}
+function bindConfiguredVideo(video){
+  if(video.dataset.mediaReadyBound==='true')return;
+  video.dataset.mediaReadyBound='true';
+  video.addEventListener('loadeddata',()=>markConfiguredVideoReady(video));
+  video.addEventListener('canplay',()=>markConfiguredVideoReady(video));
+  video.addEventListener('error',()=>{
+    const source=video.querySelector('source'),url=source?.dataset.src;
+    if(!url||video.dataset.loadedVideoURL!==url)return;
+    video.dataset.mediaFailedUrl=url;
+    video.classList.remove('media-ready');video.dataset.mediaReadyURL='';
+    const hero=video.closest('.hero');
+    if(hero&&hero.dataset.configuredMediaUrl===url){hero.classList.remove('hero-video-ready');hero.classList.add('hero-video-error')}
+    const card=video.closest('[data-home-video-enabled]');
+    if(card&&card.dataset.configuredMediaUrl===url){card.classList.add('media-pending');card.hidden=true}
+    const retry=Number(video.dataset.mediaRetryCount||0);
+    if(retry<2){
+      video.dataset.mediaRetryCount=String(retry+1);
+      window.setTimeout(()=>{
+        const currentSource=video.querySelector('source');
+        if(currentSource?.dataset.src!==url||video.dataset.loadedVideoURL!==url)return;
+        if(card?.dataset.configuredEnabled==='false'||video.closest('[data-home-section-setting]')?.hidden)return;
+        video.pause();video.dataset.loadedVideoURL='';video.dataset.autoplayAttemptedURL='';video.dataset.autoplayPending='false';currentSource.removeAttribute('src');video.load();loadLazyVideo(video);
+      },650*(retry+1));
+    }
+  });
+}
 function loadLazyVideo(video){
   const source=video.querySelector('source');
   const url=source?.dataset.src;
@@ -531,7 +572,9 @@ function initLazyVideos(){
   const videos=[...document.querySelectorAll('video[data-lazy-video]:not([data-video-observed])')];
   if(!videos.length)return;
   videos.forEach(video=>{
+    bindConfiguredVideo(video);
     video.dataset.videoObserved='true';
+    markConfiguredVideoReady(video);
     video.addEventListener('play',()=>loadLazyVideo(video),{once:true});
   });
   if('IntersectionObserver' in window){
@@ -564,7 +607,7 @@ function onPageRefresh(callback){
   window.GEMZ_PAGE_REFRESH=callback;
   if(window.GEMZ_CONTENT_LOADED!==undefined||!window.GEMZ_CONTENT_PENDING)callback();
 }
-function boot(active){layout(active);initFX();applySiteSettings();return Promise.resolve();}
+function boot(active){layout(active);window.GEMZ_APP_BOOTED=true;initFX();applySiteSettings();return Promise.resolve();}
 function applySiteSettings(){
   const setText=(selector,value)=>{const node=document.querySelector(selector);if(node&&value)node.textContent=value};
   const heroOverlay=Number(SITE_SETTINGS.hero_overlay_darkness),hero=document.querySelector('.hero');
@@ -581,7 +624,12 @@ function applySiteSettings(){
     const enabled=SITE_SETTINGS[card.dataset.homeVideoEnabled];
     const enabledByDefault=card.dataset.homeVideoEnabled==='home_video_1_enabled';
     const isEnabled=enabled===undefined?enabledByDefault:String(enabled).toLowerCase()==='true';
-    card.hidden=!isEnabled||!publicMediaURL(SITE_SETTINGS[card.dataset.homeVideoUrlSetting]);
+    const videoURL=publicMediaURL(SITE_SETTINGS[card.dataset.homeVideoUrlSetting]);
+    const video=card.querySelector('video');
+    card.dataset.configuredEnabled=String(isEnabled);card.dataset.configuredMediaUrl=videoURL;
+    const mediaReady=Boolean(videoURL&&video?.dataset.mediaReadyURL===videoURL&&video.readyState>=2);
+    card.hidden=!isEnabled||!videoURL;
+    card.classList.toggle('media-pending',Boolean(isEnabled&&videoURL&&!mediaReady));
     const slot=Number(card.dataset.homeVideoEnabled.match(/^home_video_(\d+)_enabled$/)?.[1]||1);
     const configuredOrder=Number(SITE_SETTINGS[`home_video_${slot}_order`]);
     card.dataset.displayOrder=String(Number.isInteger(configuredOrder)&&configuredOrder>0?configuredOrder:slot);
@@ -596,11 +644,21 @@ function applySiteSettings(){
     .forEach(card=>promoGrid.append(card));
   document.querySelectorAll('video[data-video-setting] source').forEach(source=>{
     const video=source.parentElement;
+    bindConfiguredVideo(video);
     const videoURL=publicMediaURL(SITE_SETTINGS[video.dataset.videoSetting]);
     const hidden=Boolean(video.closest('[data-home-video-enabled]')?.hidden||video.closest('[data-home-section-setting]')?.hidden);
+    const hero=video.closest('.hero');
+    if(hero){
+      hero.dataset.configuredMediaUrl=videoURL;
+      hero.classList.toggle('hero-has-video',Boolean(videoURL));
+      hero.classList.remove('hero-video-error');
+      if(!videoURL||video.dataset.mediaReadyURL!==videoURL)hero.classList.remove('hero-video-ready');
+    }
+    const watchClip=video.closest('.watch-clip');
+    if(watchClip)watchClip.classList.toggle('media-configured',Boolean(videoURL));
     const changed=source.dataset.src!==videoURL;
     if(changed){
-      video.pause();video.autoplay=false;video.removeAttribute('autoplay');source.removeAttribute('src');video.load();video.dataset.loadedVideoURL='';video.dataset.autoplayPending='false';video.dataset.autoplayAttemptedURL='';video.dataset.autoplayBlocked='false';
+      video.pause();video.autoplay=false;video.removeAttribute('autoplay');video.classList.remove('media-ready');video.dataset.mediaReadyURL='';video.dataset.mediaFailedUrl='';video.dataset.mediaRetryCount='0';source.removeAttribute('src');video.load();video.dataset.loadedVideoURL='';video.dataset.autoplayPending='false';video.dataset.autoplayAttemptedURL='';video.dataset.autoplayBlocked='false';
       source.dataset.src=videoURL;
       if(videoURL){
         const pathname=new URL(videoURL,document.baseURI).pathname.toLowerCase();
