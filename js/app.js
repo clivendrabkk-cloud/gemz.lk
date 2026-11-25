@@ -244,7 +244,7 @@ function layout(active){
   document.getElementById('site-header').innerHTML=`
   <div class="announce"><span class="sr-only">${announce}</span><div class="announce-track" aria-hidden="true">${Array(8).fill(`<span>${announce}</span><span>Over 40 Years of Ceylon Gem Expertise.</span>`).join('')}</div></div>
   <header class="header" id="hdr"><div class="header-in">
-    <nav class="nav" aria-label="Main navigation">${L('index.html',navHome,'home')}<details class="nav-drop"><summary class="${active==='collection'?'active':''}">${navCollection}</summary><div class="nav-dropdown"><a href="collection.html?section=gem">${navGems}</a>${gemNavLinks}</div></details><details class="nav-drop"><summary class="${active==='collection'?'active':''}">${navJewellery}</summary><div class="nav-dropdown"><a href="collection.html?section=jewellery">${navAllJewellery}</a>${jewelleryNavLinks}</div></details>${L('collection.html?section=watch',navWatches,'collection')}${L('about.html',navAbout,'about')}</nav>
+    <nav class="nav" aria-label="Main navigation">${L('index.html',navHome,'home')}<details class="nav-drop" name="gemz-categories"><summary class="${active==='collection'?'active':''}">${navCollection}</summary><div class="nav-dropdown"><a href="collection.html?section=gem">${navGems}</a>${gemNavLinks}</div></details><details class="nav-drop" name="gemz-categories"><summary class="${active==='collection'?'active':''}">${navJewellery}</summary><div class="nav-dropdown"><a href="collection.html?section=jewellery">${navAllJewellery}</a>${jewelleryNavLinks}</div></details>${L('collection.html?section=watch',navWatches,'collection')}${L('about.html',navAbout,'about')}</nav>
     <button class="burger" id="burger" aria-label="Open menu" aria-controls="mnav" aria-expanded="false"><i></i><i></i><i></i></button>
     <a href="index.html" class="logo logo-only" aria-label="${storeName} home">${brandMark(active==='home'?'dark':'light')}</a>
     <div class="utils">
@@ -256,6 +256,8 @@ function layout(active){
       <a class="ico" href="cart.html" aria-label="Inquiry cart">${icon.bag}<span class="cart-count">0</span></a>
     </div></div></header>
   <div class="mobile-nav" id="mnav" inert><a href="index.html">${navHome}</a><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=gem">${navCollection}</a><div class="mobile-jewellery-subnav"><a href="collection.html?section=gem">${navGems}</a>${gemNavLinks}</div></div><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=jewellery">${navJewellery}</a><div class="mobile-jewellery-subnav"><a href="collection.html?section=jewellery">${navAllJewellery}</a>${jewelleryNavLinks}</div></div><a href="collection.html?section=watch">${navWatches}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a><a href="contact.html">${navContact}</a><a href="login.html">${navAccount}</a></div>`;
+  const categoryMenus=[...document.querySelectorAll('.nav-drop')];
+  categoryMenus.forEach(menu=>menu.addEventListener('toggle',()=>{if(menu.open)categoryMenus.forEach(other=>{if(other!==menu)other.open=false})}));
   document.getElementById('site-footer').innerHTML=`<footer class="footer"><div class="wrap"><div class="foot-grid">
     <div class="foot-brand"><a href="index.html" class="logo logo-only footer-logo" aria-label="${storeName} home">${brandMark('dark')}</a><p data-setting="footer_tagline">Authentic natural gemstones sourced in Sri Lanka and delivered worldwide. Established 1985.</p>${socialMarkup||whatsAppMarkup?`<nav class="foot-social" aria-label="Social profiles">${socialMarkup}${whatsAppMarkup}</nav>`:''}</div>
     <div><h4>${label('footer_explore_title','Explore')}</h4><a href="index.html">${navHome}</a><a href="collection.html">${navCollection}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a></div>
@@ -290,6 +292,58 @@ function cardHTML(g,i){
   return `<a class="card" href="${href}" data-tilt>
   <div class="frame" style="background:${bgOf(g)}">${art}</div>
   <div class="card-body"><h3>${htmlEscape(g.name)}</h3><span class="tag">Price on Request</span></div></a>`;
+}
+
+function setupArrivalsCarousel(items){
+  const viewport=document.getElementById('arrivalsCarousel'),track=document.getElementById('arrivals'),controls=document.getElementById('arrivalsControls');
+  if(!viewport||!track||!controls)return;
+  track._arrivalItems=items;
+  track.dataset.cardCount=String(items.length);
+  controls.hidden=!items.length;
+  const rebuild=()=>{
+    const currentItems=track._arrivalItems||[];
+    const renderCopy=copy=>currentItems.map((item,index)=>cardHTML(item,`${copy}-${index}`)).join('');
+    track.innerHTML=currentItems.length?renderCopy(0):'<p class="empty-content">New gemstones will be added soon. <a class="text-link" href="contact.html">Ask us about availability</a></p>';
+    if(!currentItems.length){track.dataset.cycleWidth='0';viewport.scrollLeft=0;return}
+    let copies=0;
+    while(track.scrollWidth<viewport.clientWidth*1.15&&copies<12){track.insertAdjacentHTML('beforeend',renderCopy(++copies))}
+    const cycleChildren=track.children.length;
+    for(let index=0;index<copies+1;index++)track.insertAdjacentHTML('beforeend',renderCopy(copies+index+1));
+    track.dataset.cycleWidth=String(track.children[cycleChildren]?.offsetLeft||track.scrollWidth/2);
+    initTilt(track);
+    viewport.scrollLeft=0;
+  };
+  rebuild();
+  if(viewport.dataset.arrivalControlsReady)return;
+  viewport.dataset.arrivalControlsReady='true';
+  let frame=0,lastTime=0,pauseUntil=0,hovered=false,interacting=false;
+  const reducedMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const pause=()=>{pauseUntil=performance.now()+1800};
+  const animate=now=>{
+    frame=0;
+    if(document.hidden||reducedMotion())return;
+    const cycleWidth=Number(track.dataset.cycleWidth||0);
+    if(cycleWidth>0&&!hovered&&!interacting&&now>pauseUntil){
+      if(lastTime)viewport.scrollLeft+=Math.min(now-lastTime,50)*.022;
+      if(viewport.scrollLeft>=cycleWidth)viewport.scrollLeft%=cycleWidth;
+    }
+    lastTime=now;
+    frame=requestAnimationFrame(animate);
+  };
+  const start=()=>{if(!frame&&!document.hidden&&!reducedMotion())frame=requestAnimationFrame(animate)};
+  viewport.addEventListener('pointerdown',()=>{interacting=true;pause()},{passive:true});
+  viewport.addEventListener('pointerup',()=>{interacting=false;pause()},{passive:true});
+  viewport.addEventListener('pointercancel',()=>{interacting=false;pause()},{passive:true});
+  viewport.addEventListener('touchstart',()=>{interacting=true;pause()},{passive:true});
+  viewport.addEventListener('touchend',()=>{interacting=false;pause()},{passive:true});
+  viewport.addEventListener('wheel',pause,{passive:true});
+  viewport.addEventListener('mouseenter',()=>{hovered=true;pause()});
+  viewport.addEventListener('mouseleave',()=>{hovered=false;start()});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0}else start()});
+  document.getElementById('arrivalsPrev')?.addEventListener('click',()=>{pause();viewport.scrollBy({left:-Math.max(240,viewport.clientWidth*.75),behavior:reducedMotion()?'auto':'smooth'})});
+  document.getElementById('arrivalsNext')?.addEventListener('click',()=>{pause();viewport.scrollBy({left:Math.max(240,viewport.clientWidth*.75),behavior:reducedMotion()?'auto':'smooth'})});
+  window.addEventListener('resize',()=>requestAnimationFrame(rebuild),{passive:true});
+  start();
 }
 
 function jewelleryCategoryURL(category){
@@ -364,10 +418,15 @@ function loadLazyVideo(video){
   let resolvedURL;
   try{resolvedURL=new URL(url,document.baseURI).href}catch(error){return}
   if(source.src!==resolvedURL){source.src=url;video.load()}
+  video.dataset.loadedVideoURL=url;
   const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
-  if(video.dataset.autoplay==='true'&&!reduced&&!navigator.connection?.saveData){
-    const playback=video.play();
-    if(playback?.catch)playback.catch(()=>{});
+  if(video.dataset.autoplay==='true'&&!reduced){
+    video.muted=true;video.playsInline=true;
+    const play=()=>{const playback=video.play();if(playback?.catch)playback.catch(()=>{})};
+    if(video.readyState>=2)play();else if(video.dataset.autoplayPending!=='true'){
+      video.dataset.autoplayPending='true';
+      video.addEventListener('loadeddata',()=>{video.dataset.autoplayPending='false';play()},{once:true});
+    }
   }
 }
 function initLazyVideos(){
@@ -380,11 +439,12 @@ function initLazyVideos(){
   if('IntersectionObserver' in window){
     const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{
       if(!entry.isIntersecting)return;
-      loadLazyVideo(entry.target);observer.unobserve(entry.target);
+      const video=entry.target,source=video.querySelector('source');
+      if(source?.dataset.src&&video.dataset.loadedVideoURL!==source.dataset.src)loadLazyVideo(video);
     }),{rootMargin:'300px'});
     videos.forEach(video=>observer.observe(video));
   }else{
-    window.setTimeout(()=>videos.forEach(loadLazyVideo),1200);
+    window.setTimeout(()=>videos.forEach(video=>{if(video.querySelector('source')?.dataset.src)loadLazyVideo(video)}),1200);
   }
 }
 function initFX(){
@@ -418,14 +478,31 @@ function applySiteSettings(){
     const videoURL=publicMediaURL(SITE_SETTINGS[video.dataset.videoSetting]);
     if(source.dataset.src===videoURL)return;
     source.dataset.src=videoURL;
-    if(!videoURL){source.removeAttribute('src');video.load();return}
+    video.pause();source.removeAttribute('src');video.load();video.dataset.loadedVideoURL='';video.dataset.autoplayPending='false';
+    if(!videoURL)return;
     const pathname=new URL(videoURL,document.baseURI).pathname.toLowerCase();
     source.type=pathname.endsWith('.webm')?'video/webm':'video/mp4';
-    loadLazyVideo(video);
+    const bounds=video.getBoundingClientRect();
+    if(bounds.bottom>=-300&&bounds.top<=innerHeight+300)loadLazyVideo(video);
   });
   setText('.promo-card-copy h3',SITE_SETTINGS.home_promo_title);
   const meta=document.querySelector('meta[name="description"]');if(meta&&SITE_SETTINGS.meta_description)meta.content=SITE_SETTINGS.meta_description;
   document.querySelectorAll('[data-setting]').forEach(node=>{const value=SITE_SETTINGS[node.dataset.setting];if(value!==undefined&&value!==null)node.textContent=String(value)});
+  document.querySelectorAll('[data-setting-src]').forEach(node=>{
+    const value=publicMediaURL(SITE_SETTINGS[node.dataset.settingSrc]);
+    if(node.tagName==='IMG'){
+      if(value){if(node.getAttribute('src')!==value)node.src=value;node.hidden=false}
+      else{node.removeAttribute('src');node.hidden=true}
+    }
+  });
+  document.querySelectorAll('[data-setting-alt]').forEach(node=>{const value=SITE_SETTINGS[node.dataset.settingAlt];if(value!==undefined&&value!==null)node.alt=String(value)});
+  document.querySelectorAll('[data-setting-href]').forEach(node=>{
+    const key=node.dataset.settingHref,raw=String(SITE_SETTINGS[key]||'').trim();
+    if(!raw){if(Object.prototype.hasOwnProperty.call(SITE_SETTINGS,key))node.removeAttribute('href');return}
+    try{const url=new URL(raw,document.baseURI);if(/^https?:$/.test(url.protocol)||url.origin===location.origin)node.href=url.href;else node.removeAttribute('href')}catch{node.removeAttribute('href')}
+  });
+  const aboutImage=document.querySelector('[data-setting-src="about_image_url"]'),aboutGem=document.getElementById('g1');
+  if(aboutImage&&aboutGem)aboutGem.hidden=!aboutImage.hidden;
   const phone=String(SITE_SETTINGS.contact_phone||'+94 11 234 5678'),email=String(SITE_SETTINGS.contact_email||'info@gemz.lk');
   const phoneLink=document.getElementById('contactPhoneInfo'),emailLink=document.getElementById('contactEmailInfo');
   if(phoneLink)phoneLink.href=`tel:${phone.replace(/[^+\d]/g,'')}`;

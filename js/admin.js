@@ -3,6 +3,7 @@
   const $$ = (selector, root=document) => [...root.querySelectorAll(selector)];
   const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const defaultVisual={colors:['#fff3a8','#f2b705','#a86a00'],background:['#3a2a08','#8a5a12']};
+  const aboutDefaults={about_image_url:'',about_image_alt:'Gemstone expertise rooted in Ceylon',about_badge:'Ceylon · Est. 1985',about_values_eyebrow:'Our Values',about_values_title:'What We Stand For',about_value_1_number:'01',about_value_1_title:'Authenticity',about_value_1_description:'100% natural stones with transparent origin and treatment disclosure.',about_value_2_number:'02',about_value_2_title:'Expertise',about_value_2_description:'Over 40 years of grading, sourcing and cutting knowledge.',about_value_3_number:'03',about_value_3_title:'Trust',about_value_3_description:'Long-term relationships built on honesty, discretion and service.',about_milestones_eyebrow:'Milestones',about_milestones_title:'Our Journey',about_milestone_1_year:'1985',about_milestone_1_description:'Founded in Sri Lanka, trading Ratnapura sapphires.',about_milestone_2_year:'2000s',about_milestone_2_description:'Expansion into international gem fairs and private clients.',about_milestone_3_year:'2010s',about_milestone_3_description:'Presence across three continents and a global buyer network.',about_milestone_4_year:'Today',about_milestone_4_description:'Gemz.lk online — Ceylon gems, now one enquiry away.',about_cta_title:'Begin your gemstone journey',about_cta_description:'Speak with our team about the perfect stone.',about_cta_button:'Contact Us',about_cta_url:'contact.html'};
   const state={client:null,user:null,products:[],categories:[],articles:[],inquiries:[],settings:{},privateSettings:[],view:'overview',editing:null,editingCategory:null,toastTimer:null,sitemapText:''};
   const viewTitles={overview:'Overview',catalog:'Catalog',categories:'Categories',articles:'Insights',inquiries:'Inquiries',media:'Media library',settings:'Site settings',seo:'SEO Dashboard'};
 
@@ -99,11 +100,15 @@
     $('#inquiriesTable').innerHTML=items.length?inquiryTable(items):emptyState('No enquiries here','Website contact form submissions will appear in this list.');
   }
   function settingValue(key){const value=state.settings[key];return value==null?'':typeof value==='string'?value:String(value)}
-  function refreshSettingPreviews(){[['store_logo_url','storeLogoPreview'],['store_favicon_url','storeFaviconPreview'],['seo_og_image','seoOgImagePreview']].forEach(([key,id])=>{const preview=$(`#${id}`),url=settingValue(key);preview.hidden=!url;if(url)preview.src=url;else preview.removeAttribute('src')})}
+  function refreshSettingPreviews(){[['store_logo_url','storeLogoPreview'],['store_favicon_url','storeFaviconPreview'],['seo_og_image','seoOgImagePreview'],['about_image_url','aboutImagePreview']].forEach(([key,id])=>{const preview=$(`#${id}`),url=settingValue(key);preview.hidden=!url;if(url)preview.src=url;else preview.removeAttribute('src')})}
   function populateSettings(){
     for(const [key,value] of Object.entries(state.settings)){
       const field=$(`[name="${CSS.escape(key)}"]`,document);
       if(field&&field.type!=='file'&&field.type!=='checkbox')field.value=typeof value==='string'?value:String(value??'');
+    }
+    for(const [key,value] of Object.entries(aboutDefaults)){
+      if(state.settings[key]!==undefined&&state.settings[key]!==null)continue;
+      const field=$(`[name="${CSS.escape(key)}"]`,document);if(field)field.value=value;
     }
     refreshSettingPreviews();
     const secretStatus=$('#seoSecretStatus');
@@ -286,7 +291,7 @@
   }
   async function handleSettingsUpload(button){
     const form=button.closest('form'),input=$(`#${button.dataset.fileTarget}`),field=$(`[name="${CSS.escape(button.dataset.settingsUpload)}"]`,form);
-    try{const url=await uploadFile(input.files?.[0]);field.value=url;const preview=$(`#${button.dataset.settingsUpload==='store_logo_url'?'storeLogoPreview':button.dataset.settingsUpload==='store_favicon_url'?'storeFaviconPreview':'seoOgImagePreview'}`);preview.src=url;preview.hidden=false;updateSeoPreviews();notify('Image uploaded. Save site settings to publish it.')}catch(error){notify(error.message||'Upload failed.','error')}
+    try{const url=await uploadFile(input.files?.[0]);field.value=url;const previewId={store_logo_url:'storeLogoPreview',store_favicon_url:'storeFaviconPreview',seo_og_image:'seoOgImagePreview',about_image_url:'aboutImagePreview'}[button.dataset.settingsUpload];const preview=previewId?document.getElementById(previewId):null;if(preview){preview.src=url;preview.hidden=false}updateSeoPreviews();notify('Image uploaded. Save site settings to publish it.')}catch(error){notify(error.message||'Upload failed.','error')}
   }
   async function handleSettingsVideoUpload(button){
     try{const url=await uploadFile($(`#${button.dataset.fileTarget}`).files?.[0]);button.closest('form').elements[button.dataset.settingsVideoUpload].value=url;notify('Video uploaded to Supabase Storage. Save site settings to publish it.')}catch(error){notify(error.message||'Upload failed.','error')}
@@ -403,7 +408,7 @@
     $('#seoForm').addEventListener('submit',event=>saveSettings(event).catch(error=>notify(error.message,'error')));
     $('#settingsForm').addEventListener('click',event=>{const button=event.target.closest('[data-settings-upload]'),video=event.target.closest('[data-settings-video-upload]');if(button)handleSettingsUpload(button);if(video)handleSettingsVideoUpload(video)});
     $('#seoForm').addEventListener('click',event=>{const button=event.target.closest('[data-settings-upload]');if(button)handleSettingsUpload(button)});
-    $('#settingsForm').addEventListener('input',event=>{if(event.target.name==='store_logo_url'||event.target.name==='store_favicon_url'){const preview=$(`#${event.target.name==='store_logo_url'?'storeLogoPreview':'storeFaviconPreview'}`);preview.hidden=!event.target.value;if(event.target.value)preview.src=event.target.value;else preview.removeAttribute('src')}});
+    $('#settingsForm').addEventListener('input',event=>{const previews={store_logo_url:'storeLogoPreview',store_favicon_url:'storeFaviconPreview',about_image_url:'aboutImagePreview'},previewId=previews[event.target.name];if(previewId){const preview=document.getElementById(previewId);preview.hidden=!event.target.value;if(event.target.value)preview.src=event.target.value;else preview.removeAttribute('src')}});
     $('#seoForm').addEventListener('input',event=>{
       updateSeoPreviews();
       if(event.target.name==='seo_og_image'){const preview=$('#seoOgImagePreview');preview.hidden=!event.target.value;if(event.target.value)preview.src=event.target.value;else preview.removeAttribute('src')}
