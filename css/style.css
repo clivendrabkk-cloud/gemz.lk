@@ -127,11 +127,11 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 
 /* ===== Collection ===== */
 .collection{background:var(--paper-2);overflow:hidden}
-.track-wrap{margin-top:60px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);cursor:grab}
+.track-wrap{margin-top:60px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);cursor:grab}
 .track-wrap::-webkit-scrollbar{display:none}
 .track-wrap.is-dragging{cursor:grabbing;user-select:none}
 .track{display:flex;align-items:stretch;gap:28px;width:max-content;padding:30px 1px}
-.track .card,.track .jewellery-card{width:clamp(230px,25vw,300px);flex:0 0 auto;scroll-snap-align:start}
+.track .card,.track .jewellery-card{width:clamp(230px,25vw,300px);flex:0 0 auto}
 .new-arrivals{background:var(--paper)}
 .arrivals-carousel{margin:42px auto 0}
 .jewellery-showcase{background:#fff;overflow:hidden}

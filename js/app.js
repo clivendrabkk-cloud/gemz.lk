@@ -299,7 +299,7 @@ function setupHomeScroller(viewportId,trackId,items,renderItem,emptyHTML){
   if(!viewport||!track)return;
   let state=viewport._homeScroller;
   if(!state){
-    state=viewport._homeScroller={frame:0,lastTime:0,pauseUntil:0,interacting:false,visible:false,drag:null,suppressClickUntil:0};
+    state=viewport._homeScroller={frame:0,lastTime:0,pauseUntil:0,interacting:false,drag:null,suppressClickUntil:0,scrollRemainder:0};
   }
   const renderCopy=copy=>items.map((item,index)=>renderItem(item,index,copy)).join('');
   const appendCopy=copy=>{
@@ -317,8 +317,10 @@ function setupHomeScroller(viewportId,trackId,items,renderItem,emptyHTML){
     if(!items.length)return;
     const originalCount=track.children.length;
     appendCopy(1);
-    const repeatedCard=track.children[originalCount];
-    const cycleWidth=repeatedCard?repeatedCard.getBoundingClientRect().left-track.getBoundingClientRect().left+viewport.scrollLeft:0;
+    const firstCard=track.children[0],repeatedCard=track.children[originalCount];
+    const measuredCycle=firstCard&&repeatedCard?repeatedCard.getBoundingClientRect().left-firstCard.getBoundingClientRect().left:0;
+    const offsetCycle=firstCard&&repeatedCard?repeatedCard.offsetLeft-firstCard.offsetLeft:0;
+    const cycleWidth=measuredCycle||offsetCycle||track.scrollWidth/2;
     if(!cycleWidth){track.innerHTML=renderCopy(0);return}
     let copy=1;
     while(track.scrollWidth<viewport.clientWidth+cycleWidth&&copy<20)appendCopy(++copy);
@@ -331,16 +333,20 @@ function setupHomeScroller(viewportId,trackId,items,renderItem,emptyHTML){
   const pause=()=>{state.pauseUntil=performance.now()+1600};
   const animate=now=>{
     state.frame=0;
-    if(document.hidden||!state.visible)return;
+    if(document.hidden)return;
     const cycleWidth=Number(track.dataset.cycleWidth||0);
     if(cycleWidth>0&&!state.interacting&&now>state.pauseUntil){
-      if(state.lastTime){state.lastAutoAt=now;viewport.scrollLeft+=Math.min(now-state.lastTime,50)*.024}
-      if(viewport.scrollLeft>=cycleWidth)viewport.scrollLeft%=cycleWidth;
+      if(state.lastTime){
+        state.scrollRemainder+=Math.min(now-state.lastTime,50)*.05;
+        const step=Math.floor(state.scrollRemainder);
+        if(step>0){viewport.scrollLeft+=step;state.scrollRemainder-=step}
+      }
+      if(viewport.scrollLeft>=cycleWidth){viewport.scrollLeft%=cycleWidth;state.scrollRemainder=0}
     }
     state.lastTime=now;
     state.frame=requestAnimationFrame(animate);
   };
-  const start=()=>{if(!state.frame&&!document.hidden&&state.visible)state.frame=requestAnimationFrame(animate)};
+  const start=()=>{if(!state.frame&&!document.hidden)state.frame=requestAnimationFrame(animate)};
   viewport.addEventListener('pointerdown',event=>{
     state.interacting=true;pause();
     if(event.pointerType==='mouse'&&event.button===0)state.drag={id:event.pointerId,x:event.clientX,scroll:viewport.scrollLeft,moved:false};
@@ -370,10 +376,6 @@ function setupHomeScroller(viewportId,trackId,items,renderItem,emptyHTML){
     else if(event.key==='End')viewport.scrollTo({left:viewport.scrollWidth,behavior:'smooth'});
     else viewport.scrollBy({left:event.key==='ArrowRight'?distance:-distance,behavior:'smooth'});
   });
-  if('IntersectionObserver' in window){
-    const observer=new IntersectionObserver(entries=>{state.visible=entries[0]?.isIntersecting||false;if(state.visible)start();else{cancelAnimationFrame(state.frame);state.frame=0}},{rootMargin:'120px'});
-    observer.observe(viewport);
-  }else state.visible=true;
   document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(state.frame);state.frame=0}else start()});
   window.addEventListener('resize',()=>requestAnimationFrame(state.build),{passive:true});
   start();
