@@ -242,6 +242,16 @@ const icon={
   user:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
   arrow:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>'
 };
+const socialIcon={
+  facebook:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.6 21v-8h2.7l.4-3h-3.1V8.1c0-.9.3-1.5 1.6-1.5h1.7V3.9c-.3 0-1.4-.1-2.6-.1-2.6 0-4.4 1.6-4.4 4.5V10H7v3h2.9v8z"/></svg>',
+  instagram:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none"/></svg>',
+  x:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3L12 14.6 5.6 22H2.5l7.3-8.4L1.9 2h6.5l4.5 6.8L18.9 2zm-1.1 17.8h1.7L7.4 4.1H5.6l12.2 15.7z"/></svg>',
+  youtube:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.6 3.6 12 3.6 12 3.6s-7.6 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.8.5 9.4.5 9.4.5s7.6 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.6 15.6V8.4l6.3 3.6z"/></svg>',
+  linkedin:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.2 8.4a2.1 2.1 0 1 0 0-4.2 2.1 2.1 0 0 0 0 4.2zM3.4 10H7v10.6H3.4zM9.2 10h3.4v1.4h.1c.5-.9 1.6-1.8 3.3-1.8 3.6 0 4.3 2.4 4.3 5.4v5.6h-3.6v-5c0-1.2 0-2.8-1.7-2.8s-2 1.3-2 2.7v5.1H9.2z"/></svg>',
+  pinterest:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.64 19.31c-.09-.81-.17-2.07.04-2.96l1.23-5.22s-.31-.62-.31-1.53c0-1.44.83-2.51 1.87-2.51.88 0 1.3.66 1.3 1.45 0 .88-.56 2.2-.85 3.43-.24 1.02.51 1.85 1.52 1.85 1.83 0 3.24-1.93 3.24-4.72 0-2.47-1.78-4.2-4.31-4.2-2.94 0-4.67 2.21-4.67 4.49 0 .89.34 1.85.77 2.37.09.1.1.2.07.31l-.29 1.18c-.05.19-.15.23-.35.14-1.29-.6-2.1-2.49-2.1-4.01 0-3.26 2.37-6.26 6.83-6.26 3.59 0 6.39 2.56 6.39 5.98 0 3.57-2.25 6.45-5.37 6.45-1.05 0-2.04-.55-2.38-1.19l-.64 2.43c-.23.89-.86 2-1.29 2.68A10 10 0 1 0 12 2z"/></svg>',
+  tiktok:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.6 6.1a6.5 6.5 0 0 1-3.9-3.9 6.8 6.8 0 0 1-.3-1.7h-4.1v15.2a3.1 3.1 0 1 1-2.2-3v-4.2a7.3 7.3 0 1 0 6.3 7.2V8a10.5 10.5 0 0 0 5.9 1.8V5.7a6.6 6.6 0 0 1-1.7.4z"/></svg>',
+  whatsapp:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 2 17.7L.5 23.5l6-1.6A11.8 11.8 0 0 0 20.5 3.5zM12 21a9.7 9.7 0 0 1-4.9-1.3l-.4-.2-3.6 1 1-3.5-.2-.4A9.7 9.7 0 1 1 12 21zm5.3-7.3c-.3-.2-1.7-.9-2-.9s-.5-.2-.7.2-.8.9-.9 1.1-.3.2-.6.1a7.9 7.9 0 0 1-2.3-1.4 8.6 8.6 0 0 1-1.6-2c-.2-.3 0-.5.1-.6l.5-.6.3-.5c.1-.2 0-.4 0-.5l-.9-2.1c-.2-.5-.5-.4-.7-.4h-.6c-.2 0-.5.1-.8.4s-1 1-1 2.3 1 2.6 1.2 2.8a11 11 0 0 0 4.2 3.7c.6.3 1.1.5 1.5.6.6.2 1.2.2 1.7.1.5-.1 1.7-.7 1.9-1.3s.2-1.2.2-1.3-.2-.3-.5-.5z"/></svg>'
+};
 
 /* Cart (inquiry list) */
 const Cart={
@@ -268,12 +278,12 @@ function layout(active){
   const navHome=label('nav_home','Home'),navCollection=label('nav_collection','Our Gemstones'),navGems=label('nav_gemstones','GEM'),navJewellery=label('nav_jewellery','JEWELLERY'),navAllJewellery=label('nav_all_jewellery','All Jewellery'),navWatches=label('nav_watches','WATCH'),navAbout=label('nav_about','About us'),navInsights=label('nav_insights','Insights'),navContact=label('nav_contact','Contact Us'),navAccount=label('nav_account','Account');
   const gemNavLinks=GEM_CATEGORIES.map(category=>`<a href="${categoryBrowseURL('gem',category.label)}">${htmlEscape(category.label)}</a>`).join('');
   const jewelleryNavLinks=JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('');
-  const socialProfiles=[['seo_social_facebook','Facebook'],['seo_social_instagram','Instagram'],['seo_social_x','X'],['seo_social_youtube','YouTube'],['seo_social_linkedin','LinkedIn'],['seo_social_pinterest','Pinterest'],['seo_social_tiktok','TikTok']];
-  const socialMarkup=socialProfiles.map(([key,name])=>{
-    try{const url=new URL(String(SITE_SETTINGS[key]||''));return /^https?:$/.test(url.protocol)?`<a href="${htmlEscape(url.href)}" target="_blank" rel="me noopener noreferrer">${name}</a>`:''}catch{return''}
+  const socialProfiles=[['seo_social_facebook','Facebook','facebook'],['seo_social_instagram','Instagram','instagram'],['seo_social_x','X','x'],['seo_social_youtube','YouTube','youtube'],['seo_social_linkedin','LinkedIn','linkedin'],['seo_social_pinterest','Pinterest','pinterest'],['seo_social_tiktok','TikTok','tiktok']];
+  const socialMarkup=socialProfiles.map(([key,name,platform])=>{
+    try{const url=new URL(String(SITE_SETTINGS[key]||''));return /^https?:$/.test(url.protocol)?`<a class="social-button social-${platform}" href="${htmlEscape(url.href)}" target="_blank" rel="me noopener noreferrer" aria-label="${name}" title="${name}">${socialIcon[platform]}</a>`:''}catch{return''}
   }).join('');
   const whatsAppURL=safeWhatsAppURL(SITE_SETTINGS.whatsapp_number||SITE_SETTINGS.seo_social_whatsapp);
-  const whatsAppMarkup=whatsAppURL?`<a href="${htmlEscape(whatsAppURL)}" target="_blank" rel="me noopener noreferrer">WhatsApp</a>`:'';
+  const whatsAppMarkup=whatsAppURL?`<a class="social-button social-whatsapp" href="${htmlEscape(whatsAppURL)}" target="_blank" rel="me noopener noreferrer" aria-label="WhatsApp" title="WhatsApp">${socialIcon.whatsapp}</a>`:'';
   document.getElementById('site-header').innerHTML=`
   <div class="announce"><span class="sr-only">${announce}</span><div class="announce-track" aria-hidden="true">${Array(8).fill(`<span>${announce}</span><span>Over 40 Years of Ceylon Gem Expertise.</span>`).join('')}</div></div>
   <header class="header" id="hdr"><div class="header-in">
