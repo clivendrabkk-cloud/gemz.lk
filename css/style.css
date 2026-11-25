@@ -206,9 +206,9 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .viewer .gem3d{width:62%;transform-style:preserve-3d;filter:drop-shadow(0 40px 40px rgba(0,0,0,.45));will-change:transform}
 .viewer .gem3d img{width:100%;height:100%;object-fit:contain}
 .viewer small{position:absolute;bottom:18px;left:0;right:0;text-align:center;color:rgba(255,255,255,.7);font-size:.68rem;letter-spacing:.26em;text-transform:uppercase}
-.viewer.has-product-image{border-radius:0;background:transparent!important;box-shadow:none;cursor:default}
-.viewer.has-product-image .gem3d{width:100%;height:100%;filter:none;transform:none!important}
-.viewer.has-product-image .gem3d img{display:block;width:100%;height:100%;object-fit:cover}
+.viewer.has-product-image{display:block;aspect-ratio:auto;border-radius:0;background:transparent!important;box-shadow:none;cursor:default;overflow:visible}
+.viewer.has-product-image .gem3d{width:100%;height:auto;filter:none;transform:none!important}
+.viewer.has-product-image .gem3d img{display:block;width:100%;height:auto;max-height:min(78vh,900px);object-fit:contain}
 .specs{width:100%;border-collapse:collapse;margin:30px 0}
 .specs td{padding:15px 0;border-bottom:1px solid var(--line);font-size:.95rem}
 .specs td:first-child{text-transform:uppercase;letter-spacing:.1em;font-size:.875rem;font-weight:700;opacity:.65;width:42%}
@@ -222,8 +222,8 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .jewellery-product-visual{position:sticky;top:110px;aspect-ratio:1;border-radius:24px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 45%,#39405a,#151925 72%);box-shadow:var(--shadow)}
 .jewellery-product-visual svg{width:70%;filter:drop-shadow(0 25px 25px rgba(0,0,0,.4))}
 .jewellery-product-visual img{width:100%;height:100%;object-fit:cover}
-.jewellery-product-visual.has-product-image{border-radius:0;background:transparent;box-shadow:none}
-.jewellery-product-visual.has-product-image img{display:block;width:100%;height:100%;object-fit:cover}
+.jewellery-product-visual.has-product-image{display:block;aspect-ratio:auto;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
+.jewellery-product-visual.has-product-image img{display:block;width:100%;height:auto;max-height:min(78vh,900px);object-fit:contain}
 .jewellery-product .specs td:first-child{width:48%}
 .detail-actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
 
