@@ -588,6 +588,15 @@ function applySiteSettings(){
     if(!raw){if(Object.prototype.hasOwnProperty.call(SITE_SETTINGS,key))node.removeAttribute('href');return}
     try{const url=new URL(raw,document.baseURI);if(/^https?:$/.test(url.protocol)||url.origin===location.origin)node.href=url.href;else node.removeAttribute('href')}catch{node.removeAttribute('href')}
   });
+  const heritageImage=document.querySelector('[data-setting-src="home_heritage_image_url"]'),promoGem=document.getElementById('promoGem');
+  if(heritageImage&&promoGem){
+    if(!heritageImage.dataset.fallbackBound){
+      heritageImage.dataset.fallbackBound='true';
+      heritageImage.addEventListener('load',()=>{promoGem.hidden=true;heritageImage.style.display='';heritageImage.parentElement?.removeAttribute('data-image-error')});
+      heritageImage.addEventListener('error',()=>{promoGem.hidden=false;heritageImage.parentElement?.removeAttribute('data-image-error')});
+    }
+    promoGem.hidden=Boolean(!heritageImage.hidden&&heritageImage.complete&&heritageImage.naturalWidth>0);
+  }
   const aboutImage=document.querySelector('[data-setting-src="about_image_url"]'),aboutGem=document.getElementById('g1');
   if(aboutImage&&aboutGem)aboutGem.hidden=!aboutImage.hidden;
   const phone=String(SITE_SETTINGS.contact_phone||'+94 11 234 5678'),email=String(SITE_SETTINGS.contact_email||'info@gemz.lk');

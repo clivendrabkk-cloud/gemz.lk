@@ -157,9 +157,11 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .promo-card video,.promo-visual{width:100%;aspect-ratio:16/9;object-fit:cover;background:var(--ink)}
 .promo-card>div:last-child:not(.promo-visual){padding:24px 28px 28px}
 .promo-card h3{font-size:1.8rem}
-.promo-visual{display:grid;place-items:center;background:radial-gradient(circle at 50% 50%,#46518b,#12152a 72%)}
+.promo-visual{position:relative;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 50%,#46518b,#12152a 72%)}
 .promo-visual .gem-in{width:40%;filter:drop-shadow(0 18px 22px rgba(0,0,0,.4))}
 .promo-visual svg{width:100%}
+.promo-visual .promo-heritage-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.promo-visual .promo-heritage-image[hidden]{display:none}
 .promo-card .eyebrow{margin-bottom:6px}
 .text-link{display:inline-block;margin-top:16px;color:#8a5a12;font-weight:700;text-decoration:underline;text-underline-offset:4px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:28px;margin-top:50px}
