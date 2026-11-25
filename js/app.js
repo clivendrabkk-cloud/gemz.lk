@@ -294,55 +294,88 @@ function cardHTML(g,i){
   <div class="card-body"><h3>${htmlEscape(g.name)}</h3><span class="tag">Price on Request</span></div></a>`;
 }
 
-function setupArrivalsCarousel(items){
-  const viewport=document.getElementById('arrivalsCarousel'),track=document.getElementById('arrivals'),controls=document.getElementById('arrivalsControls');
-  if(!viewport||!track||!controls)return;
-  track._arrivalItems=items;
-  track.dataset.cardCount=String(items.length);
-  controls.hidden=!items.length;
-  const rebuild=()=>{
-    const currentItems=track._arrivalItems||[];
-    const renderCopy=copy=>currentItems.map((item,index)=>cardHTML(item,`${copy}-${index}`)).join('');
-    track.innerHTML=currentItems.length?renderCopy(0):'<p class="empty-content">New gemstones will be added soon. <a class="text-link" href="contact.html">Ask us about availability</a></p>';
-    if(!currentItems.length){track.dataset.cycleWidth='0';viewport.scrollLeft=0;return}
-    let copies=0;
-    while(track.scrollWidth<viewport.clientWidth*1.15&&copies<12){track.insertAdjacentHTML('beforeend',renderCopy(++copies))}
-    const cycleChildren=track.children.length;
-    for(let index=0;index<copies+1;index++)track.insertAdjacentHTML('beforeend',renderCopy(copies+index+1));
-    track.dataset.cycleWidth=String(track.children[cycleChildren]?.offsetLeft||track.scrollWidth/2);
-    initTilt(track);
-    viewport.scrollLeft=0;
-  };
-  rebuild();
-  if(viewport.dataset.arrivalControlsReady)return;
-  viewport.dataset.arrivalControlsReady='true';
-  let frame=0,lastTime=0,pauseUntil=0,hovered=false,interacting=false;
+function setupHomeScroller(viewportId,trackId,items,renderItem,emptyHTML){
+  const viewport=document.getElementById(viewportId),track=document.getElementById(trackId);
+  if(!viewport||!track)return;
+  let state=viewport._homeScroller;
+  if(!state){
+    state=viewport._homeScroller={frame:0,lastTime:0,pauseUntil:0,hovered:false,interacting:false,visible:false,drag:null,suppressClickUntil:0};
+  }
   const reducedMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const pause=()=>{pauseUntil=performance.now()+1800};
+  const renderCopy=copy=>items.map((item,index)=>renderItem(item,index,copy)).join('');
+  const appendCopy=copy=>{
+    const template=document.createElement('template');template.innerHTML=renderCopy(copy);
+    [...template.content.children].forEach(card=>{
+      card.setAttribute('aria-hidden','true');
+      if(card.matches('a,button,input,select,textarea,[tabindex]'))card.tabIndex=-1;
+      card.querySelectorAll('a,button,input,select,textarea,[tabindex]').forEach(element=>{element.tabIndex=-1});
+      track.append(card);
+    });
+  };
+  state.build=()=>{
+    track.innerHTML=items.length?renderCopy(0):emptyHTML;
+    track.dataset.cycleWidth='0';viewport.scrollLeft=0;
+    if(!items.length)return;
+    const originalCount=track.children.length;
+    appendCopy(1);
+    const cycleWidth=track.children[originalCount]?.offsetLeft||0;
+    if(!cycleWidth){track.innerHTML=renderCopy(0);return}
+    let copy=1;
+    while(track.scrollWidth<viewport.clientWidth+cycleWidth&&copy<20)appendCopy(++copy);
+    track.dataset.cycleWidth=String(cycleWidth);
+    initTilt(track);
+  };
+  state.build();
+  if(viewport.dataset.homeScrollerReady)return;
+  viewport.dataset.homeScrollerReady='true';
+  const pause=()=>{state.pauseUntil=performance.now()+1600};
   const animate=now=>{
-    frame=0;
-    if(document.hidden||reducedMotion())return;
+    state.frame=0;
+    if(document.hidden||reducedMotion()||!state.visible)return;
     const cycleWidth=Number(track.dataset.cycleWidth||0);
-    if(cycleWidth>0&&!hovered&&!interacting&&now>pauseUntil){
-      if(lastTime)viewport.scrollLeft+=Math.min(now-lastTime,50)*.022;
+    if(cycleWidth>0&&!state.hovered&&!state.interacting&&now>state.pauseUntil){
+      if(state.lastTime){state.lastAutoAt=now;viewport.scrollLeft+=Math.min(now-state.lastTime,50)*.024}
       if(viewport.scrollLeft>=cycleWidth)viewport.scrollLeft%=cycleWidth;
     }
-    lastTime=now;
-    frame=requestAnimationFrame(animate);
+    state.lastTime=now;
+    state.frame=requestAnimationFrame(animate);
   };
-  const start=()=>{if(!frame&&!document.hidden&&!reducedMotion())frame=requestAnimationFrame(animate)};
-  viewport.addEventListener('pointerdown',()=>{interacting=true;pause()},{passive:true});
-  viewport.addEventListener('pointerup',()=>{interacting=false;pause()},{passive:true});
-  viewport.addEventListener('pointercancel',()=>{interacting=false;pause()},{passive:true});
-  viewport.addEventListener('touchstart',()=>{interacting=true;pause()},{passive:true});
-  viewport.addEventListener('touchend',()=>{interacting=false;pause()},{passive:true});
+  const start=()=>{if(!state.frame&&!document.hidden&&!reducedMotion()&&state.visible)state.frame=requestAnimationFrame(animate)};
+  viewport.addEventListener('pointerdown',event=>{
+    state.interacting=true;pause();
+    if(event.pointerType==='mouse'&&event.button===0)state.drag={id:event.pointerId,x:event.clientX,scroll:viewport.scrollLeft,moved:false};
+  },{passive:true});
+  viewport.addEventListener('pointermove',event=>{
+    const drag=state.drag;if(!drag||drag.id!==event.pointerId)return;
+    const distance=event.clientX-drag.x;
+    if(!drag.moved&&Math.abs(distance)<6)return;
+    drag.moved=true;viewport.classList.add('is-dragging');viewport.setPointerCapture(event.pointerId);
+    viewport.scrollLeft=drag.scroll-distance;pause();event.preventDefault();
+  });
+  const finishPointer=event=>{
+    if(state.drag?.id===event.pointerId){if(state.drag.moved)state.suppressClickUntil=performance.now()+80;state.drag=null;viewport.classList.remove('is-dragging')}
+    state.interacting=false;pause();
+  };
+  viewport.addEventListener('pointerup',finishPointer,{passive:true});
+  viewport.addEventListener('pointercancel',finishPointer,{passive:true});
   viewport.addEventListener('wheel',pause,{passive:true});
-  viewport.addEventListener('mouseenter',()=>{hovered=true;pause()});
-  viewport.addEventListener('mouseleave',()=>{hovered=false;start()});
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0}else start()});
-  document.getElementById('arrivalsPrev')?.addEventListener('click',()=>{pause();viewport.scrollBy({left:-Math.max(240,viewport.clientWidth*.75),behavior:reducedMotion()?'auto':'smooth'})});
-  document.getElementById('arrivalsNext')?.addEventListener('click',()=>{pause();viewport.scrollBy({left:Math.max(240,viewport.clientWidth*.75),behavior:reducedMotion()?'auto':'smooth'})});
-  window.addEventListener('resize',()=>requestAnimationFrame(rebuild),{passive:true});
+  viewport.addEventListener('mouseenter',()=>{state.hovered=true;pause()});
+  viewport.addEventListener('mouseleave',()=>{state.hovered=false;state.interacting=false;state.drag=null;viewport.classList.remove('is-dragging');start()});
+  viewport.addEventListener('click',event=>{if(performance.now()<state.suppressClickUntil){event.preventDefault();event.stopPropagation()}},{capture:true});
+  viewport.addEventListener('keydown',event=>{
+    if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+    event.preventDefault();pause();
+    const distance=Math.max(240,viewport.clientWidth*.7);
+    if(event.key==='Home')viewport.scrollTo({left:0,behavior:reducedMotion()?'auto':'smooth'});
+    else if(event.key==='End')viewport.scrollTo({left:viewport.scrollWidth,behavior:reducedMotion()?'auto':'smooth'});
+    else viewport.scrollBy({left:event.key==='ArrowRight'?distance:-distance,behavior:reducedMotion()?'auto':'smooth'});
+  });
+  if('IntersectionObserver' in window){
+    const observer=new IntersectionObserver(entries=>{state.visible=entries[0]?.isIntersecting||false;if(state.visible)start();else{cancelAnimationFrame(state.frame);state.frame=0}},{rootMargin:'120px'});
+    observer.observe(viewport);
+  }else state.visible=true;
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(state.frame);state.frame=0}else start()});
+  window.addEventListener('resize',()=>requestAnimationFrame(state.build),{passive:true});
   start();
 }
 

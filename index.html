@@ -37,12 +37,8 @@
 <!-- New arrivals -->
 <section class="new-arrivals" id="new-arrivals">
   <div class="wrap center"><span class="eyebrow" data-reveal data-setting="home_arrivals_eyebrow">Just selected</span><h2 data-reveal data-setting="home_arrivals_title">New Arrivals</h2><p class="lead" data-reveal data-setting="home_arrivals_description">Discover a few of the natural stones now available to enquire about.</p></div>
-  <div class="wrap arrivals-carousel" id="arrivalsCarousel" aria-label="New arrivals" tabindex="0">
-    <div class="arrivals-track" id="arrivals"></div>
-  </div>
-  <div class="arrivals-controls center" id="arrivalsControls" aria-label="New arrivals controls">
-    <button class="arrival-control" id="arrivalsPrev" type="button" aria-label="Scroll to previous arrivals">Previous</button>
-    <button class="arrival-control" id="arrivalsNext" type="button" aria-label="Scroll to more arrivals">Next</button>
+  <div class="wrap track-wrap auto-scroll-viewport arrivals-carousel" id="arrivalsCarousel" role="region" aria-label="New arrivals" tabindex="0">
+    <div class="track arrivals-track" id="arrivals"></div>
   </div>
   <div class="center" style="margin-top:30px"><a href="collection.html?section=gem" class="btn btn-ghost">Explore all gemstones</a></div>
 </section>
@@ -50,14 +46,14 @@
 <!-- Running gemstone cards -->
 <section class="collection" id="gem-boxes">
   <div class="wrap center"><span class="eyebrow" data-reveal data-setting="home_gem_eyebrow">From Ceylon</span><h2 data-reveal data-setting="home_gem_title">Gemstone Collection</h2><p class="lead" data-reveal data-setting="home_gem_description">Browse our natural gemstone selection.</p></div>
-  <div class="track-wrap"><div class="track" id="gemTrack"></div></div>
+  <div class="wrap track-wrap auto-scroll-viewport" id="gemScroller" role="region" aria-label="Gemstone collection" tabindex="0"><div class="track" id="gemTrack"></div></div>
   <div class="center" style="margin-top:30px"><a href="collection.html?section=gem" class="btn btn-ghost">View all gemstones</a></div>
 </section>
 
 <!-- Running jewellery cards -->
 <section class="jewellery-showcase" id="jewellery-boxes">
   <div class="wrap center"><span class="eyebrow" data-reveal data-setting="home_jewellery_eyebrow">Designed for every occasion</span><h2 data-reveal data-setting="home_jewellery_title">Jewellery</h2><p class="lead" data-reveal data-setting="home_jewellery_description">Explore rings, pendants, necklaces and more.</p></div>
-  <div class="track-wrap"><div class="track jewellery-track" id="jewelleryTrack"></div></div>
+  <div class="wrap track-wrap auto-scroll-viewport" id="jewelleryScroller" role="region" aria-label="Jewellery collection" tabindex="0"><div class="track jewellery-track" id="jewelleryTrack"></div></div>
   <div class="center" style="margin-top:30px"><a href="collection.html?section=jewellery" class="btn btn-ghost">Explore jewellery</a></div>
 </section>
 
@@ -93,11 +89,9 @@ function renderHome(){
   document.getElementById('promoGem').innerHTML=gemSVG(GEMS[2]||GEMS[0],'promo');
   const featuredGems=GEMS.filter(gem=>gem.featured);
   const arrivals=(featuredGems.length?featuredGems:GEMS).slice(0,4);
-  setupArrivalsCarousel(arrivals);
-  const gemCards=GEMS.map(cardHTML).join('');
-  document.getElementById('gemTrack').innerHTML=gemCards?gemCards+gemCards:'<p class="empty-content">No gemstones are listed right now. <a class="text-link" href="contact.html">Ask us about availability</a></p>';
-  const jewelleryCards=JEWELLERY_CATEGORIES.map(jewelleryCardHTML).join('');
-  document.getElementById('jewelleryTrack').innerHTML=jewelleryCards+jewelleryCards;
+  setupHomeScroller('arrivalsCarousel','arrivals',arrivals,(gem,index,copy)=>cardHTML(gem,`arrival-${copy}-${index}`),'<p class="empty-content">New gemstones will be added soon. <a class="text-link" href="contact.html">Ask us about availability</a></p>');
+  setupHomeScroller('gemScroller','gemTrack',GEMS,(gem,index,copy)=>cardHTML(gem,`home-gem-${copy}-${index}`),'<p class="empty-content">No gemstones are listed right now. <a class="text-link" href="contact.html">Ask us about availability</a></p>');
+  setupHomeScroller('jewelleryScroller','jewelleryTrack',JEWELLERY_CATEGORIES,category=>jewelleryCardHTML(category),'<p class="empty-content">Jewellery categories will be added soon.</p>');
   initTilt(document);
 }
 boot('home');
