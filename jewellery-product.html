@@ -77,7 +77,9 @@ window.GEMZ_CONTENT_READY.then(async()=>{
     document.getElementById('productSubheading').textContent=`${type==='watch'?'Watch':'Jewellery'} details`;
     document.getElementById('productName').textContent=title;
     document.getElementById('productDescription').textContent=product?.description||'Explore fine jewellery from Sri Lanka. Contact us for current availability and details.';
-    document.getElementById('productVisual').innerHTML=product?.image_url?`<img src="${htmlEscape(product.image_url)}" alt="${htmlEscape(title)}">`:type==='watch'?'<span class="watch-glyph" aria-hidden="true">⌚</span>':jewelleryArt(category);
+    const productVisual=document.getElementById('productVisual');
+    productVisual.classList.toggle('has-product-image',Boolean(product?.image_url));
+    productVisual.innerHTML=product?.image_url?`<img src="${htmlEscape(product.image_url)}" alt="${htmlEscape(title)}">`:type==='watch'?'<span class="watch-glyph" aria-hidden="true">⌚</span>':jewelleryArt(category);
     const details=product?.specs||product?.details||product||{};
     const jewelleryRows=product&&type!=='watch'?JEWELLERY_DETAIL_FIELDS.map(label=>[label,details[label]||details[label.toLowerCase().replaceAll(' ','_')]]).filter(([,value])=>value):[];
     const knownFields=new Set(JEWELLERY_DETAIL_FIELDS.map(label=>label.toLowerCase().replaceAll(' ','_')));

@@ -53,9 +53,11 @@ window.GEMZ_CONTENT_READY.then(()=>{
     const extraDetails=Object.entries(g.specs||{}).filter(([key,value])=>value&&!standardGemFields.has(key)).map(([key,value])=>[key.replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/[_-]+/g,' ').replace(/^./,letter=>letter.toUpperCase()),value]);
     gemDetails.push(...extraDetails);
     const detailRows=rows=>rows.map(([label,value])=>`<tr><td>${htmlEscape(label)}</td><td>${htmlEscape(value)}</td></tr>`).join('');
-    const visual=g.image_url?`<img src="${htmlEscape(g.image_url)}" alt="${htmlEscape(g.name)}">`:gemSVG(g,'d');
+    const hasUploadedImage=Boolean(g.image_url);
+    const visual=hasUploadedImage?`<img src="${htmlEscape(g.image_url)}" alt="${htmlEscape(g.name)}">`:gemSVG(g,'d');
+    const viewerBackground=hasUploadedImage?'':` style="background:${bgOf(g)}"`;
     detail.innerHTML=`
-    <div class="viewer" style="background:${bgOf(g)}"><div class="gem3d">${visual}</div><small>Drag to rotate</small></div>
+    <div class="viewer${hasUploadedImage?' has-product-image':''}"${viewerBackground}><div class="gem3d">${visual}</div>${hasUploadedImage?'':'<small>Drag to rotate</small>'}</div>
     <div>
       <span class="eyebrow">Natural Gemstone</span><h1 style="font-size:clamp(2.4rem,5vw,4.2rem)">${htmlEscape(g.name)}</h1>
       <p class="lead" style="margin-top:20px">${htmlEscape(g.text)}</p>
