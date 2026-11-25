@@ -417,15 +417,24 @@ function loadLazyVideo(video){
   if(!source||!url)return;
   let resolvedURL;
   try{resolvedURL=new URL(url,document.baseURI).href}catch(error){return}
+  const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const autoPlay=video.dataset.autoplay==='true'&&!reduced;
+  if(autoPlay){
+    video.defaultMuted=true;video.muted=true;video.playsInline=true;video.autoplay=true;
+    video.setAttribute('muted','');video.setAttribute('playsinline','');video.setAttribute('webkit-playsinline','');video.setAttribute('autoplay','');
+  }else{video.autoplay=false;video.removeAttribute('autoplay')}
   if(source.src!==resolvedURL){source.src=url;video.load()}
   video.dataset.loadedVideoURL=url;
-  const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
-  if(video.dataset.autoplay==='true'&&!reduced){
-    video.muted=true;video.playsInline=true;
-    const play=()=>{const playback=video.play();if(playback?.catch)playback.catch(()=>{})};
-    if(video.readyState>=2)play();else if(video.dataset.autoplayPending!=='true'){
+  if(autoPlay&&video.dataset.autoplayAttemptedURL!==url){
+    const play=()=>{
+      if(video.dataset.autoplayAttemptedURL===url)return;
+      video.dataset.autoplayAttemptedURL=url;
+      const playback=video.play();
+      if(playback?.catch)playback.catch(()=>{video.dataset.autoplayBlocked='true'});
+    };
+    if(video.readyState>=3)play();else if(video.dataset.autoplayPending!=='true'){
       video.dataset.autoplayPending='true';
-      video.addEventListener('loadeddata',()=>{video.dataset.autoplayPending='false';play()},{once:true});
+      video.addEventListener('canplay',()=>{video.dataset.autoplayPending='false';play()},{once:true});
     }
   }
 }
@@ -478,7 +487,7 @@ function applySiteSettings(){
     const videoURL=publicMediaURL(SITE_SETTINGS[video.dataset.videoSetting]);
     if(source.dataset.src===videoURL)return;
     source.dataset.src=videoURL;
-    video.pause();source.removeAttribute('src');video.load();video.dataset.loadedVideoURL='';video.dataset.autoplayPending='false';
+    video.pause();video.autoplay=false;video.removeAttribute('autoplay');source.removeAttribute('src');video.load();video.dataset.loadedVideoURL='';video.dataset.autoplayPending='false';video.dataset.autoplayAttemptedURL='';video.dataset.autoplayBlocked='false';
     if(!videoURL)return;
     const pathname=new URL(videoURL,document.baseURI).pathname.toLowerCase();
     source.type=pathname.endsWith('.webm')?'video/webm':'video/mp4';

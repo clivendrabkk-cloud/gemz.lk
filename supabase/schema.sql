@@ -308,6 +308,31 @@ insert into public.site_settings (setting_key,setting_value) values
 on conflict (setting_key) do nothing;
 
 insert into public.site_settings (setting_key,setting_value) values
+('cart_eyebrow','"Your selection"'::jsonb),
+('cart_title','"Inquiry Cart"'::jsonb),
+('cart_description','"Prices are on request. Send us your selection and we will reply with details."'::jsonb),
+('cart_empty_title','"Your inquiry cart is empty"'::jsonb),
+('cart_empty_description','"Browse the collection and add pieces you like."'::jsonb),
+('cart_explore_button','"Explore the collection"'::jsonb),
+('cart_name_label','"Name"'::jsonb),
+('cart_email_label','"Email"'::jsonb),
+('cart_phone_label','"Phone"'::jsonb),
+('cart_message_label','"Message"'::jsonb),
+('cart_price_label','"Price on Request"'::jsonb),
+('cart_remove_label','"Remove"'::jsonb),
+('cart_submit_label','"Send enquiry"'::jsonb),
+('cart_default_message','"I am interested in: {products}"'::jsonb),
+('cart_success_message','"Thank you. Your enquiry has been sent to our team."'::jsonb),
+('account_eyebrow','"Welcome back"'::jsonb),
+('account_title','"Account Login"'::jsonb),
+('account_email_label','"Email"'::jsonb),
+('account_password_label','"Password"'::jsonb),
+('account_submit_label','"Sign In"'::jsonb),
+('account_note','"You can send an enquiry without an account."'::jsonb),
+('account_cart_link','"Open your inquiry cart"'::jsonb)
+on conflict (setting_key) do nothing;
+
+insert into public.site_settings (setting_key,setting_value) values
 ('nav_home','"Home"'::jsonb),
 ('nav_collection','"Our Gemstones"'::jsonb),
 ('nav_gemstones','"GEM"'::jsonb),

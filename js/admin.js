@@ -3,7 +3,7 @@
   const $$ = (selector, root=document) => [...root.querySelectorAll(selector)];
   const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const defaultVisual={colors:['#fff3a8','#f2b705','#a86a00'],background:['#3a2a08','#8a5a12']};
-  const aboutDefaults={about_image_url:'',about_image_alt:'Gemstone expertise rooted in Ceylon',about_badge:'Ceylon · Est. 1985',about_values_eyebrow:'Our Values',about_values_title:'What We Stand For',about_value_1_number:'01',about_value_1_title:'Authenticity',about_value_1_description:'100% natural stones with transparent origin and treatment disclosure.',about_value_2_number:'02',about_value_2_title:'Expertise',about_value_2_description:'Over 40 years of grading, sourcing and cutting knowledge.',about_value_3_number:'03',about_value_3_title:'Trust',about_value_3_description:'Long-term relationships built on honesty, discretion and service.',about_milestones_eyebrow:'Milestones',about_milestones_title:'Our Journey',about_milestone_1_year:'1985',about_milestone_1_description:'Founded in Sri Lanka, trading Ratnapura sapphires.',about_milestone_2_year:'2000s',about_milestone_2_description:'Expansion into international gem fairs and private clients.',about_milestone_3_year:'2010s',about_milestone_3_description:'Presence across three continents and a global buyer network.',about_milestone_4_year:'Today',about_milestone_4_description:'Gemz.lk online — Ceylon gems, now one enquiry away.',about_cta_title:'Begin your gemstone journey',about_cta_description:'Speak with our team about the perfect stone.',about_cta_button:'Contact Us',about_cta_url:'contact.html'};
+  const aboutDefaults={about_image_url:'',about_image_alt:'Gemstone expertise rooted in Ceylon',about_badge:'Ceylon · Est. 1985',about_values_eyebrow:'Our Values',about_values_title:'What We Stand For',about_value_1_number:'01',about_value_1_title:'Authenticity',about_value_1_description:'100% natural stones with transparent origin and treatment disclosure.',about_value_2_number:'02',about_value_2_title:'Expertise',about_value_2_description:'Over 40 years of grading, sourcing and cutting knowledge.',about_value_3_number:'03',about_value_3_title:'Trust',about_value_3_description:'Long-term relationships built on honesty, discretion and service.',about_milestones_eyebrow:'Milestones',about_milestones_title:'Our Journey',about_milestone_1_year:'1985',about_milestone_1_description:'Founded in Sri Lanka, trading Ratnapura sapphires.',about_milestone_2_year:'2000s',about_milestone_2_description:'Expansion into international gem fairs and private clients.',about_milestone_3_year:'2010s',about_milestone_3_description:'Presence across three continents and a global buyer network.',about_milestone_4_year:'Today',about_milestone_4_description:'Gemz.lk online — Ceylon gems, now one enquiry away.',about_cta_title:'Begin your gemstone journey',about_cta_description:'Speak with our team about the perfect stone.',about_cta_button:'Contact Us',about_cta_url:'contact.html',cart_eyebrow:'Your selection',cart_title:'Inquiry Cart',cart_description:'Prices are on request. Send us your selection and we will reply with details.',cart_empty_title:'Your inquiry cart is empty',cart_empty_description:'Browse the collection and add pieces you like.',cart_explore_button:'Explore the collection',cart_name_label:'Name',cart_email_label:'Email',cart_phone_label:'Phone',cart_message_label:'Message',cart_price_label:'Price on Request',cart_remove_label:'Remove',cart_submit_label:'Send enquiry',cart_default_message:'I am interested in: {products}',cart_success_message:'Thank you. Your enquiry has been sent to our team.',account_eyebrow:'Welcome back',account_title:'Account Login',account_email_label:'Email',account_password_label:'Password',account_submit_label:'Sign In',account_note:'You can send an enquiry without an account.',account_cart_link:'Open your inquiry cart'};
   const state={client:null,user:null,products:[],categories:[],articles:[],inquiries:[],settings:{},privateSettings:[],view:'overview',editing:null,editingCategory:null,toastTimer:null,sitemapText:''};
   const viewTitles={overview:'Overview',catalog:'Catalog',categories:'Categories',articles:'Insights',inquiries:'Inquiries',media:'Media library',settings:'Site settings',seo:'SEO Dashboard'};
 
@@ -12,7 +12,7 @@
     clearTimeout(state.toastTimer);state.toastTimer=setTimeout(()=>toast.classList.remove('show'),3600);
   }
   function showGate(mode,message=''){
-    $('#gate').hidden=false;$('#adminShell').hidden=true;
+    $('#adminLoading').hidden=true;$('#gate').hidden=false;$('#adminShell').hidden=true;
     $('#loginCard').hidden=mode!=='login';$('#setupCard').hidden=mode!=='setup';
     if(message){$('#loginNotice').textContent=message;$('#loginNotice').classList.toggle('success',mode==='login-success')}
   }
@@ -22,6 +22,12 @@
     $$('.side-nav button').forEach(button=>button.classList.toggle('active',button.dataset.view===view));
     $('#sectionTitle').textContent=viewTitles[view];$('#sectionEyebrow').textContent=view==='overview'?'Store workspace':`Manage ${viewTitles[view].toLowerCase()}`;
     $('#sidebar').classList.remove('open');
+  }
+  function setSitePage(page){
+    const tabs=$$('#sitePageTabs [data-site-page-tab]');
+    if(!tabs.some(tab=>tab.dataset.sitePageTab===page))return;
+    tabs.forEach(tab=>{const active=tab.dataset.sitePageTab===page,panel=document.getElementById(tab.getAttribute('aria-controls'));if(panel){if(!tab.id)tab.id=`sitePageTab-${tab.dataset.sitePageTab}`;panel.setAttribute('aria-labelledby',tab.id)}tab.classList.toggle('active',active);tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1});
+    $$('#settingsForm [data-site-page-panel]').forEach(panel=>{panel.hidden=panel.dataset.sitePagePanel!==page});
   }
   function fmtDate(value){return value?new Intl.DateTimeFormat(undefined,{dateStyle:'medium',timeStyle:'short'}).format(new Date(value)):'—'}
   function slugify(value){return String(value||'').normalize('NFKD').toLowerCase().trim().replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
@@ -40,7 +46,7 @@
     const {data,error}=await state.client.from('gemz_admins').select('user_id').eq('user_id',user.id).maybeSingle();
     if(error){showGate('login','Could not verify admin access. Check that the Supabase schema and RLS policies are installed.');return}
     if(!data){await state.client.auth.signOut();showGate('login','This account is not listed as a Gemz.lk administrator.');return}
-    $('#gate').hidden=true;$('#adminShell').hidden=false;$('#userEmail').textContent=user.email||'';
+    $('#adminLoading').hidden=true;$('#gate').hidden=true;$('#adminShell').hidden=false;$('#userEmail').textContent=user.email||'';
     await loadAll();
   }
 
@@ -174,7 +180,7 @@
       <label class="full">SEO title<input name="seo_title" value="${value('seo_title')}" maxlength="70"><span class="field-help">Optional page title for this product. Leave blank to use the product name and store name.</span></label>
       <label class="full">SEO description<textarea name="seo_description" rows="3" maxlength="320">${value('seo_description')}</textarea><span class="field-help">Optional search and social description. Leave blank to use the product description.</span></label>
       <label class="full">Image URL<input name="image_url" id="imageUrl" type="url" value="${value('image_url')}" placeholder="https://…"></label>
-      <label class="full">Upload product image<div class="upload-inline"><input name="product_file" id="productFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><button class="small-button" type="button" data-upload-inline="product">Upload</button></div></label>
+      <label class="full">Upload product image<input name="product_file" id="productFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-upload-inline="product" data-feedback-id="editorUploadPreview"><div class="upload-feedback" id="editorUploadPreview" role="status" aria-live="polite" hidden></div></label>
       <label>Storefront status<select name="status"><option value="draft" ${value('status','published')==='draft'?'selected':''}>Draft</option><option value="published" ${value('status','published')==='published'?'selected':''}>Published</option><option value="archived" ${value('status')==='archived'?'selected':''}>Archived</option></select><span class="field-help">Published products appear on the customer storefront.</span></label>
       <label>Display order<input name="sort_order" type="number" value="${value('sort_order','0')}"></label>
       <label class="check-row"><input name="featured" type="checkbox" ${row?.featured?'checked':''}> Feature this item</label>
@@ -182,19 +188,84 @@
   }
   function articleFields(row){
     const value=key=>escapeHTML(row?.[key]||'');
-    return `<label class="full">Article title<input name="title" value="${value('title')}" required></label><label>Category<input name="category" value="${value('category')||'Insight'}"></label><label>URL slug<input name="slug" value="${value('slug')}"><span class="field-help">Generated from the title if left blank.</span></label><label class="full">Short summary<textarea name="excerpt" rows="3">${value('excerpt')}</textarea></label><label class="full">Article content<textarea name="content" rows="8" required>${value('content')}</textarea></label><label class="full">Cover image URL<input name="cover_image" id="imageUrl" type="url" value="${value('cover_image')}" placeholder="https://…"></label><label class="full">Upload cover image<div class="upload-inline"><input name="article_file" id="articleFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><button class="small-button" type="button" data-upload-inline="article">Upload</button></div></label><label>Storefront status<select name="status"><option value="draft" ${row?.status==='draft'?'selected':''}>Draft</option><option value="published" ${!row||row.status==='published'?'selected':''}>Published</option><option value="archived" ${row?.status==='archived'?'selected':''}>Archived</option></select><span class="field-help">Published articles appear on the customer storefront.</span></label>`;
+    return `<label class="full">Article title<input name="title" value="${value('title')}" required></label><label>Category<input name="category" value="${value('category')||'Insight'}"></label><label>URL slug<input name="slug" value="${value('slug')}"><span class="field-help">Generated from the title if left blank.</span></label><label class="full">Short summary<textarea name="excerpt" rows="3">${value('excerpt')}</textarea></label><label class="full">Article content<textarea name="content" rows="8" required>${value('content')}</textarea></label><label class="full">Cover image URL<input name="cover_image" id="imageUrl" type="url" value="${value('cover_image')}" placeholder="https://…"></label><label class="full">Upload cover image<input name="article_file" id="articleFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-upload-inline="article" data-feedback-id="editorUploadPreview"><div class="upload-feedback" id="editorUploadPreview" role="status" aria-live="polite" hidden></div></label><label>Storefront status<select name="status"><option value="draft" ${row?.status==='draft'?'selected':''}>Draft</option><option value="published" ${!row||row.status==='published'?'selected':''}>Published</option><option value="archived" ${row?.status==='archived'?'selected':''}>Archived</option></select><span class="field-help">Published articles appear on the customer storefront.</span></label>`;
   }
-  async function uploadFile(file){
+  async function uploadFile(file,onProgress=()=>{}){
     if(!file)throw new Error('Choose a file first.');
     const safeName=file.name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-|-$/g,'').slice(-90)||'upload';
-    const key=`${Date.now()}-${safeName}`;
-    const {error}=await state.client.storage.from('gemz-media').upload(key,file,{cacheControl:'31536000',upsert:false,contentType:file.type||undefined});
+    const extension=safeName.split('.').pop().toLowerCase();
+    const inferredTypes={mp4:'video/mp4',webm:'video/webm',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',gif:'image/gif',ico:'image/x-icon'};
+    const contentType=file.type||inferredTypes[extension]||'application/octet-stream';
+    if(contentType.startsWith('video/')&&contentType!=='video/mp4')throw new Error('For mobile compatibility, export videos as H.264 MP4 before uploading.');
+    const suffix=window.crypto?.randomUUID?.()||Math.random().toString(36).slice(2);
+    const key=`${Date.now()}-${suffix}-${safeName}`;
+    const {data,error}=await state.client.auth.getSession();
     if(error)throw error;
+    if(!data.session?.access_token)throw new Error('Your admin session expired. Sign in again to upload media.');
+    const projectURL=state.client.supabaseUrl||window.GEMZ_SUPABASE_CONFIG?.url;
+    const publicKey=state.client.supabaseKey||window.GEMZ_SUPABASE_CONFIG?.anonKey;
+    if(!projectURL||!publicKey)throw new Error('Supabase Storage is not configured.');
+    const url=`${projectURL.replace(/\/$/,'')}/storage/v1/object/gemz-media/${encodeURIComponent(key)}`;
+    await new Promise((resolve,reject)=>{
+      const request=new XMLHttpRequest();
+      request.open('POST',url);
+      request.setRequestHeader('apikey',publicKey);
+      request.setRequestHeader('Authorization',`Bearer ${data.session.access_token}`);
+      request.setRequestHeader('cache-control','max-age=31536000');
+      request.setRequestHeader('x-upsert','false');
+      request.setRequestHeader('Content-Type',contentType);
+      request.upload.addEventListener('progress',event=>{if(event.lengthComputable)onProgress(Math.round(event.loaded/event.total*100))});
+      request.addEventListener('load',()=>{
+        if(request.status>=200&&request.status<300){onProgress(100);resolve();return}
+        let message=`Upload failed (${request.status}).`;
+        try{const payload=JSON.parse(request.responseText);message=payload.message||payload.error||message}catch{}
+        reject(new Error(message));
+      });
+      request.addEventListener('error',()=>reject(new Error('Network error while uploading. Check your connection and try again.')));
+      request.addEventListener('abort',()=>reject(new Error('Upload cancelled.')));
+      request.send(file);
+    });
     return state.client.storage.from('gemz-media').getPublicUrl(key).data.publicUrl;
   }
-  async function handleInlineUpload(kind){
-    const input=$(`#${kind==='product'?'productFile':'articleFile'}`);
-    try{const url=await uploadFile(input.files?.[0]);$('#imageUrl').value=url;notify('Upload complete. Save the record to use this file.')}catch(error){notify(error.message||'Upload failed.','error')}
+  function uploadFeedbackStart(input,file){
+    const box=input.dataset.feedbackId?document.getElementById(input.dataset.feedbackId):null;
+    const oldURL=input.dataset.previewObjectUrl;if(oldURL)URL.revokeObjectURL(oldURL);
+    const objectURL=URL.createObjectURL(file);input.dataset.previewObjectUrl=objectURL;
+    const externalPreview=input.dataset.previewId?document.getElementById(input.dataset.previewId):null;
+    if(externalPreview){externalPreview.src=objectURL;externalPreview.hidden=false;if(!externalPreview.dataset.previewClickBound){externalPreview.dataset.previewClickBound='true';externalPreview.addEventListener('click',event=>event.stopPropagation())}}
+    if(box){
+      const preview=file.type.startsWith('video/')?`<video class="upload-preview-media" src="${objectURL}" muted playsinline controls></video>`:`<img class="upload-preview-media" src="${objectURL}" alt="">`;
+      box.innerHTML=`<div class="upload-result">${preview}<div class="upload-result-info"><strong>${escapeHTML(file.name)}</strong><span data-upload-status>Preparing upload…</span><progress max="100" aria-label="Upload progress"></progress></div></div>`;
+      box.hidden=false;box.classList.remove('upload-failed');
+      if(!box.dataset.previewClickBound){box.dataset.previewClickBound='true';box.addEventListener('click',event=>event.stopPropagation())}
+    }
+    return {box,externalPreview,objectURL};
+  }
+  function uploadFeedbackUpdate(view,status,percent,publicURL=''){
+    const {box,externalPreview,objectURL}=view;
+    if(box){const label=box.querySelector('[data-upload-status]'),bar=box.querySelector('progress');if(label)label.textContent=status;if(bar&&percent==null)bar.removeAttribute('value');else if(bar)bar.value=percent;box.classList.toggle('upload-failed',status.startsWith('Upload failed'))}
+    if(publicURL){
+      const media=box?.querySelector('.upload-preview-media');if(media){media.src=publicURL;if(media.tagName==='VIDEO')media.load()}
+      if(externalPreview){externalPreview.src=publicURL;externalPreview.hidden=false}
+      if(objectURL)URL.revokeObjectURL(objectURL);
+    }
+  }
+  async function uploadSelectedFile(input){
+    const file=input.files?.[0];if(!file)return'';
+    const view=uploadFeedbackStart(input,file),form=input.closest('form'),submit=form?.querySelector('[type="submit"]');input.disabled=true;
+    if(form){const count=Number(form.dataset.activeUploads||0);if(!count&&submit)form.dataset.submitWasDisabled=String(submit.disabled);form.dataset.activeUploads=String(count+1);if(submit)submit.disabled=true}
+    try{
+      uploadFeedbackUpdate(view,'Uploading…',null);
+      const url=await uploadFile(file,percent=>uploadFeedbackUpdate(view,`Uploading… ${percent}%`,percent));
+      uploadFeedbackUpdate(view,'Upload complete',100,url);return url;
+    }catch(error){uploadFeedbackUpdate(view,`Upload failed: ${error.message||'Please retry.'}`,0);throw error}
+    finally{
+      input.disabled=false;input.value='';
+      if(form){const remaining=Math.max(0,Number(form.dataset.activeUploads||1)-1);form.dataset.activeUploads=String(remaining);if(!remaining&&submit){submit.disabled=form.dataset.submitWasDisabled==='true';delete form.dataset.submitWasDisabled}}
+    }
+  }
+  async function handleInlineUpload(input){
+    try{const url=await uploadSelectedFile(input);if(url)$('#imageUrl').value=url;notify('Upload complete. Save the record to use this file.')}catch(error){notify(error.message||'Upload failed.','error')}
   }
   function readSpecifications(form){
     const names=[...form.querySelectorAll('[name="spec_name"]')],values=[...form.querySelectorAll('[name="spec_value"]')],specs={};
@@ -285,16 +356,16 @@
       return `<article class="media-card"><div class="media-preview">${isVideo?`<video src="${escapeHTML(url)}" muted controls preload="metadata"></video>`:`<img src="${escapeHTML(url)}" alt="${escapeHTML(item.name)}" loading="lazy">`}</div><div class="media-info"><strong title="${escapeHTML(item.name)}">${escapeHTML(item.name)}</strong><small>${escapeHTML(item.metadata?.mimetype||'Stored media')}</small><div class="table-actions"><button class="small-button" data-copy-url="${escapeHTML(url)}">Copy URL</button><button class="small-button remove" data-delete-media="${escapeHTML(item.name)}">Delete</button></div></div></article>`;
     }).join(''):emptyState('No media uploaded','Upload a file here or from a product or article editor.');
   }
-  async function uploadFromLibrary(event){
-    event.preventDefault();const file=$('#mediaFile').files?.[0];
-    try{await uploadFile(file);event.currentTarget.reset();await loadMedia();notify('File uploaded to Supabase Storage.')}catch(error){notify(error.message||'Upload failed.','error')}
+  async function uploadFromLibrary(input){
+    try{const url=await uploadSelectedFile(input);if(!url)return;input.value='';await loadMedia();notify('File uploaded to Supabase Storage.')}catch(error){notify(error.message||'Upload failed.','error')}
   }
-  async function handleSettingsUpload(button){
-    const form=button.closest('form'),input=$(`#${button.dataset.fileTarget}`),field=$(`[name="${CSS.escape(button.dataset.settingsUpload)}"]`,form);
-    try{const url=await uploadFile(input.files?.[0]);field.value=url;const previewId={store_logo_url:'storeLogoPreview',store_favicon_url:'storeFaviconPreview',seo_og_image:'seoOgImagePreview',about_image_url:'aboutImagePreview'}[button.dataset.settingsUpload];const preview=previewId?document.getElementById(previewId):null;if(preview){preview.src=url;preview.hidden=false}updateSeoPreviews();notify('Image uploaded. Save site settings to publish it.')}catch(error){notify(error.message||'Upload failed.','error')}
+  async function handleSettingsUpload(input){
+    const form=input.closest('form'),field=form.elements.namedItem(input.dataset.settingsUpload);
+    try{const url=await uploadSelectedFile(input);if(!url)return;field.value=url;updateSeoPreviews();notify('Image uploaded. Save page changes to publish it.')}catch(error){notify(error.message||'Upload failed.','error')}
   }
-  async function handleSettingsVideoUpload(button){
-    try{const url=await uploadFile($(`#${button.dataset.fileTarget}`).files?.[0]);button.closest('form').elements[button.dataset.settingsVideoUpload].value=url;notify('Video uploaded to Supabase Storage. Save site settings to publish it.')}catch(error){notify(error.message||'Upload failed.','error')}
+  async function handleSettingsVideoUpload(input){
+    const field=input.closest('form').elements.namedItem(input.dataset.settingsVideoUpload);
+    try{const url=await uploadSelectedFile(input);if(!url)return;field.value=url;notify('Video uploaded. Save page changes to publish it.')}catch(error){notify(error.message||'Upload failed.','error')}
   }
   async function deleteMedia(name){
     if(!confirm(`Delete ${name} from storage? Any page using its URL will stop showing it.`))return;
@@ -373,8 +444,11 @@
   }
 
   function bindEvents(){
+    setSitePage('home');
     $$('.side-nav button').forEach(button=>button.addEventListener('click',()=>{setView(button.dataset.view);if(button.dataset.view==='media')loadMedia();if(button.dataset.view==='seo')updateSeoPreviews()}));
-    $$('[data-jump]').forEach(button=>button.addEventListener('click',()=>setView(button.dataset.jump)));
+    $$('[data-jump]').forEach(button=>button.addEventListener('click',()=>{setView(button.dataset.jump);if(button.dataset.productType){$('#productTypeFilter').value=button.dataset.productType;renderProducts()}if(button.dataset.jump==='seo')setSeoTab('overview')}));
+    $$('[data-site-page-tab]').forEach(button=>button.addEventListener('click',()=>setSitePage(button.dataset.sitePageTab)));
+    $('#sitePageTabs').addEventListener('keydown',event=>{if(!['ArrowRight','ArrowLeft','Home','End'].includes(event.key))return;event.preventDefault();const tabs=$$('#sitePageTabs [data-site-page-tab]'),current=tabs.indexOf(document.activeElement);const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(current+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;tabs[next].focus();tabs[next].click()});
     $('#menuToggle').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
     $('#refreshButton').addEventListener('click',()=>loadAll().then(()=>state.view==='media'?loadMedia():null));
     $('#signout').addEventListener('click',async()=>{await state.client.auth.signOut();showGate('login')});
@@ -391,11 +465,11 @@
     $('#recentInquiries').addEventListener('change',event=>{const field=event.target.closest('[data-inquiry-status]');if(field)updateInquiryStatus(field.dataset.inquiryStatus,field.value)});
     $('#editorForm').addEventListener('submit',event=>saveRecord(event).catch(error=>notify(error.message||'Could not save record.','error')));
     $('#editorFields').addEventListener('click',event=>{
-      const upload=event.target.closest('[data-upload-inline]');if(upload){handleInlineUpload(upload.dataset.uploadInline);return}
       if(event.target.closest('[data-add-spec]')){$('.specification-list').insertAdjacentHTML('beforeend',specificationRowHTML());return}
       if(event.target.closest('[data-remove-spec]'))event.target.closest('.specification-row').remove();
     });
     $('#editorFields').addEventListener('change',event=>{
+      if(event.target.matches('[data-upload-inline]'))handleInlineUpload(event.target);
       if(event.target.name==='product_type'){
         $('#editorFields [name="category"]').innerHTML=categoryOptions(event.target.value);
         $('.specification-list').innerHTML=specificationRows({},event.target.value);
@@ -406,8 +480,8 @@
     $('#closeCategoryDialog').addEventListener('click',()=>$('#categoryDialog').close());$('#cancelCategoryDialog').addEventListener('click',()=>$('#categoryDialog').close());
     $('#settingsForm').addEventListener('submit',event=>saveSettings(event).catch(error=>notify(error.message,'error')));
     $('#seoForm').addEventListener('submit',event=>saveSettings(event).catch(error=>notify(error.message,'error')));
-    $('#settingsForm').addEventListener('click',event=>{const button=event.target.closest('[data-settings-upload]'),video=event.target.closest('[data-settings-video-upload]');if(button)handleSettingsUpload(button);if(video)handleSettingsVideoUpload(video)});
-    $('#seoForm').addEventListener('click',event=>{const button=event.target.closest('[data-settings-upload]');if(button)handleSettingsUpload(button)});
+    $('#settingsForm').addEventListener('change',event=>{if(event.target.matches('[data-settings-upload]'))handleSettingsUpload(event.target);if(event.target.matches('[data-settings-video-upload]'))handleSettingsVideoUpload(event.target)});
+    $('#seoForm').addEventListener('change',event=>{if(event.target.matches('[data-settings-upload]'))handleSettingsUpload(event.target)});
     $('#settingsForm').addEventListener('input',event=>{const previews={store_logo_url:'storeLogoPreview',store_favicon_url:'storeFaviconPreview',about_image_url:'aboutImagePreview'},previewId=previews[event.target.name];if(previewId){const preview=document.getElementById(previewId);preview.hidden=!event.target.value;if(event.target.value)preview.src=event.target.value;else preview.removeAttribute('src')}});
     $('#seoForm').addEventListener('input',event=>{
       updateSeoPreviews();
@@ -422,7 +496,7 @@
     $('#downloadRobots').addEventListener('click',downloadRobots);
     $('#downloadAdsTxt').addEventListener('click',downloadAdsTxt);
     $('#copyBacklinkURL').addEventListener('click',()=>navigator.clipboard?.writeText($('#seoBacklinkURL').value).then(()=>notify('Store URL copied.')).catch(()=>notify($('#seoBacklinkURL').value)));
-    $('#mediaUploadForm').addEventListener('submit',event=>uploadFromLibrary(event));
+    $('#mediaFile').addEventListener('change',event=>uploadFromLibrary(event.currentTarget));
     $('#mediaGrid').addEventListener('click',event=>{const copy=event.target.closest('[data-copy-url]'),remove=event.target.closest('[data-delete-media]');if(copy)navigator.clipboard?.writeText(copy.dataset.copyUrl).then(()=>notify('Public URL copied.')).catch(()=>notify(copy.dataset.copyUrl));if(remove)deleteMedia(remove.dataset.deleteMedia)});
   }
   async function init(){
