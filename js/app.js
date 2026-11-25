@@ -299,9 +299,8 @@ function setupHomeScroller(viewportId,trackId,items,renderItem,emptyHTML){
   if(!viewport||!track)return;
   let state=viewport._homeScroller;
   if(!state){
-    state=viewport._homeScroller={frame:0,lastTime:0,pauseUntil:0,hovered:false,interacting:false,visible:false,drag:null,suppressClickUntil:0};
+    state=viewport._homeScroller={frame:0,lastTime:0,pauseUntil:0,interacting:false,visible:false,drag:null,suppressClickUntil:0};
   }
-  const reducedMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
   const renderCopy=copy=>items.map((item,index)=>renderItem(item,index,copy)).join('');
   const appendCopy=copy=>{
     const template=document.createElement('template');template.innerHTML=renderCopy(copy);
@@ -318,7 +317,8 @@ function setupHomeScroller(viewportId,trackId,items,renderItem,emptyHTML){
     if(!items.length)return;
     const originalCount=track.children.length;
     appendCopy(1);
-    const cycleWidth=track.children[originalCount]?.offsetLeft||0;
+    const repeatedCard=track.children[originalCount];
+    const cycleWidth=repeatedCard?repeatedCard.getBoundingClientRect().left-track.getBoundingClientRect().left+viewport.scrollLeft:0;
     if(!cycleWidth){track.innerHTML=renderCopy(0);return}
     let copy=1;
     while(track.scrollWidth<viewport.clientWidth+cycleWidth&&copy<20)appendCopy(++copy);
@@ -331,16 +331,16 @@ function setupHomeScroller(viewportId,trackId,items,renderItem,emptyHTML){
   const pause=()=>{state.pauseUntil=performance.now()+1600};
   const animate=now=>{
     state.frame=0;
-    if(document.hidden||reducedMotion()||!state.visible)return;
+    if(document.hidden||!state.visible)return;
     const cycleWidth=Number(track.dataset.cycleWidth||0);
-    if(cycleWidth>0&&!state.hovered&&!state.interacting&&now>state.pauseUntil){
+    if(cycleWidth>0&&!state.interacting&&now>state.pauseUntil){
       if(state.lastTime){state.lastAutoAt=now;viewport.scrollLeft+=Math.min(now-state.lastTime,50)*.024}
       if(viewport.scrollLeft>=cycleWidth)viewport.scrollLeft%=cycleWidth;
     }
     state.lastTime=now;
     state.frame=requestAnimationFrame(animate);
   };
-  const start=()=>{if(!state.frame&&!document.hidden&&!reducedMotion()&&state.visible)state.frame=requestAnimationFrame(animate)};
+  const start=()=>{if(!state.frame&&!document.hidden&&state.visible)state.frame=requestAnimationFrame(animate)};
   viewport.addEventListener('pointerdown',event=>{
     state.interacting=true;pause();
     if(event.pointerType==='mouse'&&event.button===0)state.drag={id:event.pointerId,x:event.clientX,scroll:viewport.scrollLeft,moved:false};
@@ -349,7 +349,8 @@ function setupHomeScroller(viewportId,trackId,items,renderItem,emptyHTML){
     const drag=state.drag;if(!drag||drag.id!==event.pointerId)return;
     const distance=event.clientX-drag.x;
     if(!drag.moved&&Math.abs(distance)<6)return;
-    drag.moved=true;viewport.classList.add('is-dragging');viewport.setPointerCapture(event.pointerId);
+    if(!drag.moved)viewport.setPointerCapture(event.pointerId);
+    drag.moved=true;viewport.classList.add('is-dragging');
     viewport.scrollLeft=drag.scroll-distance;pause();event.preventDefault();
   });
   const finishPointer=event=>{
@@ -359,16 +360,15 @@ function setupHomeScroller(viewportId,trackId,items,renderItem,emptyHTML){
   viewport.addEventListener('pointerup',finishPointer,{passive:true});
   viewport.addEventListener('pointercancel',finishPointer,{passive:true});
   viewport.addEventListener('wheel',pause,{passive:true});
-  viewport.addEventListener('mouseenter',()=>{state.hovered=true;pause()});
-  viewport.addEventListener('mouseleave',()=>{state.hovered=false;state.interacting=false;state.drag=null;viewport.classList.remove('is-dragging');start()});
+  viewport.addEventListener('mouseleave',()=>{state.interacting=false;state.drag=null;viewport.classList.remove('is-dragging');start()});
   viewport.addEventListener('click',event=>{if(performance.now()<state.suppressClickUntil){event.preventDefault();event.stopPropagation()}},{capture:true});
   viewport.addEventListener('keydown',event=>{
     if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
     event.preventDefault();pause();
     const distance=Math.max(240,viewport.clientWidth*.7);
-    if(event.key==='Home')viewport.scrollTo({left:0,behavior:reducedMotion()?'auto':'smooth'});
-    else if(event.key==='End')viewport.scrollTo({left:viewport.scrollWidth,behavior:reducedMotion()?'auto':'smooth'});
-    else viewport.scrollBy({left:event.key==='ArrowRight'?distance:-distance,behavior:reducedMotion()?'auto':'smooth'});
+    if(event.key==='Home')viewport.scrollTo({left:0,behavior:'smooth'});
+    else if(event.key==='End')viewport.scrollTo({left:viewport.scrollWidth,behavior:'smooth'});
+    else viewport.scrollBy({left:event.key==='ArrowRight'?distance:-distance,behavior:'smooth'});
   });
   if('IntersectionObserver' in window){
     const observer=new IntersectionObserver(entries=>{state.visible=entries[0]?.isIntersecting||false;if(state.visible)start();else{cancelAnimationFrame(state.frame);state.frame=0}},{rootMargin:'120px'});
