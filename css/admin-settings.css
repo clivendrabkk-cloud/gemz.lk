@@ -67,6 +67,8 @@
 .seo-layout .settings-submit{grid-column:auto}
 .settings-group .check-row{display:flex;align-items:center;gap:10px}
 .settings-group .check-row input{width:17px;height:17px;accent-color:var(--gold)}
+.settings-group .whatsapp-setting-toggle{display:flex;align-items:center;gap:12px}
+.settings-group .whatsapp-setting-toggle input{width:18px;height:18px;padding:0;accent-color:var(--gold);flex:none}
 button:disabled{opacity:.5;cursor:not-allowed;transform:none}
 @media(prefers-reduced-motion:reduce){.admin-loader{animation:none;border-top-color:#e3bd78}}
 @media(max-width:760px){.seo-check-grid{grid-template-columns:1fr}.seo-submit-global{align-items:flex-start;flex-direction:column}.seo-action-row>*{max-width:100%}}

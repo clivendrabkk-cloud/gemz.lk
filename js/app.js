@@ -58,6 +58,35 @@ function safeWhatsAppURL(value){
   if(/^https?:\/\//i.test(raw)){try{const url=new URL(raw);return /^https?:$/.test(url.protocol)?url.href:''}catch{return''}}
   const digits=raw.replace(/\D/g,'');return digits.length>=8&&digits.length<=15?`https://wa.me/${digits}`:'';
 }
+function whatsAppNumber(value){
+  let raw=String(value||'').trim();
+  if(/^https?:\/\//i.test(raw)){
+    try{const url=new URL(raw);if(/(^|\.)wa\.me$/i.test(url.hostname))raw=url.pathname;else if(url.searchParams.has('phone'))raw=url.searchParams.get('phone');else return''}catch{return''}
+  }
+  const digits=raw.replace(/\D/g,'');return digits.length>=8&&digits.length<=15?digits:'';
+}
+function whatsAppChatURL(value,message=''){
+  const number=whatsAppNumber(value);if(!number)return'';
+  const text=String(message||'').trim();return `https://wa.me/${number}${text?`?text=${encodeURIComponent(text)}`:''}`;
+}
+const DEFAULT_WHATSAPP_INQUIRY_TEMPLATE='Hello, I would like to make an enquiry.\n\nProducts: {products}\n\nName: {name}\nEmail: {email}\nPhone: {phone}\n\nMessage: {message}\n\n{site}';
+function whatsAppInquiryMessage(values={}){
+  const template=String(SITE_SETTINGS.whatsapp_inquiry_template||DEFAULT_WHATSAPP_INQUIRY_TEMPLATE);
+  return template.replace(/\{(products|name|email|phone|message|site)\}/gi,(_,key)=>String(values[key.toLowerCase()]??''));
+}
+function whatsAppProductDetails(slugs=[]){
+  const products=[...GEMS,...JEWELLERY_PRODUCTS,...WATCH_PRODUCTS];
+  return slugs.map(slug=>{
+    const product=products.find(item=>item.slug===slug);
+    if(product)return `• ${product.name}${product.category?` (${product.category})`:''}\n  ${new URL(productDetailURL(product),location.href).href}`;
+    const category=JEWELLERY_CATEGORIES.find(item=>`jewellery-${item.toLowerCase()}`===slug);
+    return `• ${category?`${category} Jewellery`:slug}`;
+  }).join('\n\n')||'General enquiry';
+}
+function launchWhatsAppChat(url){
+  const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.style.position='fixed';link.style.left='-9999px';document.body.append(link);link.click();link.remove();
+}
+function whatsAppReadyMarkup(url){return `WhatsApp is ready with your enquiry. Tap Send in WhatsApp to deliver it. If it did not open, <a href="${htmlEscape(url)}" target="_blank" rel="noopener noreferrer">open the prepared message here</a>.`}
 function productFromRow(row){
   const specs=row.specs||{},visual=row.visual||{};
   const validColors=(items,fallback)=>Array.isArray(items)&&items.length===fallback.length&&items.every(item=>/^#[0-9a-f]{3,8}$/i.test(item))?items:fallback;
@@ -239,7 +268,7 @@ function layout(active){
   const socialMarkup=socialProfiles.map(([key,name])=>{
     try{const url=new URL(String(SITE_SETTINGS[key]||''));return /^https?:$/.test(url.protocol)?`<a href="${htmlEscape(url.href)}" target="_blank" rel="me noopener noreferrer">${name}</a>`:''}catch{return''}
   }).join('');
-  const whatsAppURL=safeWhatsAppURL(SITE_SETTINGS.seo_social_whatsapp);
+  const whatsAppURL=safeWhatsAppURL(SITE_SETTINGS.whatsapp_number||SITE_SETTINGS.seo_social_whatsapp);
   const whatsAppMarkup=whatsAppURL?`<a href="${htmlEscape(whatsAppURL)}" target="_blank" rel="me noopener noreferrer">WhatsApp</a>`:'';
   document.getElementById('site-header').innerHTML=`
   <div class="announce"><span class="sr-only">${announce}</span><div class="announce-track" aria-hidden="true">${Array(8).fill(`<span>${announce}</span><span>Over 40 Years of Ceylon Gem Expertise.</span>`).join('')}</div></div>
@@ -268,6 +297,17 @@ function layout(active){
   let quickNav=document.getElementById('mobile-bottom-nav');
   if(!quickNav){quickNav=document.createElement('nav');quickNav.className='mobile-bottom-nav';quickNav.id='mobile-bottom-nav';quickNav.setAttribute('aria-label','Quick navigation');document.body.append(quickNav)}
   quickNav.innerHTML=`<a href="index.html"><span aria-hidden="true">⌂</span>${navHome}</a><a href="collection.html?section=gem"><span aria-hidden="true">◇</span>${navGems}</a><a href="collection.html?section=jewellery"><span aria-hidden="true">✧</span>${navJewellery}</a><a href="cart.html"><span aria-hidden="true">▱</span>Inquiry</a>`;
+  document.querySelector('.whatsapp-float')?.remove();
+  const floatingNumber=SITE_SETTINGS.whatsapp_number;
+  const floatingEnabled=SITE_SETTINGS.whatsapp_enabled===undefined||String(SITE_SETTINGS.whatsapp_enabled).toLowerCase()==='true';
+  const floatingLabel=String(SITE_SETTINGS.whatsapp_button_label||'Chat with us');
+  const floatingGreeting=String(SITE_SETTINGS.whatsapp_greeting||'Hello! How can we help you today?');
+  const floatingHref=whatsAppChatURL(floatingNumber,floatingGreeting);
+  if(floatingEnabled&&floatingHref){
+    const floating=document.createElement('a');floating.className='whatsapp-float';floating.href=floatingHref;floating.target='_blank';floating.rel='noopener noreferrer';floating.setAttribute('aria-label',floatingLabel);floating.title=floatingLabel;
+    floating.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h2.4l1.3 3.3-1.6 1.3a13.7 13.7 0 0 0 6.8 6.8l1.3-1.6 3.3 1.3V17a2 2 0 0 1-2 2A16.5 16.5 0 0 1 5 4.9a1.4 1.4 0 0 1 2-1.4z"/></svg><span class="whatsapp-float-label">${htmlEscape(floatingLabel)}</span>`;
+    document.body.append(floating);
+  }
   const b=document.getElementById('burger'),m=document.getElementById('mnav');
   const setMenuOpen=open=>{
     b.classList.toggle('open',open);
@@ -663,7 +703,7 @@ function applySeoSettings(overrides={}){
   const schema={
     '@context':'https://schema.org','@type':schemaType,'name':String(SITE_SETTINGS.seo_business_name||siteName),
     ...(baseURL?{url:baseURL}:{}),...(assetURL(SITE_SETTINGS.store_logo_url)?{logo:assetURL(SITE_SETTINGS.store_logo_url)}:{}),
-    sameAs:[...['facebook','instagram','x','youtube','linkedin','pinterest','tiktok'].map(name=>assetURL(SITE_SETTINGS[`seo_social_${name}`])).filter(Boolean),safeWhatsAppURL(SITE_SETTINGS.seo_social_whatsapp)].filter(Boolean),
+    sameAs:[...['facebook','instagram','x','youtube','linkedin','pinterest','tiktok'].map(name=>assetURL(SITE_SETTINGS[`seo_social_${name}`])).filter(Boolean),safeWhatsAppURL(SITE_SETTINGS.whatsapp_number||SITE_SETTINGS.seo_social_whatsapp)].filter(Boolean),
     ...(SITE_SETTINGS.seo_business_email?{email:String(SITE_SETTINGS.seo_business_email)}:{}),
     ...(SITE_SETTINGS.seo_business_phone?{telephone:String(SITE_SETTINGS.seo_business_phone)}:{}),
     ...(SITE_SETTINGS.seo_business_address?{address:{'@type':'PostalAddress',streetAddress:String(SITE_SETTINGS.seo_business_address),addressCountry:String(SITE_SETTINGS.seo_business_country||'Sri Lanka')}}:{})

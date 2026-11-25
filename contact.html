@@ -6,7 +6,7 @@
 <link rel="preload" as="image" href="assets/gemz-logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="css/style.css"><script>document.documentElement.classList.add('js')</script>
+<link rel="stylesheet" href="css/style.css?v=whatsapp-1"><script>document.documentElement.classList.add('js')</script>
 </head><body>
 <div id="site-header"></div>
 <main>
@@ -25,13 +25,14 @@
       <div class="field"><label for="gemsel">Product</label><select name="product" id="gemsel"><option value="">General enquiry</option></select></div></div>
     <div class="field"><label for="contactMessage">Message</label><textarea id="contactMessage" name="msg" rows="5" required></textarea></div>
     <button class="btn btn-gold" type="submit" style="justify-self:start">Send Enquiry</button>
+    <span class="field-help">Your enquiry opens in WhatsApp with the selected product and your details. Tap Send there to deliver it.</span>
     <p class="note" id="note" aria-live="polite"></p>
   </form>
 </div></section>
 </main>
 <div id="site-footer"></div>
 <script src="js/supabase-config.js"></script>
-<script src="js/app.js?v=announcement-speed-1"></script>
+<script src="js/app.js?v=whatsapp-flow-1"></script>
 <script>
 window.GEMZ_READY.then(()=>{
   i1.innerHTML=icon.phone;i2.innerHTML=icon.mail;i3.innerHTML=icon.pin;
@@ -54,20 +55,17 @@ window.GEMZ_READY.then(()=>{
   }
   refreshContactPage();
   onPageRefresh(refreshContactPage);
-  form.onsubmit=async e=>{e.preventDefault();
+  form.onsubmit=e=>{e.preventDefault();
     const d=new FormData(form);
     const submitButton=form.querySelector('[type="submit"]');
     submitButton.disabled=true;
-    note.textContent='Sending your enquiry…';
-    try{
-      if(window.GEMZ_SUPABASE_CONFIG?.url&&window.GEMZ_SUPABASE_CONFIG?.anonKey){
-        await createInquiry({name:d.get('name'),email:d.get('email'),phone:d.get('phone'),product_slug:d.get('product'),message:d.get('msg')});
-        note.textContent='Thank you. Your enquiry has been sent to our team.';form.reset();return;
-      }
-      location.href='mailto:'+encodeURIComponent(SITE_SETTINGS.contact_email||'info@gemz.lk')+'?subject='+encodeURIComponent('Enquiry: '+(d.get('product')||'General'))+'&body='+encodeURIComponent(d.get('msg')+'\n\n'+d.get('name')+' · '+d.get('email')+' · '+d.get('phone'));
-      note.textContent='Opening your email app…';
-    }catch(error){note.textContent='We could not send that enquiry. Please try again or email us directly.'}
-    finally{submitButton.disabled=false}
+    const productSlug=String(d.get('product')||''),productDetails=whatsAppProductDetails(productSlug?[productSlug]:[]);
+    const message=whatsAppInquiryMessage({products:productDetails,name:d.get('name'),email:d.get('email'),phone:d.get('phone'),message:d.get('msg'),site:SITE_SETTINGS.store_name||location.host});
+    const whatsappURL=whatsAppChatURL(SITE_SETTINGS.whatsapp_number,message);
+    if(!whatsappURL){note.textContent=`WhatsApp is not configured yet. Please call ${SITE_SETTINGS.contact_phone||'the store'} or email ${SITE_SETTINGS.contact_email||'the store'}.`;submitButton.disabled=false;return}
+    launchWhatsAppChat(whatsappURL);note.innerHTML=whatsAppReadyMarkup(whatsappURL);
+    if(window.GEMZ_SUPABASE_CONFIG?.url&&window.GEMZ_SUPABASE_CONFIG?.anonKey)createInquiry({name:d.get('name'),email:d.get('email'),phone:d.get('phone'),product_slug:productSlug,message}).catch(error=>console.warn('Could not save the WhatsApp enquiry to the admin dashboard.',error));
+    submitButton.disabled=false;
   };
   boot('contact');
 });

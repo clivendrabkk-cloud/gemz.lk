@@ -6,8 +6,9 @@
   const aboutDefaults={about_image_url:'',about_image_alt:'Gemstone expertise rooted in Ceylon',about_badge:'Ceylon · Est. 1985',about_values_eyebrow:'Our Values',about_values_title:'What We Stand For',about_value_1_number:'01',about_value_1_title:'Authenticity',about_value_1_description:'100% natural stones with transparent origin and treatment disclosure.',about_value_2_number:'02',about_value_2_title:'Expertise',about_value_2_description:'Over 40 years of grading, sourcing and cutting knowledge.',about_value_3_number:'03',about_value_3_title:'Trust',about_value_3_description:'Long-term relationships built on honesty, discretion and service.',about_milestones_eyebrow:'Milestones',about_milestones_title:'Our Journey',about_milestone_1_year:'1985',about_milestone_1_description:'Founded in Sri Lanka, trading Ratnapura sapphires.',about_milestone_2_year:'2000s',about_milestone_2_description:'Expansion into international gem fairs and private clients.',about_milestone_3_year:'2010s',about_milestone_3_description:'Presence across three continents and a global buyer network.',about_milestone_4_year:'Today',about_milestone_4_description:'Gemz.lk online — Ceylon gems, now one enquiry away.',about_cta_title:'Begin your gemstone journey',about_cta_description:'Speak with our team about the perfect stone.',about_cta_button:'Contact Us',about_cta_url:'contact.html',cart_eyebrow:'Your selection',cart_title:'Inquiry Cart',cart_description:'Prices are on request. Send us your selection and we will reply with details.',cart_empty_title:'Your inquiry cart is empty',cart_empty_description:'Browse the collection and add pieces you like.',cart_explore_button:'Explore the collection',cart_name_label:'Name',cart_email_label:'Email',cart_phone_label:'Phone',cart_message_label:'Message',cart_price_label:'Price on Request',cart_remove_label:'Remove',cart_submit_label:'Send enquiry',cart_default_message:'I am interested in: {products}',cart_success_message:'Thank you. Your enquiry has been sent to our team.',account_eyebrow:'Welcome back',account_title:'Account Login',account_email_label:'Email',account_password_label:'Password',account_submit_label:'Sign In',account_note:'You can send an enquiry without an account.',account_cart_link:'Open your inquiry cart',home_carousel_speed:'50'};
   aboutDefaults.announcement_speed='50';
   Object.assign(aboutDefaults,{home_promo_title:'Over 40 Years in Gems',home_heritage_eyebrow:'Our heritage',home_heritage_image_url:'',home_heritage_image_alt:'Our gemstone heritage',home_heritage_link_label:'Discover our story',home_heritage_link_url:'about.html'});
+  Object.assign(aboutDefaults,{whatsapp_enabled:'true',whatsapp_number:'',whatsapp_button_label:'Chat with us',whatsapp_greeting:'Hello! How can we help you today?',whatsapp_inquiry_template:'Hello, I would like to make an enquiry.\n\nProducts: {products}\n\nName: {name}\nEmail: {email}\nPhone: {phone}\n\nMessage: {message}\n\n{site}'});
   const state={client:null,user:null,products:[],categories:[],articles:[],inquiries:[],settings:{},privateSettings:[],view:'overview',editing:null,editingCategory:null,toastTimer:null,sitemapText:''};
-  const viewTitles={overview:'Overview',catalog:'Catalog',categories:'Categories',articles:'Insights',inquiries:'Inquiries',media:'Media library',settings:'Site settings',seo:'SEO Dashboard'};
+  const viewTitles={overview:'Overview',catalog:'Catalog',categories:'Categories',articles:'Insights',inquiries:'Inquiries',whatsapp:'WhatsApp',media:'Media library',settings:'Site settings',seo:'SEO Dashboard'};
 
   function notify(message,type='success'){
     const toast=$('#toast');toast.textContent=message;toast.className=`toast show${type==='error'?' error':''}`;
@@ -149,11 +150,14 @@
   function populateSettings(){
     for(const [key,value] of Object.entries(state.settings)){
       const field=$(`[name="${CSS.escape(key)}"]`,document);
-      if(field&&field.type!=='file'&&field.type!=='checkbox')field.value=typeof value==='string'?value:String(value??'');
+      if(field?.type==='checkbox')field.checked=value===true||String(value).toLowerCase()==='true';
+      else if(field&&field.type!=='file')field.value=typeof value==='string'?value:String(value??'');
     }
     for(const [key,value] of Object.entries(aboutDefaults)){
       if(state.settings[key]!==undefined&&state.settings[key]!==null)continue;
-      const field=$(`[name="${CSS.escape(key)}"]`,document);if(field)field.value=value;
+      const field=$(`[name="${CSS.escape(key)}"]`,document);
+      if(field?.type==='checkbox')field.checked=value===true||String(value).toLowerCase()==='true';
+      else if(field)field.value=value;
     }
     populateContentRepeater('value');populateContentRepeater('milestone');
     refreshSettingPreviews();updateCarouselSpeedOutput();updateAnnouncementSpeedOutput();
@@ -367,11 +371,17 @@
     if(error){notify(error.message,'error');return}notify('Inquiry updated.');await loadAll();
   }
   async function saveSettings(event){
-    event.preventDefault();const form=event.currentTarget,fd=new FormData(form),isSeo=form.id==='seoForm';
+    event.preventDefault();const form=event.currentTarget,fd=new FormData(form),isSeo=form.id==='seoForm',isWhatsApp=form.id==='whatsappForm';
+    const notice=$(isSeo?'#seoNoticeGlobal':isWhatsApp?'#whatsappNotice':'#settingsNotice');
+    if(isWhatsApp){
+      const rawNumber=String(fd.get('whatsapp_number')||'').trim(),digits=rawNumber.replace(/\D/g,'');
+      if(form.elements.whatsapp_enabled.checked&&(digits.length<8||digits.length>15)){notice.textContent='Enter a valid international WhatsApp number with 8–15 digits before enabling the floating button.';notice.classList.remove('success');return}
+      if(rawNumber&& (digits.length<8||digits.length>15)){notice.textContent='The WhatsApp number must contain 8–15 digits.';notice.classList.remove('success');return}
+      fd.set('whatsapp_number',rawNumber);fd.set('whatsapp_enabled',form.elements.whatsapp_enabled.checked?'true':'false');
+    }
     const token=String(fd.get('seo_capi_access_token')||'').trim(),clearToken=fd.has('seo_capi_clear_token');
     const rows=[...fd.entries()].filter(([key])=>!['seo_capi_access_token','seo_capi_clear_token'].includes(key)&&!key.endsWith('File')).map(([setting_key,setting_value])=>({setting_key,setting_value,updated_at:new Date().toISOString()}));
     const {error}=await state.client.from('site_settings').upsert(rows,{onConflict:'setting_key'});
-    const notice=$(isSeo?'#seoNoticeGlobal':'#settingsNotice');
     if(error){notice.textContent=error.message;notice.classList.remove('success');return}
     if(isSeo&&(token||clearToken)){
       const secretResult=clearToken
@@ -381,8 +391,8 @@
       $('#seoCapiClearToken').checked=false;
       $('#seoCapiToken').value='';
     }
-    notice.textContent=isSeo?'SEO settings saved. Public metadata and enabled integrations are live.':'Site settings saved. Changes are now live on the storefront.';notice.classList.add('success');
-    notify(isSeo?'SEO settings saved.':'Site settings saved.');announceStorefrontChange();await loadAll();
+    notice.textContent=isSeo?'SEO settings saved. Public metadata and enabled integrations are live.':isWhatsApp?'WhatsApp settings saved. The storefront chat button and enquiry links are updated.':'Site settings saved. Changes are now live on the storefront.';notice.classList.add('success');
+    notify(isSeo?'SEO settings saved.':isWhatsApp?'WhatsApp settings saved.':'Site settings saved.');announceStorefrontChange();await loadAll();
   }
 
   async function loadMedia(){
@@ -519,6 +529,7 @@
     $('#categoryForm').addEventListener('submit',event=>saveCategory(event).catch(error=>notify(error.message||'Could not save category.','error')));
     $('#closeCategoryDialog').addEventListener('click',()=>$('#categoryDialog').close());$('#cancelCategoryDialog').addEventListener('click',()=>$('#categoryDialog').close());
     $('#settingsForm').addEventListener('submit',event=>saveSettings(event).catch(error=>notify(error.message,'error')));
+    $('#whatsappForm').addEventListener('submit',event=>saveSettings(event).catch(error=>notify(error.message,'error')));
     $('#settingsForm').addEventListener('click',event=>{
       const add=event.target.closest('[data-add-content-item]');
       if(add){

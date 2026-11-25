@@ -6,7 +6,7 @@
 <link rel="preload" as="image" href="assets/gemz-logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="css/style.css"><script>document.documentElement.classList.add('js')</script>
+<link rel="stylesheet" href="css/style.css?v=whatsapp-1"><script>document.documentElement.classList.add('js')</script>
 </head><body>
 <div id="site-header"></div>
 <main>
@@ -15,7 +15,7 @@
 </main>
 <div id="site-footer"></div>
 <script src="js/supabase-config.js"></script>
-<script src="js/app.js?v=announcement-speed-1"></script>
+<script src="js/app.js?v=whatsapp-flow-1"></script>
 <script>
 window.GEMZ_READY.then(()=>{
   function draw(){
@@ -34,7 +34,7 @@ window.GEMZ_READY.then(()=>{
     items.innerHTML=list.length?list.map((item,i)=>{const art=item.item?.image_url?`<img src="${htmlEscape(item.item.image_url)}" alt="${htmlEscape(item.name)}" loading="lazy" decoding="async">`:item.kind==='gem'?gemSVG(item.item,'k'+i):item.kind==='watch'?'<span>⌚</span>':item.kind==='jewellery'?jewelleryArt(item.category):'<span class="cart-placeholder" aria-hidden="true">◇</span>';return `<div class="cart-item"><div class="frame" style="background:${item.kind==='gem'?bgOf(item.item):'linear-gradient(145deg,#20263a,#474f68)'}">${art}</div><div><h3>${htmlEscape(item.name)}</h3><span class="tag">${copy('cart_price_label','Price on Request')}</span></div><button class="rm" type="button" data-s="${htmlEscape(item.slug)}" aria-label="${htmlEscape(SITE_SETTINGS.cart_remove_label||'Remove')} ${htmlEscape(item.name)} from your inquiry">${copy('cart_remove_label','Remove')}</button></div>`}).join(''):`<div class="empty"><h3>${copy('cart_empty_title','Your inquiry cart is empty')}</h3><p style="margin:10px 0 24px;opacity:.7">${copy('cart_empty_description','Browse the collection and add pieces you like.')}</p><a class="btn btn-dark" href="collection.html">${copy('cart_explore_button','Explore the collection')}</a></div>`;
     const productNames=list.map(item=>item.name).join(', ');
     const message=htmlEscape(String(SITE_SETTINGS.cart_default_message||'I am interested in: {products}').replaceAll('{products}',productNames));
-    act.innerHTML=list.length?`<form class="f" id="cartInquiryForm"><div class="row2"><div class="field"><label for="inquiryName">${copy('cart_name_label','Name')}</label><input id="inquiryName" name="name" required></div><div class="field"><label for="inquiryEmail">${copy('cart_email_label','Email')}</label><input id="inquiryEmail" name="email" type="email" required></div></div><div class="field"><label for="inquiryPhone">${copy('cart_phone_label','Phone')}</label><input id="inquiryPhone" name="phone" type="tel"></div><div class="field"><label for="inquiryMessage">${copy('cart_message_label','Message')}</label><textarea id="inquiryMessage" name="message" rows="4" required>${message}</textarea></div><button class="btn btn-gold" type="submit">${copy('cart_submit_label','Send enquiry')}</button><p class="note" id="cartNote" aria-live="polite"></p></form>`:'';
+    act.innerHTML=list.length?`<form class="f" id="cartInquiryForm"><div class="row2"><div class="field"><label for="inquiryName">${copy('cart_name_label','Name')}</label><input id="inquiryName" name="name" required></div><div class="field"><label for="inquiryEmail">${copy('cart_email_label','Email')}</label><input id="inquiryEmail" name="email" type="email" required></div></div><div class="field"><label for="inquiryPhone">${copy('cart_phone_label','Phone')}</label><input id="inquiryPhone" name="phone" type="tel"></div><div class="field"><label for="inquiryMessage">${copy('cart_message_label','Message')}</label><textarea id="inquiryMessage" name="message" rows="4" required>${message}</textarea></div><button class="btn btn-gold" type="submit">${copy('cart_submit_label','Send enquiry')}</button><p class="field-help">Your enquiry opens in WhatsApp with the selected products and your details. Tap Send there to deliver it.</p><p class="note" id="cartNote" aria-live="polite"></p></form>`:'';
     const form=document.getElementById('cartInquiryForm');
     if(form)Object.entries(previous).forEach(([name,value])=>{if(form.elements[name])form.elements[name].value=value});
     Cart.badge();
@@ -47,14 +47,11 @@ window.GEMZ_READY.then(()=>{
     const cartItems=Cart.get(),productSlug=cartItems.join(',');
     const submitButton=form.querySelector('[type="submit"]');
     submitButton.disabled=true;
-    note.textContent='Sending your enquiry…';
-    if(window.GEMZ_SUPABASE_CONFIG?.url&&window.GEMZ_SUPABASE_CONFIG?.anonKey){
-      try{await createInquiry({name:fd.get('name'),email:fd.get('email'),phone:fd.get('phone'),product_slug:productSlug,message:fd.get('message')})}
-      catch(error){note.textContent='We could not send your enquiry. Please try again or email us directly.';submitButton.disabled=false;return}
-      Cart.set([]);draw();act.innerHTML=`<p class="note">${htmlEscape(SITE_SETTINGS.cart_success_message||'Thank you. Your enquiry has been sent to our team.')}</p>`;return;
-    }
-    location.href='mailto:'+encodeURIComponent(SITE_SETTINGS.contact_email||'info@gemz.lk')+'?subject='+encodeURIComponent('Gemz.lk enquiry')+'&body='+encodeURIComponent(`${fd.get('message')}\n\n${fd.get('name')} · ${fd.get('email')} · ${fd.get('phone')}`);
-    note.textContent='Opening your email app…';
+    const productDetails=whatsAppProductDetails(cartItems),message=whatsAppInquiryMessage({products:productDetails,name:fd.get('name'),email:fd.get('email'),phone:fd.get('phone'),message:fd.get('message'),site:SITE_SETTINGS.store_name||location.host});
+    const whatsappURL=whatsAppChatURL(SITE_SETTINGS.whatsapp_number,message);
+    if(!whatsappURL){note.textContent=`WhatsApp is not configured yet. Please call ${SITE_SETTINGS.contact_phone||'the store'} or email ${SITE_SETTINGS.contact_email||'the store'}.`;submitButton.disabled=false;return}
+    launchWhatsAppChat(whatsappURL);note.innerHTML=whatsAppReadyMarkup(whatsappURL);
+    if(window.GEMZ_SUPABASE_CONFIG?.url&&window.GEMZ_SUPABASE_CONFIG?.anonKey)createInquiry({name:fd.get('name'),email:fd.get('email'),phone:fd.get('phone'),product_slug:productSlug,message}).catch(error=>console.warn('Could not save the WhatsApp enquiry to the admin dashboard.',error));
     submitButton.disabled=false;
   });
   boot('cart').then(draw);

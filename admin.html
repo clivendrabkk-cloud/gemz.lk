@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css">
   <link rel="stylesheet" href="css/admin-product-fields.css">
-  <link rel="stylesheet" href="css/admin-settings.css?v=announcement-speed-1">
+  <link rel="stylesheet" href="css/admin-settings.css?v=whatsapp-1">
 </head>
 <body>
   <section class="admin-loading" id="adminLoading" role="status" aria-live="polite"><span class="admin-loader" aria-hidden="true"></span><span>Checking admin session…</span></section>
@@ -43,6 +43,7 @@
         <button data-view="categories"><span>⌑</span>Categories</button>
         <button data-view="articles"><span>▤</span>Insights</button>
         <button data-view="inquiries"><span>✉</span>Inquiries</button>
+        <button data-view="whatsapp"><span>☏</span>WhatsApp</button>
         <button data-view="media"><span>▧</span>Media library</button>
         <button data-view="seo"><span>⌕</span>SEO Dashboard</button>
         <button data-view="settings"><span>⚙</span>Site settings</button>
@@ -83,6 +84,20 @@
         <section class="view" id="view-inquiries">
           <div class="toolbar"><div><span class="eyebrow">Customer messages</span><h2>Inquiries</h2></div><select id="inquiryFilter" aria-label="Filter inquiries"><option value="">All inquiries</option><option value="new">New</option><option value="in_progress">In progress</option><option value="resolved">Resolved</option></select></div>
           <div class="panel"><div id="inquiriesTable" class="table-wrap"></div></div>
+        </section>
+
+        <section class="view" id="view-whatsapp">
+          <div class="toolbar"><div><span class="eyebrow">Customer conversations</span><h2>WhatsApp</h2><p class="settings-intro">Configure the floating chat button and where customer enquiries open. WhatsApp asks the customer to tap Send to deliver each prepared message.</p></div></div>
+          <form id="whatsappForm" class="settings-layout">
+            <div class="panel settings-group wide"><span class="eyebrow">WhatsApp Business</span><h3>Button and enquiry settings</h3>
+              <label class="whatsapp-setting-toggle"><input type="checkbox" name="whatsapp_enabled" value="true">Show the floating WhatsApp button on the storefront</label>
+              <label>Business phone number<input name="whatsapp_number" type="tel" autocomplete="tel" placeholder="94771234567"><span class="field-help">Enter the full international number with country code. The floating button and enquiry routing need a valid number.</span></label>
+              <label>Floating button label<input name="whatsapp_button_label" placeholder="Chat with us"></label>
+              <label>Greeting message<textarea name="whatsapp_greeting" rows="3" placeholder="Hello! How can we help you today?"></textarea><span class="field-help">This prefilled greeting is used by the floating chat button.</span></label>
+              <label>Inquiry message template<textarea name="whatsapp_inquiry_template" rows="8" placeholder="Hello, I would like to make an enquiry about: {products}"></textarea><span class="field-help">Available placeholders: {products}, {name}, {email}, {phone}, {message}, {site}. Product and customer details are filled in automatically.</span></label>
+            </div>
+            <div class="settings-submit"><button class="button primary" type="submit">Save WhatsApp settings</button><p class="notice" id="whatsappNotice" role="status"></p></div>
+          </form>
         </section>
 
         <section class="view" id="view-media">
@@ -309,6 +324,6 @@
   <dialog id="categoryDialog" class="editor-dialog"><form id="categoryForm" method="dialog"><div class="dialog-head"><div><span class="eyebrow">Product organization</span><h2 id="categoryDialogTitle">Add category</h2></div><button type="button" class="close-button" id="closeCategoryDialog" aria-label="Close">×</button></div><div class="editor-fields"><label>Product type<select name="product_type" required><option value="gem">Gemstone</option><option value="jewellery">Jewellery</option><option value="watch">Watch</option></select></label><label>Category name<input name="name" required maxlength="80" autocomplete="off"></label><label>Display order<input name="sort_order" type="number" value="0"></label><p class="field-help full">Categories appear in product forms and storefront navigation. A category in use cannot be deleted.</p></div><div class="dialog-actions"><button type="button" class="button quiet" id="cancelCategoryDialog">Cancel</button><button type="submit" class="button primary">Save category</button></div></form></dialog>
 
   <script src="js/supabase-config.js"></script>
-  <script src="js/admin.js?v=home-heritage-1"></script>
+  <script src="js/admin.js?v=whatsapp-inquiries-1"></script>
 </body>
 </html>
