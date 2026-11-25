@@ -290,6 +290,7 @@ button:disabled{opacity:.58;cursor:wait}
 .footer a{display:block;padding:5px 0;font-size:1rem;transition:.3s}.footer a:hover{color:var(--amber);transform:translateX(4px)}
 .foot-social{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:16px}.foot-social a{display:inline-block;padding:3px 0;font-size:.8rem}
 .foot-bot{margin-top:60px;padding-top:26px;border-top:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:.78rem;opacity:.6}
+.foot-bot .developer-credit{display:inline;padding:0;color:inherit;text-decoration:underline;text-underline-offset:3px;transition:color .2s}.foot-bot .developer-credit:hover,.foot-bot .developer-credit:focus-visible{color:#e7bf7d;transform:none}
 
 /* Reveal markers remain visible when optional motion features are unavailable. */
 [data-reveal]{opacity:1;transform:none}
