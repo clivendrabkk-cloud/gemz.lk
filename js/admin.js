@@ -7,6 +7,7 @@
   aboutDefaults.announcement_speed='50';
   Object.assign(aboutDefaults,{home_promo_title:'Over 40 Years in Gems',home_heritage_eyebrow:'Our heritage',home_heritage_image_url:'',home_heritage_image_alt:'Our gemstone heritage',home_heritage_link_label:'Discover our story',home_heritage_link_url:'about.html'});
   Object.assign(aboutDefaults,{whatsapp_enabled:'true',whatsapp_number:'',whatsapp_button_label:'Chat with us',whatsapp_greeting:'Hello! How can we help you today?',whatsapp_inquiry_template:'Hello, I would like to make an enquiry.\n\nProducts: {products}\n\nName: {name}\nEmail: {email}\nPhone: {phone}\n\nMessage: {message}\n\n{site}'});
+  Object.assign(aboutDefaults,{hero_overlay_darkness:'100',home_hero_enabled:'true',home_arrivals_enabled:'true',home_gems_enabled:'true',home_jewellery_enabled:'true',home_watch_enabled:'true',home_videos_enabled:'true',home_video_1_enabled:'true',home_video_1_eyebrow:'The collection',home_video_title:'Natural Gems of Ceylon',home_video_2_enabled:'false',home_video_2_eyebrow:'From the workshop',home_video_2_title:'Gemstone craftsmanship',home_promo_video_2_url:'',home_video_3_enabled:'false',home_video_3_eyebrow:'Stories from Ceylon',home_video_3_title:'A closer look at our gems',home_promo_video_3_url:''});
   const state={client:null,user:null,products:[],categories:[],articles:[],inquiries:[],settings:{},privateSettings:[],view:'overview',editing:null,editingCategory:null,toastTimer:null,sitemapText:''};
   const viewTitles={overview:'Overview',catalog:'Catalog',categories:'Categories',articles:'Insights',inquiries:'Inquiries',whatsapp:'WhatsApp',media:'Media library',settings:'Site settings',seo:'SEO Dashboard'};
 
@@ -112,6 +113,7 @@
   function refreshSettingPreviews(){[['store_logo_url','storeLogoPreview'],['store_favicon_url','storeFaviconPreview'],['seo_og_image','seoOgImagePreview'],['about_image_url','aboutImagePreview'],['home_heritage_image_url','homeHeritageImagePreview']].forEach(([key,id])=>{const preview=$(`#${id}`),url=settingValue(key);preview.hidden=!url;if(url)preview.src=url;else preview.removeAttribute('src')})}
   function updateCarouselSpeedOutput(){const input=$('#homeCarouselSpeed'),output=$('#homeCarouselSpeedOutput');if(!input||!output)return;output.value=`${input.value} px per second`;output.textContent=output.value}
   function updateAnnouncementSpeedOutput(){const input=$('#announcementSpeed'),output=$('#announcementSpeedOutput');if(!input||!output)return;output.value=`${input.value} px per second`;output.textContent=output.value}
+  function updateHeroOverlayOutput(){const input=$('#heroOverlayDarkness'),output=$('#heroOverlayDarknessOutput');if(!input||!output)return;output.value=`${input.value}%`;output.textContent=output.value}
   const contentRepeaterConfig={
     value:{prefix:'about_value',countName:'about_values_count',container:'#aboutValuesRepeater',minimum:3,fields:[['number','Number','input'],['title','Title','input'],['description','Description','textarea']]},
     milestone:{prefix:'about_milestone',countName:'about_milestones_count',container:'#aboutMilestonesRepeater',minimum:4,fields:[['year','Year','input'],['description','Description','textarea']]}
@@ -160,7 +162,7 @@
       else if(field)field.value=value;
     }
     populateContentRepeater('value');populateContentRepeater('milestone');
-    refreshSettingPreviews();updateCarouselSpeedOutput();updateAnnouncementSpeedOutput();
+    refreshSettingPreviews();updateCarouselSpeedOutput();updateAnnouncementSpeedOutput();updateHeroOverlayOutput();
     const secretStatus=$('#seoSecretStatus');
     if(secretStatus)secretStatus.textContent=state.privateSettings.includes('seo_capi_access_token')?'A Conversions API token is stored in the admin-only settings table.':'No Conversions API token is stored.';
     updateSeoPreviews();updateRobotsPreview();updateAdsTxtPreview();
@@ -373,6 +375,7 @@
   async function saveSettings(event){
     event.preventDefault();const form=event.currentTarget,fd=new FormData(form),isSeo=form.id==='seoForm',isWhatsApp=form.id==='whatsappForm';
     const notice=$(isSeo?'#seoNoticeGlobal':isWhatsApp?'#whatsappNotice':'#settingsNotice');
+    if(!isSeo&&!isWhatsApp)form.querySelectorAll('input[type="checkbox"][name]').forEach(field=>fd.set(field.name,field.checked?'true':'false'));
     if(isWhatsApp){
       const rawNumber=String(fd.get('whatsapp_number')||'').trim(),digits=rawNumber.replace(/\D/g,'');
       if(form.elements.whatsapp_enabled.checked&&(digits.length<8||digits.length>15)){notice.textContent='Enter a valid international WhatsApp number with 8–15 digits before enabling the floating button.';notice.classList.remove('success');return}
@@ -547,7 +550,7 @@
     $('#seoForm').addEventListener('submit',event=>saveSettings(event).catch(error=>notify(error.message,'error')));
     $('#settingsForm').addEventListener('change',event=>{if(event.target.matches('[data-settings-upload]'))handleSettingsUpload(event.target);if(event.target.matches('[data-settings-video-upload]'))handleSettingsVideoUpload(event.target)});
     $('#seoForm').addEventListener('change',event=>{if(event.target.matches('[data-settings-upload]'))handleSettingsUpload(event.target)});
-    $('#settingsForm').addEventListener('input',event=>{if(event.target.id==='homeCarouselSpeed')updateCarouselSpeedOutput();if(event.target.id==='announcementSpeed')updateAnnouncementSpeedOutput();const previews={store_logo_url:'storeLogoPreview',store_favicon_url:'storeFaviconPreview',about_image_url:'aboutImagePreview',home_heritage_image_url:'homeHeritageImagePreview'},previewId=previews[event.target.name];if(previewId){const preview=document.getElementById(previewId);preview.hidden=!event.target.value;if(event.target.value)preview.src=event.target.value;else preview.removeAttribute('src')}});
+    $('#settingsForm').addEventListener('input',event=>{if(event.target.id==='homeCarouselSpeed')updateCarouselSpeedOutput();if(event.target.id==='announcementSpeed')updateAnnouncementSpeedOutput();if(event.target.id==='heroOverlayDarkness')updateHeroOverlayOutput();const previews={store_logo_url:'storeLogoPreview',store_favicon_url:'storeFaviconPreview',about_image_url:'aboutImagePreview',home_heritage_image_url:'homeHeritageImagePreview'},previewId=previews[event.target.name];if(previewId){const preview=document.getElementById(previewId);preview.hidden=!event.target.value;if(event.target.value)preview.src=event.target.value;else preview.removeAttribute('src')}});
     $('#seoForm').addEventListener('input',event=>{
       updateSeoPreviews();
       if(event.target.name==='seo_og_image'){const preview=$('#seoOgImagePreview');preview.hidden=!event.target.value;if(event.target.value)preview.src=event.target.value;else preview.removeAttribute('src')}

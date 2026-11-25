@@ -337,10 +337,10 @@ function productDetailURL(product){
 }
 function cardHTML(g,i){
   const href=productDetailURL(g);
-  if(g.image_url)return `<a class="card" href="${href}" data-tilt><div class="frame" style="background:${bgOf(g)}"><img src="${htmlEscape(g.image_url)}" alt="${htmlEscape(g.name)}" loading="lazy" decoding="async"></div><div class="card-body"><h3>${htmlEscape(g.name)}</h3><span class="tag">Price on Request</span></div></a>`;
+  if(g.image_url)return `<a class="card" href="${href}" data-tilt><div class="frame"><img src="${htmlEscape(g.image_url)}" alt="${htmlEscape(g.name)}" loading="lazy" decoding="async"></div><div class="card-body"><h3>${htmlEscape(g.name)}</h3><span class="tag">Price on Request</span></div></a>`;
   const art=g.type==='jewellery'?jewelleryArt(g.category):g.type==='watch'?'<span class="watch-glyph" aria-hidden="true">⌚</span>':gemSVG(g,'c'+i+Math.random().toString(36).slice(2,5));
   return `<a class="card" href="${href}" data-tilt>
-  <div class="frame" style="background:${bgOf(g)}">${art}</div>
+  <div class="frame">${art}</div>
   <div class="card-body"><h3>${htmlEscape(g.name)}</h3><span class="tag">Price on Request</span></div></a>`;
 }
 
@@ -567,19 +567,36 @@ function onPageRefresh(callback){
 function boot(active){layout(active);initFX();applySiteSettings();return Promise.resolve();}
 function applySiteSettings(){
   const setText=(selector,value)=>{const node=document.querySelector(selector);if(node&&value)node.textContent=value};
+  const heroOverlay=Number(SITE_SETTINGS.hero_overlay_darkness),hero=document.querySelector('.hero');
+  if(hero)hero.style.setProperty('--hero-overlay-opacity',String(Number.isFinite(heroOverlay)?Math.max(0,Math.min(100,heroOverlay))/100:1));
   setText('.hero .eyebrow',SITE_SETTINGS.hero_eyebrow);
   setText('.hero h1',SITE_SETTINGS.hero_title);
   setText('.hero p',SITE_SETTINGS.hero_description);
   setText('.announce span',SITE_SETTINGS.announcement);
+  document.querySelectorAll('[data-home-section-setting]').forEach(section=>{
+    const value=SITE_SETTINGS[section.dataset.homeSectionSetting];
+    section.hidden=value!==undefined&&String(value).toLowerCase()==='false';
+  });
+  document.querySelectorAll('[data-home-video-enabled]').forEach(card=>{
+    const enabled=SITE_SETTINGS[card.dataset.homeVideoEnabled];
+    const enabledByDefault=card.dataset.homeVideoEnabled==='home_video_1_enabled';
+    const isEnabled=enabled===undefined?enabledByDefault:String(enabled).toLowerCase()==='true';
+    card.hidden=!isEnabled||!publicMediaURL(SITE_SETTINGS[card.dataset.homeVideoUrlSetting]);
+  });
   document.querySelectorAll('video[data-video-setting] source').forEach(source=>{
     const video=source.parentElement;
     const videoURL=publicMediaURL(SITE_SETTINGS[video.dataset.videoSetting]);
-    if(source.dataset.src===videoURL)return;
-    source.dataset.src=videoURL;
-    video.pause();video.autoplay=false;video.removeAttribute('autoplay');source.removeAttribute('src');video.load();video.dataset.loadedVideoURL='';video.dataset.autoplayPending='false';video.dataset.autoplayAttemptedURL='';video.dataset.autoplayBlocked='false';
-    if(!videoURL)return;
-    const pathname=new URL(videoURL,document.baseURI).pathname.toLowerCase();
-    source.type=pathname.endsWith('.webm')?'video/webm':'video/mp4';
+    const hidden=Boolean(video.closest('[data-home-video-enabled]')?.hidden||video.closest('[data-home-section-setting]')?.hidden);
+    const changed=source.dataset.src!==videoURL;
+    if(changed){
+      video.pause();video.autoplay=false;video.removeAttribute('autoplay');source.removeAttribute('src');video.load();video.dataset.loadedVideoURL='';video.dataset.autoplayPending='false';video.dataset.autoplayAttemptedURL='';video.dataset.autoplayBlocked='false';
+      source.dataset.src=videoURL;
+      if(videoURL){
+        const pathname=new URL(videoURL,document.baseURI).pathname.toLowerCase();
+        source.type=pathname.endsWith('.webm')?'video/webm':'video/mp4';
+      }
+    }
+    if(!videoURL||hidden){video.pause();video.dataset.autoplayAttemptedURL='';return}
     const bounds=video.getBoundingClientRect();
     if(bounds.bottom>=-300&&bounds.top<=innerHeight+300)loadLazyVideo(video);
   });

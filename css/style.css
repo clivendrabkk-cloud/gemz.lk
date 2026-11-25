@@ -91,7 +91,7 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .hero{position:relative;min-height:calc(100vh - 32px);min-height:calc(100svh - 32px);margin-top:-78px;display:grid;align-items:center;color:#fff;overflow:hidden;padding:158px 0 202px;isolation:isolate}
 .hero-bg{position:absolute;inset:0;z-index:-3;background:radial-gradient(1200px 700px at 75% 30%,#27399c 0%,transparent 60%),radial-gradient(900px 600px at 15% 90%,#5a2f8f 0%,transparent 60%),#07080c}
 .hero video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;opacity:.75}
-.hero::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(7,8,12,.88) 0%,rgba(7,8,12,.45) 55%,rgba(7,8,12,.2) 100%),linear-gradient(0deg,rgba(7,8,12,.7),transparent 40%)}
+.hero::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(7,8,12,.88) 0%,rgba(7,8,12,.45) 55%,rgba(7,8,12,.2) 100%),linear-gradient(0deg,rgba(7,8,12,.7),transparent 40%);opacity:var(--hero-overlay-opacity,1)}
 .hero-grid{display:block}
 .hero-grid>div{max-width:780px}
 .hero-collection-links{position:absolute;z-index:2;left:50%;bottom:104px;transform:translateX(-50%);width:min(360px,calc(100% - 32px));display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:nowrap}
@@ -135,15 +135,15 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .new-arrivals{background:var(--paper)}
 .arrivals-carousel{margin:42px auto 0}
 .jewellery-showcase{background:#fff;overflow:hidden}
-.jewellery-card{display:block;background:var(--ink-2);color:#fff;border-radius:var(--r);padding:16px;border:1px solid rgba(255,255,255,.12);transition:transform .45s var(--ease),box-shadow .45s var(--ease)}
+.jewellery-card{display:block;background:var(--white);color:var(--ink);border-radius:var(--r);padding:16px;border:1px solid var(--line);transition:transform .45s var(--ease),box-shadow .45s var(--ease)}
 .jewellery-card:hover{transform:translateY(-6px);box-shadow:var(--shadow)}
-.jewellery-art{aspect-ratio:1;border-radius:12px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 45%,#39405a,#151925 72%)}
-.jewellery-art svg{width:78%;filter:drop-shadow(0 18px 18px rgba(0,0,0,.4));transition:transform .7s var(--ease)}
+.jewellery-art{aspect-ratio:1;border-radius:12px;display:grid;place-items:center;overflow:hidden;background:#fff}
+.jewellery-art svg{width:78%;filter:drop-shadow(0 12px 14px rgba(12,14,19,.12));transition:transform .7s var(--ease)}
 .jewellery-art img{width:100%;height:100%;object-fit:cover}
 .jewellery-card:hover .jewellery-art svg{transform:scale(1.08) rotate(-4deg)}
 .jewellery-card-body{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 4px 4px}
 .jewellery-card-body h3{font-size:1.5rem}
-.jewellery-card .tag{background:rgba(201,138,43,.2);color:#e8c77f}
+.jewellery-card .tag{background:#f5f2ea;color:#8a5a12}
 .watch-feature{background:var(--ink-2);color:#fff}
 .watch-panel{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,7vw,100px);align-items:center}
 .watch-clip{position:relative;min-height:460px;border-radius:24px;overflow:hidden;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 46%,#49516a,#171b29 48%,#0c0e13 80%);border:1px solid rgba(255,255,255,.12)}
@@ -152,7 +152,7 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .clip-label{position:absolute;z-index:1;bottom:20px;left:22px;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.76);pointer-events:none}
 .watch-copy p{margin:24px 0 34px;color:rgba(255,255,255,.72);max-width:42ch}
 .promo-videos{background:var(--paper)}
-.promo-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:26px;margin-top:50px}
+.promo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px;margin-top:50px}
 .promo-card{overflow:hidden;border-radius:var(--r);background:var(--white);border:1px solid var(--line);box-shadow:0 18px 48px -34px rgba(12,14,19,.6)}
 .promo-card video,.promo-visual{width:100%;aspect-ratio:16/9;object-fit:cover;background:var(--ink)}
 .promo-card>div:last-child:not(.promo-visual){padding:24px 28px 28px}
@@ -167,7 +167,7 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:28px;margin-top:50px}
 .card{display:block;background:var(--white);border-radius:var(--r);padding:14px;border:1px solid var(--line);transition:transform .22s ease,box-shadow .35s var(--ease),border-color .35s;transform-style:preserve-3d}
 .card:hover{box-shadow:var(--shadow);border-color:rgba(201,138,43,.5)}
-.frame{aspect-ratio:1;border-radius:12px;display:grid;place-items:center;position:relative;overflow:hidden;transform:translateZ(30px)}
+.frame{aspect-ratio:1;border-radius:12px;display:grid;place-items:center;position:relative;overflow:hidden;transform:translateZ(30px);background:#fff}
 .frame img{width:100%;height:100%;object-fit:cover}
 .watch-glyph{font-size:clamp(3rem,10vw,6rem);line-height:1;filter:drop-shadow(0 15px 18px rgba(0,0,0,.35))}
 .frame svg{width:68%;transition:transform .8s var(--ease);filter:drop-shadow(0 18px 24px rgba(0,0,0,.35))}
@@ -345,9 +345,11 @@ button:disabled{opacity:.58;cursor:wait}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}[data-reveal]{opacity:1;transform:none}}
 .mobile-bottom-nav{display:none}
-.whatsapp-float{position:fixed;z-index:70;right:24px;bottom:24px;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 32px);padding:13px 18px;border-radius:999px;background:#20b765;color:#fff;box-shadow:0 12px 34px rgba(12,14,19,.24);font-size:.82rem;font-weight:700;transition:transform .2s,box-shadow .2s}
-.whatsapp-float:hover{transform:translateY(-3px);box-shadow:0 16px 38px rgba(12,14,19,.3)}
-.whatsapp-float svg{width:24px;height:24px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.whatsapp-float{position:fixed;z-index:70;right:24px;bottom:24px;display:grid;place-items:center;width:62px;height:62px;padding:0;border:1px solid rgba(255,255,255,.68);border-radius:50%;background:linear-gradient(145deg,#29d977,#0b9f57);color:#fff;box-shadow:0 12px 32px rgba(12,14,19,.25),inset 0 1px 0 rgba(255,255,255,.28);transition:transform .2s,box-shadow .2s}
+.whatsapp-float:hover,.whatsapp-float:focus-visible{transform:translateY(-3px) scale(1.04);box-shadow:0 16px 38px rgba(12,14,19,.3),inset 0 1px 0 rgba(255,255,255,.32)}
+.whatsapp-float svg{width:29px;height:29px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.whatsapp-float-label{position:absolute;right:calc(100% + 12px);padding:9px 12px;border-radius:10px;background:#11141d;color:#fff;font-size:.76rem;font-weight:700;white-space:nowrap;opacity:0;transform:translateX(5px);pointer-events:none;transition:opacity .18s,transform .18s}
+.whatsapp-float:hover .whatsapp-float-label,.whatsapp-float:focus-visible .whatsapp-float-label{opacity:1;transform:none}
 @media(min-width:761px) and (max-width:1100px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){
   body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
@@ -358,8 +360,8 @@ button:disabled{opacity:.58;cursor:wait}
   .mobile-bottom-nav{position:fixed;z-index:25;right:0;bottom:0;left:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;padding:7px 8px max(8px,env(safe-area-inset-bottom));border-top:1px solid rgba(12,14,19,.12);background:rgba(255,255,255,.97);backdrop-filter:blur(14px)}
   .mobile-bottom-nav a{display:grid;place-items:center;align-content:center;gap:3px;min-height:48px;padding:4px 2px;color:var(--ink);font-size:.65rem;font-weight:700;letter-spacing:.04em;text-align:center;text-transform:uppercase}
   .mobile-bottom-nav a span{font-size:1.05rem;line-height:1}
-  .whatsapp-float{right:16px;bottom:calc(78px + env(safe-area-inset-bottom));width:56px;height:56px;justify-content:center;padding:0;border-radius:50%}
-  .whatsapp-float-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+  .whatsapp-float{right:16px;bottom:calc(78px + env(safe-area-inset-bottom));width:56px;height:56px}
+  .whatsapp-float-label{display:none}
 }
 @media(max-width:380px){
   .hero{padding-inline:0}
