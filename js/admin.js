@@ -108,6 +108,41 @@
   function settingValue(key){const value=state.settings[key];return value==null?'':typeof value==='string'?value:String(value)}
   function refreshSettingPreviews(){[['store_logo_url','storeLogoPreview'],['store_favicon_url','storeFaviconPreview'],['seo_og_image','seoOgImagePreview'],['about_image_url','aboutImagePreview']].forEach(([key,id])=>{const preview=$(`#${id}`),url=settingValue(key);preview.hidden=!url;if(url)preview.src=url;else preview.removeAttribute('src')})}
   function updateCarouselSpeedOutput(){const input=$('#homeCarouselSpeed'),output=$('#homeCarouselSpeedOutput');if(!input||!output)return;output.value=`${input.value} px per second`;output.textContent=output.value}
+  const contentRepeaterConfig={
+    value:{prefix:'about_value',countName:'about_values_count',container:'#aboutValuesRepeater',minimum:3,fields:[['number','Number','input'],['title','Title','input'],['description','Description','textarea']]},
+    milestone:{prefix:'about_milestone',countName:'about_milestones_count',container:'#aboutMilestonesRepeater',minimum:4,fields:[['year','Year','input'],['description','Description','textarea']]}
+  };
+  function contentRepeaterItem(kind,index,useSaved=true){
+    const config=contentRepeaterConfig[kind];
+    const label=kind==='value'?'Value':'Milestone';
+    const fields=config.fields.map(([field,title,type])=>{
+      const name=`${config.prefix}_${index}_${field}`;
+      const stored=state.settings[name]??aboutDefaults[name]??'';
+      const fallback=useSaved?stored:(field==='number'&&kind==='value'?String(index).padStart(2,'0'):'');
+      const control=type==='textarea'?`<textarea data-content-field="${field}" rows="2">${escapeHTML(fallback)}</textarea>`:`<input data-content-field="${field}" value="${escapeHTML(fallback)}">`;
+      return `<label>${title}${control}</label>`;
+    }).join('');
+    return `<fieldset class="content-repeat-item" data-content-item data-index="${index}"><legend data-content-legend>${label} ${index}</legend><div class="content-repeat-fields">${fields}</div><button class="small-button remove" type="button" data-remove-content-item="${kind}">Remove ${label.toLowerCase()}</button></fieldset>`;
+  }
+  function syncContentRepeater(kind){
+    const config=contentRepeaterConfig[kind],container=$(config.container),items=$$('[data-content-item]',container);
+    items.forEach((item,index)=>{
+      const number=index+1;item.dataset.index=String(number);
+      item.querySelector('[data-content-legend]').textContent=`${kind==='value'?'Value':'Milestone'} ${number}`;
+      item.querySelectorAll('[data-content-field]').forEach(field=>{field.name=`${config.prefix}_${number}_${field.dataset.contentField}`});
+    });
+    const countField=$(`[name="${config.countName}"]`);if(countField)countField.value=String(items.length);
+    const add=$(`[data-add-content-item="${kind}"]`);if(add)add.disabled=items.length>=30;
+  }
+  function populateContentRepeater(kind){
+    const config=contentRepeaterConfig[kind],container=$(config.container);if(!container)return;
+    const savedCount=Number(state.settings[config.countName]);
+    const keyPattern=new RegExp(`^${config.prefix}_(\\d+)_`);
+    const savedIndexes=Object.keys(state.settings).map(key=>Number(key.match(keyPattern)?.[1]||0));
+    const count=Math.max(1,Math.min(30,Number.isInteger(savedCount)&&savedCount>0?savedCount:Math.max(config.minimum,...savedIndexes)));
+    container.innerHTML=Array.from({length:count},(_,index)=>contentRepeaterItem(kind,index+1)).join('');
+    syncContentRepeater(kind);
+  }
   function populateSettings(){
     for(const [key,value] of Object.entries(state.settings)){
       const field=$(`[name="${CSS.escape(key)}"]`,document);
@@ -117,6 +152,7 @@
       if(state.settings[key]!==undefined&&state.settings[key]!==null)continue;
       const field=$(`[name="${CSS.escape(key)}"]`,document);if(field)field.value=value;
     }
+    populateContentRepeater('value');populateContentRepeater('milestone');
     refreshSettingPreviews();updateCarouselSpeedOutput();
     const secretStatus=$('#seoSecretStatus');
     if(secretStatus)secretStatus.textContent=state.privateSettings.includes('seo_capi_access_token')?'A Conversions API token is stored in the admin-only settings table.':'No Conversions API token is stored.';
@@ -480,6 +516,20 @@
     $('#categoryForm').addEventListener('submit',event=>saveCategory(event).catch(error=>notify(error.message||'Could not save category.','error')));
     $('#closeCategoryDialog').addEventListener('click',()=>$('#categoryDialog').close());$('#cancelCategoryDialog').addEventListener('click',()=>$('#categoryDialog').close());
     $('#settingsForm').addEventListener('submit',event=>saveSettings(event).catch(error=>notify(error.message,'error')));
+    $('#settingsForm').addEventListener('click',event=>{
+      const add=event.target.closest('[data-add-content-item]');
+      if(add){
+        const kind=add.dataset.addContentItem,config=contentRepeaterConfig[kind],container=$(config.container),items=$$('[data-content-item]',container);
+        if(items.length>=30){notify('Each section can contain up to 30 items.','error');return}
+        container.insertAdjacentHTML('beforeend',contentRepeaterItem(kind,items.length+1,false));syncContentRepeater(kind);return;
+      }
+      const remove=event.target.closest('[data-remove-content-item]');
+      if(remove){
+        const kind=remove.dataset.removeContentItem,config=contentRepeaterConfig[kind],container=$(config.container),item=remove.closest('[data-content-item]');
+        if($$('[data-content-item]',container).length<=1){notify('Keep at least one item in this section.','error');return}
+        item.remove();syncContentRepeater(kind);
+      }
+    });
     $('#seoForm').addEventListener('submit',event=>saveSettings(event).catch(error=>notify(error.message,'error')));
     $('#settingsForm').addEventListener('change',event=>{if(event.target.matches('[data-settings-upload]'))handleSettingsUpload(event.target);if(event.target.matches('[data-settings-video-upload]'))handleSettingsVideoUpload(event.target)});
     $('#seoForm').addEventListener('change',event=>{if(event.target.matches('[data-settings-upload]'))handleSettingsUpload(event.target)});

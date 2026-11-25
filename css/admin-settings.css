@@ -22,6 +22,12 @@
 .settings-copy-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .settings-copy-grid fieldset{min-width:0;display:grid;gap:13px;padding:14px;border:1px solid var(--line);border-radius:10px}
 .settings-copy-grid legend{padding:0 6px;font-size:.75rem;font-weight:700;color:#5d6069}
+.content-repeater-setting{align-content:start}
+.content-repeat-list{display:grid;gap:10px}
+.content-repeat-item{display:grid;gap:10px;min-width:0;padding:12px;border:1px solid #e1dfd9;border-radius:9px;background:#faf9f6}
+.content-repeat-item legend{font-size:.72rem}
+.content-repeat-fields{display:grid;gap:10px}
+.content-repeat-item .small-button{justify-self:start}
 .carousel-speed-control input[type=range]{width:100%;padding:0;border:0;background:transparent;accent-color:#c58b3d}
 .carousel-speed-control output{font-size:.76rem;font-weight:700;color:#202942}
 .settings-group input[type=color]{width:72px;height:46px;padding:4px}

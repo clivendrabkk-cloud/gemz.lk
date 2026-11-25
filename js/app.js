@@ -536,6 +536,35 @@ function applySiteSettings(){
   setText('.promo-card-copy h3',SITE_SETTINGS.home_promo_title);
   const meta=document.querySelector('meta[name="description"]');if(meta&&SITE_SETTINGS.meta_description)meta.content=SITE_SETTINGS.meta_description;
   document.querySelectorAll('[data-setting]').forEach(node=>{const value=SITE_SETTINGS[node.dataset.setting];if(value!==undefined&&value!==null)node.textContent=String(value)});
+  const valueList=document.getElementById('aboutValuesList');
+  if(valueList){
+    const defaults=[
+      {number:'01',title:'Authenticity',description:'100% natural stones with transparent origin and treatment disclosure.'},
+      {number:'02',title:'Expertise',description:'Over 40 years of grading, sourcing and cutting knowledge.'},
+      {number:'03',title:'Trust',description:'Long-term relationships built on honesty, discretion and service.'}
+    ];
+    const savedCount=Number(SITE_SETTINGS.about_values_count),count=Number.isInteger(savedCount)?Math.max(1,Math.min(30,savedCount)):defaults.length;
+    const setting=(key,fallback)=>SITE_SETTINGS[key]===undefined||SITE_SETTINGS[key]===null?fallback:String(SITE_SETTINGS[key]);
+    valueList.innerHTML=Array.from({length:count},(_,index)=>{
+      const number=index+1,fallback=defaults[index]||{number:String(number).padStart(2,'0'),title:'',description:''};
+      return `<div class="value"><i>${htmlEscape(setting(`about_value_${number}_number`,fallback.number))}</i><h3>${htmlEscape(setting(`about_value_${number}_title`,fallback.title))}</h3><p>${htmlEscape(setting(`about_value_${number}_description`,fallback.description))}</p></div>`;
+    }).join('');
+  }
+  const milestoneList=document.getElementById('aboutMilestonesList');
+  if(milestoneList){
+    const defaults=[
+      {year:'1985',description:'Founded in Sri Lanka, trading Ratnapura sapphires.'},
+      {year:'2000s',description:'Expansion into international gem fairs and private clients.'},
+      {year:'2010s',description:'Presence across three continents and a global buyer network.'},
+      {year:'Today',description:'Gemz.lk online — Ceylon gems, now one enquiry away.'}
+    ];
+    const savedCount=Number(SITE_SETTINGS.about_milestones_count),count=Number.isInteger(savedCount)?Math.max(1,Math.min(30,savedCount)):defaults.length;
+    const setting=(key,fallback)=>SITE_SETTINGS[key]===undefined||SITE_SETTINGS[key]===null?fallback:String(SITE_SETTINGS[key]);
+    milestoneList.innerHTML=Array.from({length:count},(_,index)=>{
+      const number=index+1,fallback=defaults[index]||{year:'',description:''};
+      return `<div class="tl"><b>${htmlEscape(setting(`about_milestone_${number}_year`,fallback.year))}</b><p>${htmlEscape(setting(`about_milestone_${number}_description`,fallback.description))}</p></div>`;
+    }).join('');
+  }
   document.querySelectorAll('[data-setting-src]').forEach(node=>{
     const value=publicMediaURL(SITE_SETTINGS[node.dataset.settingSrc]);
     if(node.tagName==='IMG'){

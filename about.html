@@ -18,13 +18,13 @@
   <p data-reveal data-setting="about_story_paragraph_2">We work directly with miners and master cutters, selecting stones for colour, clarity and character, and we welcome every client — from first-time buyers to seasoned collectors.</p></div>
 </div></section>
 <section class="collection"><div class="wrap center"><span class="eyebrow" data-reveal data-setting="about_values_eyebrow">Our Values</span><h2 data-reveal data-setting="about_values_title">What We Stand For</h2>
-  <div class="values" data-stagger style="text-align:left">
+  <div class="values" id="aboutValuesList" data-stagger style="text-align:left">
     <div class="value"><i data-setting="about_value_1_number">01</i><h3 data-setting="about_value_1_title">Authenticity</h3><p data-setting="about_value_1_description">100% natural stones with transparent origin and treatment disclosure.</p></div>
     <div class="value"><i data-setting="about_value_2_number">02</i><h3 data-setting="about_value_2_title">Expertise</h3><p data-setting="about_value_2_description">Over 40 years of grading, sourcing and cutting knowledge.</p></div>
     <div class="value"><i data-setting="about_value_3_number">03</i><h3 data-setting="about_value_3_title">Trust</h3><p data-setting="about_value_3_description">Long-term relationships built on honesty, discretion and service.</p></div>
   </div></div></section>
 <section><div class="wrap"><div class="center"><span class="eyebrow" data-reveal data-setting="about_milestones_eyebrow">Milestones</span><h2 data-reveal data-setting="about_milestones_title">Our Journey</h2></div>
-  <div class="timeline" data-stagger style="max-width:700px;margin-inline:auto">
+  <div class="timeline" id="aboutMilestonesList" data-stagger style="max-width:700px;margin-inline:auto">
     <div class="tl"><b data-setting="about_milestone_1_year">1985</b><p data-setting="about_milestone_1_description">Founded in Sri Lanka, trading Ratnapura sapphires.</p></div>
     <div class="tl"><b data-setting="about_milestone_2_year">2000s</b><p data-setting="about_milestone_2_description">Expansion into international gem fairs and private clients.</p></div>
     <div class="tl"><b data-setting="about_milestone_3_year">2010s</b><p data-setting="about_milestone_3_description">Presence across three continents and a global buyer network.</p></div>
@@ -34,6 +34,6 @@
 </main>
 <div id="site-footer"></div>
 <script src="js/supabase-config.js"></script>
-<script src="js/app.js"></script>
+<script src="js/app.js?v=about-repeaters-1"></script>
 <script>window.GEMZ_READY.then(()=>{const drawGem=()=>{document.getElementById('g1').innerHTML=GEMS[0]?gemSVG(GEMS[0],'ab'):''};drawGem();boot('about');onPageRefresh(drawGem)});</script>
 </body></html>
