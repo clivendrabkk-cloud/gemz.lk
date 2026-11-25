@@ -582,7 +582,18 @@ function applySiteSettings(){
     const enabledByDefault=card.dataset.homeVideoEnabled==='home_video_1_enabled';
     const isEnabled=enabled===undefined?enabledByDefault:String(enabled).toLowerCase()==='true';
     card.hidden=!isEnabled||!publicMediaURL(SITE_SETTINGS[card.dataset.homeVideoUrlSetting]);
+    const slot=Number(card.dataset.homeVideoEnabled.match(/^home_video_(\d+)_enabled$/)?.[1]||1);
+    const configuredOrder=Number(SITE_SETTINGS[`home_video_${slot}_order`]);
+    card.dataset.displayOrder=String(Number.isInteger(configuredOrder)&&configuredOrder>0?configuredOrder:slot);
+    card.dataset.slotOrder=String(slot);
+    const size=String(SITE_SETTINGS[`home_video_${slot}_size`]||'standard').toLowerCase();
+    card.classList.remove('promo-card--compact','promo-card--standard','promo-card--wide');
+    card.classList.add(`promo-card--${['compact','wide'].includes(size)?size:'standard'}`);
   });
+  const promoGrid=document.querySelector('.promo-grid');
+  if(promoGrid)[...promoGrid.querySelectorAll('[data-home-video-enabled]')]
+    .sort((first,second)=>Number(first.dataset.displayOrder)-Number(second.dataset.displayOrder)||Number(first.dataset.slotOrder)-Number(second.dataset.slotOrder))
+    .forEach(card=>promoGrid.append(card));
   document.querySelectorAll('video[data-video-setting] source').forEach(source=>{
     const video=source.parentElement;
     const videoURL=publicMediaURL(SITE_SETTINGS[video.dataset.videoSetting]);

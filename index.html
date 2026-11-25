@@ -9,7 +9,7 @@
 <link rel="preload" as="image" href="assets/gemz-logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="css/style.css?v=home-controls-1">
+<link rel="stylesheet" href="css/style.css?v=home-layout-2">
 <script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
@@ -78,14 +78,21 @@
     <article class="promo-card" data-home-video-enabled="home_video_1_enabled" data-home-video-url-setting="home_promo_video_url" hidden><video loop muted playsinline preload="none" data-lazy-video data-autoplay="true" data-video-setting="home_promo_video_url" aria-label="Promotional video"><source data-src="">Your browser does not support video playback.</video><div><span class="eyebrow" data-setting="home_video_1_eyebrow">The collection</span><h3 data-setting="home_video_title">Natural Gems of Ceylon</h3></div></article>
     <article class="promo-card" data-home-video-enabled="home_video_2_enabled" data-home-video-url-setting="home_promo_video_2_url" hidden><video loop muted playsinline preload="none" data-lazy-video data-autoplay="true" data-video-setting="home_promo_video_2_url" aria-label="Promotional video 2"><source data-src="">Your browser does not support video playback.</video><div><span class="eyebrow" data-setting="home_video_2_eyebrow">From the workshop</span><h3 data-setting="home_video_2_title">Gemstone craftsmanship</h3></div></article>
     <article class="promo-card" data-home-video-enabled="home_video_3_enabled" data-home-video-url-setting="home_promo_video_3_url" hidden><video loop muted playsinline preload="none" data-lazy-video data-autoplay="true" data-video-setting="home_promo_video_3_url" aria-label="Promotional video 3"><source data-src="">Your browser does not support video playback.</video><div><span class="eyebrow" data-setting="home_video_3_eyebrow">Stories from Ceylon</span><h3 data-setting="home_video_3_title">A closer look at our gems</h3></div></article>
-    <article class="promo-card promo-card-copy"><div class="promo-visual"><div class="gem-in" id="promoGem"></div><img class="promo-heritage-image" data-setting-src="home_heritage_image_url" data-setting-alt="home_heritage_image_alt" alt="Our gemstone heritage" loading="lazy" decoding="async" hidden></div><div><span class="eyebrow" data-setting="home_heritage_eyebrow">Our heritage</span><h3 data-setting="home_promo_title">Over 40 Years in Gems</h3><a href="about.html" class="text-link" data-setting="home_heritage_link_label" data-setting-href="home_heritage_link_url">Discover our story</a></div></article>
+  </div>
+</section>
+
+<!-- Our heritage -->
+<section class="heritage-feature" id="home-heritage" data-home-section-setting="home_heritage_enabled">
+  <div class="wrap heritage-layout">
+    <div class="heritage-visual promo-visual"><div class="gem-in" id="promoGem"></div><img class="promo-heritage-image" data-setting-src="home_heritage_image_url" data-setting-alt="home_heritage_image_alt" alt="Our gemstone heritage" loading="lazy" decoding="async" hidden></div>
+    <div class="heritage-copy"><span class="eyebrow" data-setting="home_heritage_eyebrow">Our heritage</span><h2 data-setting="home_promo_title">Over 40 Years in Gems</h2><p data-setting="home_heritage_description">A family tradition of selecting exceptional natural gemstones in Sri Lanka and sharing them with collectors around the world.</p><a href="about.html" class="text-link" data-setting="home_heritage_link_label" data-setting-href="home_heritage_link_url">Discover our story</a></div>
   </div>
 </section>
 </main>
 
 <div id="site-footer"></div>
 <script src="js/supabase-config.js"></script>
-<script src="js/app.js?v=home-controls-1"></script>
+<script src="js/app.js?v=home-layout-2"></script>
 <script>
 function renderHome(){
   document.getElementById('promoGem').innerHTML=gemSVG(GEMS[2]||GEMS[0],'promo');

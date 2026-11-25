@@ -152,8 +152,9 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .clip-label{position:absolute;z-index:1;bottom:20px;left:22px;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.76);pointer-events:none}
 .watch-copy p{margin:24px 0 34px;color:rgba(255,255,255,.72);max-width:42ch}
 .promo-videos{background:var(--paper)}
-.promo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px;margin-top:50px}
+.promo-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:26px;margin-top:50px}
 .promo-card{overflow:hidden;border-radius:var(--r);background:var(--white);border:1px solid var(--line);box-shadow:0 18px 48px -34px rgba(12,14,19,.6)}
+.promo-card--compact{grid-column:span 4}.promo-card--standard{grid-column:span 6}.promo-card--wide{grid-column:span 12}
 .promo-card video,.promo-visual{width:100%;aspect-ratio:16/9;object-fit:cover;background:var(--ink)}
 .promo-card>div:last-child:not(.promo-visual){padding:24px 28px 28px}
 .promo-card h3{font-size:1.8rem}
@@ -163,6 +164,11 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .promo-visual .promo-heritage-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .promo-visual .promo-heritage-image[hidden]{display:none}
 .promo-card .eyebrow{margin-bottom:6px}
+.heritage-feature{background:#fff}
+.heritage-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);gap:clamp(30px,6vw,100px);align-items:center}
+.heritage-visual{position:relative;aspect-ratio:4/3;border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.heritage-visual .promo-heritage-image{border-radius:inherit}
+.heritage-copy h2{margin-bottom:24px}.heritage-copy p{max-width:58ch;margin-bottom:8px;color:rgba(12,14,19,.72);font-size:1.02rem;line-height:1.8}
 .text-link{display:inline-block;margin-top:16px;color:#8a5a12;font-weight:700;text-decoration:underline;text-underline-offset:4px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:28px;margin-top:50px}
 .card{display:block;background:var(--white);border-radius:var(--r);padding:14px;border:1px solid var(--line);transition:transform .22s ease,box-shadow .35s var(--ease),border-color .35s;transform-style:preserve-3d}
@@ -319,7 +325,8 @@ button:disabled{opacity:.58;cursor:wait}
   .header-in>.logo.logo-only{width:min(138px,100%);height:50px}
   .utils .ico.opt{display:none}
   .row2{grid-template-columns:1fr}
-  .watch-panel,.promo-grid{grid-template-columns:1fr}
+  .watch-panel,.promo-grid,.heritage-layout{grid-template-columns:1fr}
+  .promo-grid .promo-card--compact,.promo-grid .promo-card--standard,.promo-grid .promo-card--wide{grid-column:1/-1}
   .watch-clip{min-height:380px}
   .promo-card>div:last-child:not(.promo-visual){padding:20px}
   .cart-item{grid-template-columns:70px 1fr}.cart-item .rm{grid-column:2}
