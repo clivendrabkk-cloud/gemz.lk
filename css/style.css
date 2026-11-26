@@ -38,7 +38,6 @@ h1{font-size:clamp(2.8rem,7.5vw,6.2rem)} h2{font-size:clamp(2.1rem,4.6vw,3.8rem)
 .announce{background:var(--ink);color:#e9dfc8;overflow:hidden;white-space:nowrap;font-size:.75rem;letter-spacing:.18em;text-transform:uppercase;padding:9px 0}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .announce-track{display:inline-flex;gap:70px;animation:slide 40s linear infinite;padding-left:70px}
-.announce-track span::before{content:"◆";color:var(--amber);margin-right:70px;font-size:.6rem}
 @keyframes slide{to{transform:translateX(-50%)}}
 
 /* ===== Header ===== */

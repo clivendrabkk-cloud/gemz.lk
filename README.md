@@ -44,3 +44,7 @@ The storefront uses Supabase for its catalog, insights, contact enquiries, site 
 Public pages continue to show the built-in starter content until Supabase is configured. When connected, they read published products and articles from Supabase; contact form submissions are stored as enquiries. Storage uploads are public-read so product and article media can be shown on the storefront. Database and storage writes require an authenticated user listed in `gemz_admins`.
 
 SEO titles, descriptions, canonical URLs, robots directives, social cards, and structured store data are applied by storefront JavaScript after public settings load. Since this is a static site, crawlers that do not execute JavaScript may only see the metadata in the original HTML.
+
+## Vercel CDN caching
+
+`vercel.json` caches HTML in the browser for five minutes and versioned CSS, JavaScript, and local brand assets for one year. Bump the relevant `?v=` value in the HTML or `js/app.js` whenever you change a cached file so visitors fetch its new version. Vercel automatically compresses text responses. Product images and videos are served directly from Supabase Storage, not Vercel.

@@ -270,7 +270,7 @@ function layout(active){
   const label=(key,fallback)=>htmlEscape(SITE_SETTINGS[key]||fallback);
   const L=(h,t,k)=>`<a href="${h}" class="${active===k?'active':''}">${t}</a>`;
   const storeName=htmlEscape(SITE_SETTINGS.store_name||'GEMZ');
-  const brandMark=(variant='dark')=>`<img class="logo-image" src="${variant==='light'?'assets/gemz-logo-light.png':'assets/gemz-logo.png'}" data-dark-src="assets/gemz-logo.png" data-light-src="assets/gemz-logo-light.png" alt="" width="399" height="183" fetchpriority="high" decoding="sync">`;
+  const brandMark=(variant='dark',lazy=false)=>`<img class="logo-image" src="${variant==='light'?'assets/gemz-logo-light.png?v=brand-1':'assets/gemz-logo.png?v=brand-1'}" data-dark-src="assets/gemz-logo.png?v=brand-1" data-light-src="assets/gemz-logo-light.png?v=brand-1" alt="" width="399" height="183" ${lazy?'loading="lazy" fetchpriority="low" decoding="async"':'fetchpriority="high" decoding="sync'}>`;
   const email=htmlEscape(SITE_SETTINGS.contact_email||'info@gemz.lk');
   const phone=htmlEscape(SITE_SETTINGS.contact_phone||'+94 11 234 5678');
   const address=htmlEscape(SITE_SETTINGS.contact_address||'Colombo, Sri Lanka');
@@ -308,7 +308,7 @@ function layout(active){
   const categoryMenus=[...document.querySelectorAll('.nav-drop')];
   categoryMenus.forEach(menu=>menu.addEventListener('toggle',()=>{if(menu.open)categoryMenus.forEach(other=>{if(other!==menu)other.open=false})}));
   document.getElementById('site-footer').innerHTML=`<footer class="footer"><div class="wrap"><div class="foot-grid">
-    <div class="foot-brand"><a href="index.html" class="logo logo-only footer-logo" aria-label="${storeName} home">${brandMark('dark')}</a><p data-setting="footer_tagline">Authentic natural gemstones sourced in Sri Lanka and delivered worldwide. Established 1985.</p>${socialMarkup||whatsAppMarkup?`<nav class="foot-social" aria-label="Social profiles">${socialMarkup}${whatsAppMarkup}</nav>`:''}</div>
+    <div class="foot-brand"><a href="index.html" class="logo logo-only footer-logo" aria-label="${storeName} home">${brandMark('dark',true)}</a><p data-setting="footer_tagline">Authentic natural gemstones sourced in Sri Lanka and delivered worldwide. Established 1985.</p>${socialMarkup||whatsAppMarkup?`<nav class="foot-social" aria-label="Social profiles">${socialMarkup}${whatsAppMarkup}</nav>`:''}</div>
     <div><h4>${label('footer_explore_title','Explore')}</h4><a href="index.html">${navHome}</a><a href="collection.html">${navCollection}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a></div>
     <div><h4>${label('footer_account_title','Account')}</h4><a href="cart.html">Inquiry Cart</a><a href="login.html">${navAccount}</a><a href="contact.html">${navContact}</a></div>
     <div><h4>${label('footer_contact_title','Contact')}</h4><a href="mailto:${email}">${email}</a><a href="tel:${phone.replace(/[^+\d]/g,'')}">${phone}</a><a href="contact.html">${address}</a></div>
