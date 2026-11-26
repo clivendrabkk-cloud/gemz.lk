@@ -576,7 +576,7 @@ function initImageZoom(){
 function initViewer(){
   const viewer=document.querySelector('.viewer');
   const visual=viewer?.querySelector('.gem3d');
-  if(!viewer||!visual||viewer.dataset.dragReady)return;
+  if(!viewer||!visual||viewer.dataset.dragReady||viewer.classList.contains('has-product-image'))return;
   viewer.dataset.dragReady='true';
   let rx=-10,ry=0,lastX=0,lastY=0,dragging=false;
   const paint=()=>{visual.style.transform=`perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg)`};
