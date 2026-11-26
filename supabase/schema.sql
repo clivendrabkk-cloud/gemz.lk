@@ -261,7 +261,7 @@ insert into public.site_settings (setting_key,setting_value) values
 ('home_heritage_enabled','true'::jsonb),
 ('home_arrivals_eyebrow','"Just selected"'::jsonb),
 ('home_arrivals_title','"New Arrivals"'::jsonb),
-('home_arrivals_description','"Discover a few of the natural stones now available to enquire about."'::jsonb),
+('home_arrivals_description','"Discover the latest gemstones, jewellery and watches available to enquire about."'::jsonb),
 ('home_gem_eyebrow','"From Ceylon"'::jsonb),
 ('home_gem_title','"Gemstone Collection"'::jsonb),
 ('home_gem_description','"Browse our natural gemstone selection."'::jsonb),

@@ -36,11 +36,11 @@
 
 <!-- New arrivals -->
 <section class="new-arrivals" id="new-arrivals" data-home-section-setting="home_arrivals_enabled">
-  <div class="wrap center"><span class="eyebrow" data-reveal data-setting="home_arrivals_eyebrow">Just selected</span><h2 data-reveal data-setting="home_arrivals_title">New Arrivals</h2><p class="lead" data-reveal data-setting="home_arrivals_description">Discover a few of the natural stones now available to enquire about.</p></div>
+  <div class="wrap center"><span class="eyebrow" data-reveal data-setting="home_arrivals_eyebrow">Just selected</span><h2 data-reveal data-setting="home_arrivals_title">New Arrivals</h2><p class="lead" data-reveal data-setting="home_arrivals_description">Discover the latest gemstones, jewellery and watches available to enquire about.</p></div>
   <div class="wrap track-wrap auto-scroll-viewport arrivals-carousel" id="arrivalsCarousel" role="region" aria-label="New arrivals" tabindex="0">
     <div class="track arrivals-track" id="arrivals"></div>
   </div>
-  <div class="center" style="margin-top:30px"><a href="collection.html?section=gem" class="btn btn-ghost">Explore all gemstones</a></div>
+  <div class="center" style="margin-top:30px"><a href="collection.html" class="btn btn-ghost">Explore all products</a></div>
 </section>
 
 <!-- Running gemstone cards -->
@@ -92,13 +92,14 @@
 
 <div id="site-footer"></div>
 <script src="js/supabase-config.js?v=config-1"></script>
-<script src="js/app.js?v=app-7"></script>
+<script src="js/app.js?v=app-8"></script>
 <script>
 function renderHome(){
   document.getElementById('promoGem').innerHTML=gemSVG(GEMS[2]||GEMS[0],'promo');
-  const featuredGems=GEMS.filter(gem=>gem.featured);
-  const arrivals=(featuredGems.length?featuredGems:GEMS).slice(0,4);
-  setupHomeScroller('arrivalsCarousel','arrivals',arrivals,(gem,index,copy)=>cardHTML(gem,`arrival-${copy}-${index}`),'<p class="empty-content">New gemstones will be added soon. <a class="text-link" href="contact.html">Ask us about availability</a></p>');
+  const featuredProducts=[...GEMS,...JEWELLERY_PRODUCTS,...WATCH_PRODUCTS].filter(product=>product.featured)
+    .sort((a,b)=>(Date.parse(b.created_at)||0)-(Date.parse(a.created_at)||0));
+  const arrivals=(featuredProducts.length?featuredProducts:GEMS).slice(0,4);
+  setupHomeScroller('arrivalsCarousel','arrivals',arrivals,(product,index,copy)=>cardHTML(product,`arrival-${copy}-${index}`),'<p class="empty-content">New products will be added soon. <a class="text-link" href="collection.html">Explore the collection</a></p>');
   setupHomeScroller('gemScroller','gemTrack',GEMS,(gem,index,copy)=>cardHTML(gem,`home-gem-${copy}-${index}`),'<p class="empty-content">No gemstones are listed right now. <a class="text-link" href="contact.html">Ask us about availability</a></p>');
   setupHomeScroller('jewelleryScroller','jewelleryTrack',JEWELLERY_CATEGORIES,category=>jewelleryCardHTML(category),'<p class="empty-content">Jewellery categories will be added soon.</p>');
   initTilt(document);

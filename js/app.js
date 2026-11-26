@@ -94,7 +94,7 @@ function productFromRow(row){
   const background=validColors(visual.background,['#3a2a08','#8a5a12']);
   return { ...specs, specs, slug:row.slug, name:row.name, type:row.product_type, category:row.category||'',
     text:row.description||'', description:row.description||'', image_url:publicMediaURL(row.image_url),
-    seo_title:row.seo_title||'',seo_description:row.seo_description||'',status:row.status, featured:row.featured, sort_order:row.sort_order,
+    seo_title:row.seo_title||'',seo_description:row.seo_description||'',status:row.status, featured:row.featured, sort_order:row.sort_order,created_at:row.created_at||'',
     c:colors,bg:background,visual:{colors,background} };
 }
 async function fetchPublicTable(table,query){
@@ -767,6 +767,8 @@ function applySiteSettings(){
   setText('.promo-card-copy h3',SITE_SETTINGS.home_promo_title);
   const meta=document.querySelector('meta[name="description"]');if(meta&&SITE_SETTINGS.meta_description)meta.content=SITE_SETTINGS.meta_description;
   document.querySelectorAll('[data-setting]').forEach(node=>{const value=SITE_SETTINGS[node.dataset.setting];if(value!==undefined&&value!==null)node.textContent=String(value)});
+  const arrivalsDescription=document.querySelector('[data-setting="home_arrivals_description"]');
+  if(arrivalsDescription&&arrivalsDescription.textContent==='Discover a few of the natural stones now available to enquire about.')arrivalsDescription.textContent='Discover the latest gemstones, jewellery and watches available to enquire about.';
   const valueList=document.getElementById('aboutValuesList');
   if(valueList){
     const defaults=[

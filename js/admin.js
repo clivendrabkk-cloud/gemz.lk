@@ -8,6 +8,7 @@
   aboutDefaults.announcement='Natural Gems & Fine Jewellery from Sri Lanka.\nOver 40 Years of Ceylon Gem Expertise.';
   aboutDefaults.announcement_format='lines-v1';
   aboutDefaults.announcement_speed='50';
+  aboutDefaults.home_arrivals_description='Discover the latest gemstones, jewellery and watches available to enquire about.';
   aboutDefaults.about_milestones_layout='vertical';
   Object.assign(aboutDefaults,{home_promo_title:'Over 40 Years in Gems',home_heritage_eyebrow:'Our heritage',home_heritage_description:'A family tradition of selecting exceptional natural gemstones in Sri Lanka and sharing them with collectors around the world.',home_heritage_enabled:'true',home_heritage_image_url:'',home_heritage_image_alt:'Our gemstone heritage',home_heritage_link_label:'Discover our story',home_heritage_link_url:'about.html'});
   Object.assign(aboutDefaults,{whatsapp_enabled:'true',whatsapp_number:'',whatsapp_button_label:'Chat with us',whatsapp_greeting:'Hello! How can we help you today?',whatsapp_inquiry_template:'Hello, I would like to make an enquiry.\n\nProducts: {products}\n\nName: {name}\nEmail: {email}\nPhone: {phone}\n\nMessage: {message}\n\n{site}'});
@@ -173,6 +174,7 @@
     syncContentRepeater(kind);
   }
   function populateSettings(){
+    if(state.settings.home_arrivals_description==='Discover a few of the natural stones now available to enquire about.')state.settings.home_arrivals_description=aboutDefaults.home_arrivals_description;
     for(const [key,value] of Object.entries(state.settings)){
       const field=$(`[name="${CSS.escape(key)}"]`,document);
       if(field?.type==='checkbox')field.checked=value===true||String(value).toLowerCase()==='true';
@@ -258,7 +260,7 @@
       <label class="full">Upload product image<input name="product_file" id="productFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-upload-inline="product" data-url-field="productImageUrl" data-preview-id="productImagePreview" data-feedback-id="editorUploadPreview"><div class="upload-feedback" id="editorUploadPreview" role="status" aria-live="polite" hidden></div></label>
       <label>Storefront status<select name="status"><option value="draft" ${value('status','published')==='draft'?'selected':''}>Draft</option><option value="published" ${value('status','published')==='published'?'selected':''}>Published</option><option value="archived" ${value('status')==='archived'?'selected':''}>Archived</option></select><span class="field-help">Published products appear on the customer storefront.</span></label>
       <label>Display order<input name="sort_order" type="number" value="${value('sort_order','0')}"></label>
-      <label class="check-row"><input name="featured" type="checkbox" ${row?.featured?'checked':''}> Feature this item</label>
+      <label class="check-row"><input name="featured" type="checkbox" ${!row||row.featured?'checked':''}> Feature this item</label><span class="field-help">New products are featured automatically and appear in New Arrivals when published.</span>
       <section class="full specifications-editor" aria-label="Product specifications"><div class="specifications-heading"><div><b>Specifications</b><span class="field-help">Product type loads its standard fields. Leave unused values blank or add your own specifications.</span></div><button class="small-button" type="button" data-add-spec>Add specification</button></div><div class="specification-list">${specificationRows(row?.specs,row?.product_type||'gem')}</div></section>`;
   }
   function articleFields(row){
