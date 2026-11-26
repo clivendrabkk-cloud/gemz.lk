@@ -270,7 +270,7 @@ function layout(active){
   const label=(key,fallback)=>htmlEscape(SITE_SETTINGS[key]||fallback);
   const L=(h,t,k)=>`<a href="${h}" class="${active===k?'active':''}">${t}</a>`;
   const storeName=htmlEscape(SITE_SETTINGS.store_name||'GEMZ');
-  const brandMark=(variant='dark',lazy=false)=>`<img class="logo-image" src="${variant==='light'?'assets/gemz-logo-light.png?v=brand-1':'assets/gemz-logo.png?v=brand-1'}" data-dark-src="assets/gemz-logo.png?v=brand-1" data-light-src="assets/gemz-logo-light.png?v=brand-1" alt="" width="399" height="183" ${lazy?'loading="lazy" fetchpriority="low" decoding="async"':'fetchpriority="high" decoding="sync"'}>`;
+  const brandMark=(variant='dark',lazy=false)=>`<img class="logo-image" src="${variant==='light'?'assets/gemz-logo-light.png?v=brand-1':'assets/gemz-logo.png?v=brand-1'}" data-dark-src="assets/gemz-logo.png?v=brand-1" data-light-src="assets/gemz-logo-light.png?v=brand-1" alt="" width="399" height="183" ${lazy?'loading="lazy" fetchpriority="low" decoding="async"':'fetchpriority="high" decoding="sync'}>`;
   const email=htmlEscape(SITE_SETTINGS.contact_email||'info@gemz.lk');
   const phone=htmlEscape(SITE_SETTINGS.contact_phone||'+94 11 234 5678');
   const address=htmlEscape(SITE_SETTINGS.contact_address||'Colombo, Sri Lanka');
