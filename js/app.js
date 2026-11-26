@@ -496,11 +496,9 @@ function initImageZoom(){
   window.GEMZ_ZOOM_READY=true;
   const SEL='.viewer.has-product-image,.jewellery-product-visual.has-product-image';
   const FINE_POINTER='(hover:hover) and (pointer:fine)';
-  let activeLens=null,dialog=null,dialogImage=null;
+  let active=null,activeRect=null,dialog=null,dialogImage=null;
   const imgOf=el=>el&&el.querySelector('img');
-  const ensureControls=el=>{
-    let lens=el.querySelector('.product-image-lens');
-    if(!lens){lens=document.createElement('span');lens.className='product-image-lens';lens.setAttribute('aria-hidden','true');el.append(lens)}
+  const ensureExpand=el=>{
     let expand=el.querySelector('.product-image-expand');
     if(!expand){
       expand=document.createElement('button');expand.type='button';expand.className='product-image-expand';
@@ -508,29 +506,22 @@ function initImageZoom(){
       expand.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/></svg>';
       el.append(expand);
     }
-    return lens;
   };
-  const hideLens=el=>{if(!el)return;el.classList.remove('is-lens-active');if(activeLens===el)activeLens=null};
-  const updateLens=(el,event)=>{
+  const clearZoom=el=>{
+    if(!el)return;
+    el.classList.remove('is-hover-zoomed');
+    el.style.removeProperty('--product-zoom');el.style.removeProperty('--zoom-x');el.style.removeProperty('--zoom-y');
+    if(active===el){active=null;activeRect=null}
+  };
+  const updateZoom=(el,event)=>{
     const img=imgOf(el);if(!img)return;
-    const imageRect=img.getBoundingClientRect(),hostRect=el.getBoundingClientRect();
-    const naturalWidth=img.naturalWidth||imageRect.width,naturalHeight=img.naturalHeight||imageRect.height;
-    if(!imageRect.width||!imageRect.height||!naturalWidth||!naturalHeight||!hostRect.width||!hostRect.height)return;
-    const fit=Math.min(imageRect.width/naturalWidth,imageRect.height/naturalHeight);
-    const contentWidth=naturalWidth*fit,contentHeight=naturalHeight*fit;
-    const contentLeft=imageRect.left+(imageRect.width-contentWidth)/2,contentTop=imageRect.top+(imageRect.height-contentHeight)/2;
-    const imageX=event.clientX-contentLeft,imageY=event.clientY-contentTop;
-    if(imageX<0||imageY<0||imageX>contentWidth||imageY>contentHeight){hideLens(el);return}
-    const lens=ensureControls(el),diameter=Math.max(90,Math.min(170,Math.min(hostRect.width,hostRect.height)*.34));
-    const zoom=Math.max(2.1,Math.min(2.8,700/Math.max(contentWidth,contentHeight)));
-    const x=Math.max(diameter/2,Math.min(hostRect.width-diameter/2,event.clientX-hostRect.left));
-    const y=Math.max(diameter/2,Math.min(hostRect.height-diameter/2,event.clientY-hostRect.top));
-    lens.style.width=`${diameter}px`;lens.style.height=`${diameter}px`;
-    lens.style.left=`${x}px`;lens.style.top=`${y}px`;
-    lens.style.backgroundImage=`url(${JSON.stringify(img.currentSrc||img.src)})`;
-    lens.style.backgroundSize=`${contentWidth*zoom}px ${contentHeight*zoom}px`;
-    lens.style.backgroundPosition=`${diameter/2-imageX*zoom}px ${diameter/2-imageY*zoom}px`;
-    el.classList.add('is-lens-active');activeLens=el;
+    const rect=active===el&&activeRect?activeRect:img.getBoundingClientRect();
+    if(!rect.width||!rect.height)return;
+    const x=Math.max(0,Math.min(100,(event.clientX-rect.left)/rect.width*100));
+    const y=Math.max(0,Math.min(100,(event.clientY-rect.top)/rect.height*100));
+    const zoom=Math.max(1.55,Math.min(2.2,900/rect.width));
+    el.style.setProperty('--zoom-x',`${x}%`);el.style.setProperty('--zoom-y',`${y}%`);
+    el.style.setProperty('--product-zoom',String(zoom));el.classList.add('is-hover-zoomed');
   };
   const ensureDialog=()=>{
     if(dialog)return;
@@ -546,22 +537,26 @@ function initImageZoom(){
   };
   const openFullImage=el=>{
     const img=imgOf(el),src=img&&(img.currentSrc||img.src);if(!src)return;
-    hideLens(el);ensureDialog();dialogImage.src=src;dialogImage.alt=img.alt||'Product image';
+    clearZoom(el);ensureDialog();dialogImage.src=src;dialogImage.alt=img.alt||'Product image';
     if(typeof dialog.showModal==='function'){if(!dialog.open)dialog.showModal()}else dialog.setAttribute('open','');
     dialog.querySelector('.product-image-lightbox-close').focus({preventScroll:true});
   };
-  document.querySelectorAll(SEL).forEach(el=>{if(imgOf(el))ensureControls(el)});
+  document.querySelectorAll(SEL).forEach(el=>{if(imgOf(el))ensureExpand(el)});
   const trackHover=event=>{
-    if(event.pointerType==='touch'||!matchMedia(FINE_POINTER).matches){hideLens(activeLens);return}
+    if(event.pointerType==='touch'||!matchMedia(FINE_POINTER).matches){clearZoom(active);return}
     const el=event.target.closest&&event.target.closest(SEL),img=event.target.closest&&event.target.closest('img');
-    if(el&&img===imgOf(el))updateLens(el,event);else hideLens(activeLens);
+    if(el&&img===imgOf(el)){
+      ensureExpand(el);
+      if(active!==el){clearZoom(active);active=el;activeRect=img.getBoundingClientRect()}
+      updateZoom(el,event);
+    }else clearZoom(active);
   };
   document.addEventListener('pointerover',trackHover);
   document.addEventListener('pointermove',trackHover,{passive:true});
   document.addEventListener('pointerout',event=>{
     if(event.pointerType==='touch')return;
     const el=event.target.closest&&event.target.closest(SEL),img=event.target.closest&&event.target.closest('img');
-    if(el&&img===imgOf(el)&&event.relatedTarget!==img)hideLens(el);
+    if(el&&img===imgOf(el)&&event.relatedTarget!==img)clearZoom(el);
   });
   document.addEventListener('click',event=>{
     const trigger=event.target.closest&&event.target.closest('.product-image-expand');
@@ -570,8 +565,9 @@ function initImageZoom(){
     if(!el||(!trigger&&clickedImage!==imgOf(el)))return;
     event.preventDefault();openFullImage(el);
   });
-  document.addEventListener('pointercancel',()=>hideLens(activeLens));
-  window.addEventListener('resize',()=>hideLens(activeLens));
+  document.addEventListener('pointercancel',()=>clearZoom(active));
+  window.addEventListener('resize',()=>clearZoom(active));
+  window.addEventListener('scroll',()=>clearZoom(active),{passive:true});
 }
 function initViewer(){
   const viewer=document.querySelector('.viewer');

@@ -235,12 +235,10 @@ video[data-lazy-video]:not(.media-ready){opacity:0;transition:opacity .3s ease}.
 .jewellery-product-visual img{width:100%;height:100%;object-fit:cover}
 .jewellery-product-visual.has-product-image{display:block;width:100%;box-sizing:border-box;aspect-ratio:auto;padding:clamp(6px,1.4vw,16px);border:1px solid rgba(12,14,19,.16);border-radius:clamp(12px,1.5vw,20px);background:transparent;box-shadow:none;overflow:visible}
 .jewellery-product-visual.has-product-image img{display:block;width:100%;height:auto;max-height:min(78vh,900px);object-fit:contain}
-/* Cursor-follow magnifier and full-screen product image viewer */
+/* Responsive product-image zoom and full-screen viewer */
 .viewer.has-product-image,.jewellery-product-visual.has-product-image{overflow:hidden;cursor:zoom-in;touch-action:pan-y;-webkit-tap-highlight-color:transparent}
-.viewer.has-product-image img,.jewellery-product-visual.has-product-image img{-webkit-user-drag:none;user-select:none;-webkit-user-select:none}
-.product-image-lens{position:absolute;z-index:4;display:block;border:2px solid rgba(255,255,255,.96);border-radius:50%;background-color:#fff;background-repeat:no-repeat;box-shadow:0 12px 34px rgba(12,14,19,.34),inset 0 0 0 1px rgba(201,138,43,.75);opacity:0;pointer-events:none;transform:translate(-50%,-50%);transition:opacity .12s ease;will-change:left,top,background-position}
-.product-image-lens::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(140deg,rgba(255,255,255,.24),transparent 42%);pointer-events:none}
-.is-lens-active>.product-image-lens{opacity:1}
+.viewer.has-product-image img,.jewellery-product-visual.has-product-image img{transform-origin:var(--zoom-x,50%) var(--zoom-y,50%);transition:transform .18s cubic-bezier(.22,.61,.36,1);-webkit-user-drag:none;user-select:none;-webkit-user-select:none;will-change:transform}
+.viewer.has-product-image.is-hover-zoomed img,.jewellery-product-visual.has-product-image.is-hover-zoomed img{transform:scale(var(--product-zoom,1.8))}
 .product-image-expand{position:absolute;z-index:5;top:clamp(10px,1.5vw,18px);right:clamp(10px,1.5vw,18px);width:44px;height:44px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.62);border-radius:50%;background:rgba(12,14,19,.72);backdrop-filter:blur(8px);color:#fff;transition:transform .18s ease,background .18s ease,color .18s ease}
 .product-image-expand svg,.product-image-lightbox-close svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .product-image-expand:hover,.product-image-expand:focus-visible{background:var(--amber);color:var(--ink);transform:scale(1.06)}
@@ -250,7 +248,7 @@ video[data-lazy-video]:not(.media-ready){opacity:0;transition:opacity .3s ease}.
 .product-image-lightbox>img{display:block;width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain}
 .product-image-lightbox-close{position:absolute;z-index:2;top:16px;right:16px;width:46px;height:46px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.5);border-radius:50%;background:rgba(255,255,255,.1);color:#fff;transition:background .18s ease,transform .18s ease}
 .product-image-lightbox-close:hover,.product-image-lightbox-close:focus-visible{background:var(--amber);color:var(--ink);transform:scale(1.06)}
-@media(prefers-reduced-motion:reduce){.product-image-lens,.product-image-expand,.product-image-lightbox-close{transition:none}}
+@media(prefers-reduced-motion:reduce){.viewer.has-product-image img,.jewellery-product-visual.has-product-image img,.product-image-expand,.product-image-lightbox-close{transition:none}}
 @media(hover:hover) and (pointer:fine){
   .card:hover .frame img,.jewellery-card:hover .jewellery-art img{transform:scale(1.06)}
 }
