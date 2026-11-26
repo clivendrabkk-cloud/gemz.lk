@@ -296,11 +296,6 @@ function layout(active){
     <button class="burger" id="burger" aria-label="Open menu" aria-controls="mnav" aria-expanded="false"><i></i><i></i><i></i></button>
     <a href="index.html" class="logo logo-only" aria-label="${storeName} home">${brandMark(active==='home'?'dark':'light')}</a>
     <div class="utils">
-      <a href="insights.html" class="txt">${navInsights}</a><a href="contact.html" class="txt">${navContact}</a>
-      <a class="ico opt" href="tel:${phone.replace(/[^+\d]/g,'')}" aria-label="${label('contact_phone_label','Call')}">${icon.phone}</a>
-      <a class="ico opt" href="mailto:${email}" aria-label="${label('contact_email_label','Email')}">${icon.mail}</a>
-      <a class="ico opt" href="contact.html" aria-label="${label('contact_location_label','Location')}">${icon.pin}</a>
-      <a class="ico opt" href="login.html" aria-label="${navAccount}">${icon.user}</a>
       <a class="ico" href="cart.html" aria-label="Inquiry cart">${icon.bag}<span class="cart-count">0</span></a>
     </div></div></header>
   <div class="mobile-nav" id="mnav" inert><a href="index.html">${navHome}</a><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=gem">${navCollection}</a><div class="mobile-jewellery-subnav"><a href="collection.html?section=gem">${navGems}</a>${gemNavLinks}</div></div><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=jewellery">${navJewellery}</a><div class="mobile-jewellery-subnav"><a href="collection.html?section=jewellery">${navAllJewellery}</a>${jewelleryNavLinks}</div></div><a href="collection.html?section=watch">${navWatches}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a><a href="contact.html">${navContact}</a><a href="login.html">${navAccount}</a></div>`;
