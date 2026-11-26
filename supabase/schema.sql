@@ -222,7 +222,8 @@ insert into public.articles (slug,title,category,excerpt,content,status) values
 on conflict (slug) do nothing;
 
 insert into public.site_settings (setting_key,setting_value) values
-('announcement','"Natural Gems & Fine Jewellery from Sri Lanka."'::jsonb),
+('announcement','"Natural Gems & Fine Jewellery from Sri Lanka.\nOver 40 Years of Ceylon Gem Expertise."'::jsonb),
+('announcement_format','"lines-v1"'::jsonb),
 ('announcement_speed','50'::jsonb),
 ('hero_eyebrow','"Sri Lanka · Est. 1985"'::jsonb),
 ('hero_title','"Fine Gems & Jewellery, Made to Last"'::jsonb),

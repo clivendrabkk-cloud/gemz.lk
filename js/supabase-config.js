@@ -4,7 +4,6 @@ window.GEMZ_SUPABASE_CONFIG = {
   url: 'https://lpgkepcsvfpgbakidiiu.supabase.co',
   anonKey: 'sb_publishable_kZ6bxOyANyw7cco7zcvtCg_Voo145XQ'
 };
-
 window.GEMZ_SUPABASE_READY = null;
 window.GEMZ_GET_SUPABASE = () => {
   const config = window.GEMZ_SUPABASE_CONFIG;

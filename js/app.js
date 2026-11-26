@@ -274,7 +274,12 @@ function layout(active){
   const email=htmlEscape(SITE_SETTINGS.contact_email||'info@gemz.lk');
   const phone=htmlEscape(SITE_SETTINGS.contact_phone||'+94 11 234 5678');
   const address=htmlEscape(SITE_SETTINGS.contact_address||'Colombo, Sri Lanka');
-  const announce=htmlEscape(SITE_SETTINGS.announcement||'Natural Gems & Fine Jewellery from Sri Lanka.');
+  const storedAnnouncement=String(SITE_SETTINGS.announcement||'Natural Gems & Fine Jewellery from Sri Lanka.\nOver 40 Years of Ceylon Gem Expertise.');
+  const announcement=!SITE_SETTINGS.announcement_format&&!storedAnnouncement.includes('\n')&&storedAnnouncement.trim()
+    ?`${storedAnnouncement.trim()}\nOver 40 Years of Ceylon Gem Expertise.`:storedAnnouncement;
+  const announcementMessages=announcement.split(/\r?\n/).map(message=>message.trim()).filter(Boolean);
+  const announcementMarkup=announcementMessages.map(message=>`<span>${htmlEscape(message)}</span>`).join('');
+  const announce=announcementMessages.map(htmlEscape).join(' · ');
   const navHome=label('nav_home','Home'),navCollection=label('nav_collection','Our Gemstones'),navGems=label('nav_gemstones','GEM'),navJewellery=label('nav_jewellery','JEWELLERY'),navAllJewellery=label('nav_all_jewellery','All Jewellery'),navWatches=label('nav_watches','WATCH'),navAbout=label('nav_about','About us'),navInsights=label('nav_insights','Insights'),navContact=label('nav_contact','Contact Us'),navAccount=label('nav_account','Account');
   const gemNavLinks=GEM_CATEGORIES.map(category=>`<a href="${categoryBrowseURL('gem',category.label)}">${htmlEscape(category.label)}</a>`).join('');
   const jewelleryNavLinks=JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('');
@@ -285,7 +290,7 @@ function layout(active){
   const whatsAppURL=safeWhatsAppURL(SITE_SETTINGS.whatsapp_number||SITE_SETTINGS.seo_social_whatsapp);
   const whatsAppMarkup=whatsAppURL?`<a class="social-button social-whatsapp" href="${htmlEscape(whatsAppURL)}" target="_blank" rel="me noopener noreferrer" aria-label="WhatsApp" title="WhatsApp">${socialIcon.whatsapp}</a>`:'';
   document.getElementById('site-header').innerHTML=`
-  <div class="announce"><span class="sr-only">${announce}</span><div class="announce-track" aria-hidden="true">${Array(8).fill(`<span>${announce}</span><span>Over 40 Years of Ceylon Gem Expertise.</span>`).join('')}</div></div>
+  <div class="announce"><span class="sr-only">${announce}</span><div class="announce-track" aria-hidden="true">${Array(8).fill(announcementMarkup).join('')}</div></div>
   <header class="header" id="hdr"><div class="header-in">
     <nav class="nav" aria-label="Main navigation">${L('index.html',navHome,'home')}<details class="nav-drop" name="gemz-categories"><summary class="${active==='collection'?'active':''}">${navCollection}</summary><div class="nav-dropdown"><a href="collection.html?section=gem">${navGems}</a>${gemNavLinks}</div></details><details class="nav-drop" name="gemz-categories"><summary class="${active==='collection'?'active':''}">${navJewellery}</summary><div class="nav-dropdown"><a href="collection.html?section=jewellery">${navAllJewellery}</a>${jewelleryNavLinks}</div></details>${L('collection.html?section=watch',navWatches,'collection')}${L('about.html',navAbout,'about')}</nav>
     <button class="burger" id="burger" aria-label="Open menu" aria-controls="mnav" aria-expanded="false"><i></i><i></i><i></i></button>
