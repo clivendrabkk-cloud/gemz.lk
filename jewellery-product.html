@@ -33,7 +33,7 @@
 </main>
 <div id="site-footer"></div>
 <script src="js/supabase-config.js?v=config-1"></script>
-<script src="js/app.js?v=app-4"></script>
+<script src="js/app.js?v=app-5"></script>
 <script>
 window.GEMZ_CONTENT_READY.then(async()=>{
   const params=new URLSearchParams(location.search);
@@ -80,6 +80,7 @@ window.GEMZ_CONTENT_READY.then(async()=>{
     const productVisual=document.getElementById('productVisual');
     productVisual.classList.toggle('has-product-image',Boolean(product?.image_url));
     productVisual.innerHTML=product?.image_url?`<img src="${htmlEscape(product.image_url)}" alt="${htmlEscape(title)}">`:type==='watch'?'<span class="watch-glyph" aria-hidden="true">⌚</span>':jewelleryArt(category);
+    window.GEMZ_REFRESH_IMAGE_ZOOM?.();
     const details=product?.specs||product?.details||product||{};
     const jewelleryRows=product&&type!=='watch'?JEWELLERY_DETAIL_FIELDS.map(label=>[label,details[label]||details[label.toLowerCase().replaceAll(' ','_')]]).filter(([,value])=>value):[];
     const knownFields=new Set(JEWELLERY_DETAIL_FIELDS.map(label=>label.toLowerCase().replaceAll(' ','_')));
