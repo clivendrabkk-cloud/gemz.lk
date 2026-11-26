@@ -8,6 +8,7 @@
   aboutDefaults.announcement='Natural Gems & Fine Jewellery from Sri Lanka.\nOver 40 Years of Ceylon Gem Expertise.';
   aboutDefaults.announcement_format='lines-v1';
   aboutDefaults.announcement_speed='50';
+  aboutDefaults.about_milestones_layout='vertical';
   Object.assign(aboutDefaults,{home_promo_title:'Over 40 Years in Gems',home_heritage_eyebrow:'Our heritage',home_heritage_description:'A family tradition of selecting exceptional natural gemstones in Sri Lanka and sharing them with collectors around the world.',home_heritage_enabled:'true',home_heritage_image_url:'',home_heritage_image_alt:'Our gemstone heritage',home_heritage_link_label:'Discover our story',home_heritage_link_url:'about.html'});
   Object.assign(aboutDefaults,{whatsapp_enabled:'true',whatsapp_number:'',whatsapp_button_label:'Chat with us',whatsapp_greeting:'Hello! How can we help you today?',whatsapp_inquiry_template:'Hello, I would like to make an enquiry.\n\nProducts: {products}\n\nName: {name}\nEmail: {email}\nPhone: {phone}\n\nMessage: {message}\n\n{site}'});
   Object.assign(aboutDefaults,{hero_overlay_darkness:'100',home_hero_enabled:'true',home_arrivals_enabled:'true',home_gems_enabled:'true',home_jewellery_enabled:'true',home_watch_enabled:'true',home_videos_enabled:'true',home_video_1_enabled:'true',home_video_1_order:'1',home_video_1_size:'standard',home_video_1_eyebrow:'The collection',home_video_title:'Natural Gems of Ceylon',home_video_2_enabled:'false',home_video_2_order:'2',home_video_2_size:'standard',home_video_2_eyebrow:'From the workshop',home_video_2_title:'Gemstone craftsmanship',home_promo_video_2_url:'',home_video_3_enabled:'false',home_video_3_order:'3',home_video_3_size:'standard',home_video_3_eyebrow:'Stories from Ceylon',home_video_3_title:'A closer look at our gems',home_promo_video_3_url:''});
@@ -117,9 +118,13 @@
   function updateCarouselSpeedOutput(){const input=$('#homeCarouselSpeed'),output=$('#homeCarouselSpeedOutput');if(!input||!output)return;output.value=`${input.value} px per second`;output.textContent=output.value}
   function updateAnnouncementSpeedOutput(){const input=$('#announcementSpeed'),output=$('#announcementSpeedOutput');if(!input||!output)return;output.value=`${input.value} px per second`;output.textContent=output.value}
   function updateHeroOverlayOutput(){const input=$('#heroOverlayDarkness'),output=$('#heroOverlayDarknessOutput');if(!input||!output)return;output.value=`${input.value}%`;output.textContent=output.value}
+  function updateRepeaterImagePreview(field){
+    const preview=field.closest('[data-content-item]')?.querySelector('[data-content-image-preview]');if(!preview)return;
+    const url=safePreviewURL(field.value);preview.hidden=!url;if(url)preview.src=url;else preview.removeAttribute('src');
+  }
   const contentRepeaterConfig={
     value:{prefix:'about_value',countName:'about_values_count',container:'#aboutValuesRepeater',minimum:3,fields:[['number','Number','input'],['title','Title','input'],['description','Description','textarea']]},
-    milestone:{prefix:'about_milestone',countName:'about_milestones_count',container:'#aboutMilestonesRepeater',minimum:4,fields:[['year','Year','input'],['description','Description','textarea']]}
+    milestone:{prefix:'about_milestone',countName:'about_milestones_count',container:'#aboutMilestonesRepeater',minimum:4,fields:[['year','Year','input'],['description','Description','textarea'],['image_url','Image','image'],['image_alt','Image alt text','input']]}
   };
   function contentRepeaterItem(kind,index,useSaved=true){
     const config=contentRepeaterConfig[kind];
@@ -128,7 +133,13 @@
       const name=`${config.prefix}_${index}_${field}`;
       const stored=state.settings[name]??aboutDefaults[name]??'';
       const fallback=useSaved?stored:(field==='number'&&kind==='value'?String(index).padStart(2,'0'):'');
-      const control=type==='textarea'?`<textarea data-content-field="${field}" rows="2">${escapeHTML(fallback)}</textarea>`:`<input data-content-field="${field}" value="${escapeHTML(fallback)}">`;
+      let control;
+      if(type==='textarea')control=`<textarea data-content-field="${field}" rows="2">${escapeHTML(fallback)}</textarea>`;
+      else if(type==='image'){
+        const previewURL=safePreviewURL(fallback),previewId=`aboutMilestoneImagePreview-${index}`,feedbackId=`aboutMilestoneImageUpload-${index}`;
+        const imageAlt=state.settings[`${config.prefix}_${index}_image_alt`]||'Milestone image preview';
+        return `<div class="content-image-field"><label>${title} URL<input type="url" data-content-field="${field}" value="${escapeHTML(fallback)}" placeholder="https://…"></label><label>Upload image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-settings-upload="${escapeHTML(name)}" data-content-image-upload data-preview-id="${previewId}" data-feedback-id="${feedbackId}"></label><span class="field-help">Upload an image or paste its public URL.</span><div class="upload-feedback" id="${feedbackId}" role="status" aria-live="polite" hidden></div><img class="setting-image-preview" data-content-image-preview ${previewURL?`src="${escapeHTML(previewURL)}"`:''} alt="${escapeHTML(imageAlt)}" ${previewURL?'':'hidden'}></div>`;
+      }else control=`<input data-content-field="${field}" value="${escapeHTML(fallback)}">`;
       return `<label>${title}${control}</label>`;
     }).join('');
     return `<fieldset class="content-repeat-item" data-content-item data-index="${index}"><legend data-content-legend>${label} ${index}</legend><div class="content-repeat-fields">${fields}</div><button class="small-button remove" type="button" data-remove-content-item="${kind}">Remove ${label.toLowerCase()}</button></fieldset>`;
@@ -139,6 +150,15 @@
       const number=index+1;item.dataset.index=String(number);
       item.querySelector('[data-content-legend]').textContent=`${kind==='value'?'Value':'Milestone'} ${number}`;
       item.querySelectorAll('[data-content-field]').forEach(field=>{field.name=`${config.prefix}_${number}_${field.dataset.contentField}`});
+      const imageUpload=item.querySelector('[data-content-image-upload]');
+      if(imageUpload){
+        const previewId=`aboutMilestoneImagePreview-${number}`,feedbackId=`aboutMilestoneImageUpload-${number}`;
+        imageUpload.dataset.settingsUpload=`${config.prefix}_${number}_image_url`;
+        imageUpload.dataset.previewId=previewId;imageUpload.dataset.feedbackId=feedbackId;
+        const preview=item.querySelector('[data-content-image-preview]'),feedback=item.querySelector('.upload-feedback');
+        if(preview)preview.id=previewId;
+        if(feedback)feedback.id=feedbackId;
+      }
     });
     const countField=$(`[name="${config.countName}"]`);if(countField)countField.value=String(items.length);
     const add=$(`[data-add-content-item="${kind}"]`);if(add)add.disabled=items.length>=30;
@@ -561,7 +581,7 @@
     $('#seoForm').addEventListener('submit',event=>saveSettings(event).catch(error=>notify(error.message,'error')));
     $('#settingsForm').addEventListener('change',event=>{if(event.target.matches('[data-settings-upload]'))handleSettingsUpload(event.target);if(event.target.matches('[data-settings-video-upload]'))handleSettingsVideoUpload(event.target)});
     $('#seoForm').addEventListener('change',event=>{if(event.target.matches('[data-settings-upload]'))handleSettingsUpload(event.target)});
-    $('#settingsForm').addEventListener('input',event=>{if(event.target.id==='homeCarouselSpeed')updateCarouselSpeedOutput();if(event.target.id==='announcementSpeed')updateAnnouncementSpeedOutput();if(event.target.id==='heroOverlayDarkness')updateHeroOverlayOutput();const previews={store_logo_url:'storeLogoPreview',store_favicon_url:'storeFaviconPreview',about_image_url:'aboutImagePreview',home_heritage_image_url:'homeHeritageImagePreview'},previewId=previews[event.target.name];if(previewId){const preview=document.getElementById(previewId);preview.hidden=!event.target.value;if(event.target.value)preview.src=event.target.value;else preview.removeAttribute('src')}});
+    $('#settingsForm').addEventListener('input',event=>{if(event.target.id==='homeCarouselSpeed')updateCarouselSpeedOutput();if(event.target.id==='announcementSpeed')updateAnnouncementSpeedOutput();if(event.target.id==='heroOverlayDarkness')updateHeroOverlayOutput();if(event.target.matches('[data-content-field="image_url"]'))updateRepeaterImagePreview(event.target);const previews={store_logo_url:'storeLogoPreview',store_favicon_url:'storeFaviconPreview',about_image_url:'aboutImagePreview',home_heritage_image_url:'homeHeritageImagePreview'},previewId=previews[event.target.name];if(previewId){const preview=document.getElementById(previewId);preview.hidden=!event.target.value;if(event.target.value)preview.src=event.target.value;else preview.removeAttribute('src')}});
     $('#seoForm').addEventListener('input',event=>{
       updateSeoPreviews();
       if(event.target.name==='seo_og_image'){const preview=$('#seoOgImagePreview');preview.hidden=!event.target.value;if(event.target.value)preview.src=event.target.value;else preview.removeAttribute('src')}

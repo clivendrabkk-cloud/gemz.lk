@@ -280,7 +280,9 @@ function layout(active){
   const announcementMessages=announcement.split(/\r?\n/).map(message=>message.trim()).filter(Boolean);
   const announcementMarkup=announcementMessages.map(message=>`<span>${htmlEscape(message)}</span>`).join('');
   const announce=announcementMessages.map(htmlEscape).join(' · ');
-  const navHome=label('nav_home','Home'),navCollection=label('nav_collection','Our Gemstones'),navGems=label('nav_gemstones','GEM'),navJewellery=label('nav_jewellery','JEWELLERY'),navAllJewellery=label('nav_all_jewellery','All Jewellery'),navWatches=label('nav_watches','WATCH'),navAbout=label('nav_about','About us'),navInsights=label('nav_insights','Insights'),navContact=label('nav_contact','Contact Us'),navAccount=label('nav_account','Account');
+  const configuredCollection=String(SITE_SETTINGS.nav_collection||'Gemstones').trim();
+  const navCollection=htmlEscape(/^our gemstones$/i.test(configuredCollection)?'Gemstones':configuredCollection);
+  const navHome=label('nav_home','Home'),footerCollection=label('nav_collection','Our Gemstones'),footerAbout=label('nav_about','About us'),navGems=label('nav_gemstones','GEM'),navJewellery=label('nav_jewellery','JEWELLERY'),navAllJewellery=label('nav_all_jewellery','All Jewellery'),navWatches=label('nav_watches','WATCH'),navAbout=label('nav_about','About Us'),navInsights=label('nav_insights','Insights'),navContact=label('nav_contact','Contact Us'),navAccount=label('nav_account','Account');
   const gemNavLinks=GEM_CATEGORIES.map(category=>`<a href="${categoryBrowseURL('gem',category.label)}">${htmlEscape(category.label)}</a>`).join('');
   const jewelleryNavLinks=JEWELLERY_CATEGORIES.map(category=>`<a href="${jewelleryCategoryURL(category)}">${htmlEscape(category)}</a>`).join('');
   const socialProfiles=[['seo_social_facebook','Facebook','facebook'],['seo_social_instagram','Instagram','instagram'],['seo_social_x','X','x'],['seo_social_youtube','YouTube','youtube'],['seo_social_linkedin','LinkedIn','linkedin'],['seo_social_pinterest','Pinterest','pinterest'],['seo_social_tiktok','TikTok','tiktok']];
@@ -292,10 +294,11 @@ function layout(active){
   document.getElementById('site-header').innerHTML=`
   <div class="announce"><span class="sr-only">${announce}</span><div class="announce-track" aria-hidden="true">${Array(8).fill(announcementMarkup).join('')}</div></div>
   <header class="header" id="hdr"><div class="header-in">
-    <nav class="nav" aria-label="Main navigation">${L('index.html',navHome,'home')}<details class="nav-drop" name="gemz-categories"><summary class="${active==='collection'?'active':''}">${navCollection}</summary><div class="nav-dropdown"><a href="collection.html?section=gem">${navGems}</a>${gemNavLinks}</div></details><details class="nav-drop" name="gemz-categories"><summary class="${active==='collection'?'active':''}">${navJewellery}</summary><div class="nav-dropdown"><a href="collection.html?section=jewellery">${navAllJewellery}</a>${jewelleryNavLinks}</div></details>${L('collection.html?section=watch',navWatches,'collection')}${L('about.html',navAbout,'about')}</nav>
+    <nav class="nav" aria-label="Main navigation">${L('index.html',navHome,'home')}<details class="nav-drop" name="gemz-categories"><summary class="${active==='collection'?'active':''}">${navCollection}</summary><div class="nav-dropdown"><a href="collection.html?section=gem">${navGems}</a>${gemNavLinks}</div></details><details class="nav-drop" name="gemz-categories"><summary class="${active==='collection'?'active':''}">${navJewellery}</summary><div class="nav-dropdown"><a href="collection.html?section=jewellery">${navAllJewellery}</a>${jewelleryNavLinks}</div></details>${L('collection.html?section=watch',navWatches,'collection')}</nav>
     <button class="burger" id="burger" aria-label="Open menu" aria-controls="mnav" aria-expanded="false"><i></i><i></i><i></i></button>
     <a href="index.html" class="logo logo-only" aria-label="${storeName} home">${brandMark(active==='home'?'dark':'light')}</a>
     <div class="utils">
+      <a class="txt${active==='about'?' active':''}" href="about.html">${navAbout}</a><a class="txt${active==='contact'?' active':''}" href="contact.html">${navContact}</a><a class="txt${active==='insights'?' active':''}" href="insights.html">${navInsights}</a>
       <a class="ico" href="cart.html" aria-label="Inquiry cart">${icon.bag}<span class="cart-count">0</span></a>
     </div></div></header>
   <div class="mobile-nav" id="mnav" inert><a href="index.html">${navHome}</a><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=gem">${navCollection}</a><div class="mobile-jewellery-subnav"><a href="collection.html?section=gem">${navGems}</a>${gemNavLinks}</div></div><div class="mobile-jewellery"><a class="mobile-jewellery-title" href="collection.html?section=jewellery">${navJewellery}</a><div class="mobile-jewellery-subnav"><a href="collection.html?section=jewellery">${navAllJewellery}</a>${jewelleryNavLinks}</div></div><a href="collection.html?section=watch">${navWatches}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a><a href="contact.html">${navContact}</a><a href="login.html">${navAccount}</a></div>`;
@@ -304,7 +307,7 @@ function layout(active){
   categoryMenus.forEach(menu=>menu.addEventListener('toggle',()=>{if(menu.open)categoryMenus.forEach(other=>{if(other!==menu)other.open=false})}));
   document.getElementById('site-footer').innerHTML=`<footer class="footer"><div class="wrap"><div class="foot-grid">
     <div class="foot-brand"><a href="index.html" class="logo logo-only footer-logo" aria-label="${storeName} home">${brandMark('dark',true)}</a><p data-setting="footer_tagline">Authentic natural gemstones sourced in Sri Lanka and delivered worldwide. Established 1985.</p>${socialMarkup||whatsAppMarkup?`<nav class="foot-social" aria-label="Social profiles">${socialMarkup}${whatsAppMarkup}</nav>`:''}</div>
-    <div><h4>${label('footer_explore_title','Explore')}</h4><a href="index.html">${navHome}</a><a href="collection.html">${navCollection}</a><a href="about.html">${navAbout}</a><a href="insights.html">${navInsights}</a></div>
+    <div><h4>${label('footer_explore_title','Explore')}</h4><a href="index.html">${navHome}</a><a href="collection.html">${footerCollection}</a><a href="about.html">${footerAbout}</a><a href="insights.html">${navInsights}</a></div>
     <div><h4>${label('footer_account_title','Account')}</h4><a href="cart.html">Inquiry Cart</a><a href="login.html">${navAccount}</a><a href="contact.html">${navContact}</a></div>
     <div><h4>${label('footer_contact_title','Contact')}</h4><a href="mailto:${email}">${email}</a><a href="tel:${phone.replace(/[^+\d]/g,'')}">${phone}</a><a href="contact.html">${address}</a></div>
   </div><div class="foot-bot"><span>© ${new Date().getFullYear()} · ${label('footer_copyright','All rights reserved.')}</span><span>${label('footer_motto','Natural · Authentic · Ceylon')}</span><span>Developed by <a class="developer-credit" href="https://zenstack360.com/" target="_blank" rel="noopener noreferrer">Zenstack360.com</a></span></div></div></footer>`;
@@ -780,6 +783,8 @@ function applySiteSettings(){
   }
   const milestoneList=document.getElementById('aboutMilestonesList');
   if(milestoneList){
+    const milestoneLayout=String(SITE_SETTINGS.about_milestones_layout||'vertical').toLowerCase();
+    milestoneList.classList.toggle('timeline--side-by-side',milestoneLayout==='side-by-side');
     const defaults=[
       {year:'1985',description:'Founded in Sri Lanka, trading Ratnapura sapphires.'},
       {year:'2000s',description:'Expansion into international gem fairs and private clients.'},
@@ -790,7 +795,10 @@ function applySiteSettings(){
     const setting=(key,fallback)=>SITE_SETTINGS[key]===undefined||SITE_SETTINGS[key]===null?fallback:String(SITE_SETTINGS[key]);
     milestoneList.innerHTML=Array.from({length:count},(_,index)=>{
       const number=index+1,fallback=defaults[index]||{year:'',description:''};
-      return `<div class="tl"><b>${htmlEscape(setting(`about_milestone_${number}_year`,fallback.year))}</b><p>${htmlEscape(setting(`about_milestone_${number}_description`,fallback.description))}</p></div>`;
+      const year=setting(`about_milestone_${number}_year`,fallback.year),description=setting(`about_milestone_${number}_description`,fallback.description);
+      const imageURL=publicMediaURL(setting(`about_milestone_${number}_image_url`,'')),imageAlt=setting(`about_milestone_${number}_image_alt`,`${year} milestone`);
+      const image=imageURL?`<img class="milestone-image" src="${htmlEscape(imageURL)}" alt="${htmlEscape(imageAlt||`${year} milestone`)}" loading="lazy" decoding="async">`:'';
+      return `<div class="tl${imageURL?' has-image':''}">${image}<div class="tl-copy"><b>${htmlEscape(year)}</b><p>${htmlEscape(description)}</p></div></div>`;
     }).join('');
   }
   document.querySelectorAll('[data-setting-src]').forEach(node=>{
