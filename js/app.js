@@ -491,6 +491,61 @@ function initTilt(root=document){
     card.addEventListener('pointerleave',()=>{card.style.transform=''});
   });
 }
+function initImageZoom(){
+  if(window.GEMZ_ZOOM_READY)return;
+  window.GEMZ_ZOOM_READY=true;
+  const SEL='.viewer.has-product-image,.jewellery-product-visual.has-product-image';
+  let box=null,downX=0,downY=0,downT=0,moved=false;
+  const imgOf=el=>el&&el.querySelector('img');
+  const origin=(el,event)=>{
+    const img=imgOf(el);if(!img)return;
+    const r=img.getBoundingClientRect();if(!r.width||!r.height)return;
+    const x=Math.max(0,Math.min(100,(event.clientX-r.left)/r.width*100));
+    const y=Math.max(0,Math.min(100,(event.clientY-r.top)/r.height*100));
+    el.style.setProperty('--zx',x+'%');el.style.setProperty('--zy',y+'%');
+  };
+  const zoomOn=(el,event)=>{
+    box=el;
+    el.style.setProperty('--zoom',event.pointerType==='touch'?'2.6':'2.2');
+    origin(el,event);el.classList.add('is-zoomed');
+  };
+  const zoomOff=el=>{if(!el)return;el.classList.remove('is-zoomed');if(box===el)box=null};
+  document.addEventListener('pointerover',event=>{
+    if(event.pointerType==='touch')return;
+    const el=event.target.closest&&event.target.closest(SEL);
+    if(el&&imgOf(el)&&!el.classList.contains('is-zoomed'))zoomOn(el,event);
+  });
+  document.addEventListener('pointermove',event=>{
+    const el=event.target.closest&&event.target.closest(SEL);
+    if(event.pointerType==='touch'){
+      if(box&&box.classList.contains('is-zoomed')){
+        if(Math.abs(event.clientX-downX)+Math.abs(event.clientY-downY)>6)moved=true;
+        origin(box,event);
+      }
+      return;
+    }
+    if(el&&el.classList.contains('is-zoomed'))origin(el,event);
+  });
+  document.addEventListener('pointerout',event=>{
+    if(event.pointerType==='touch')return;
+    const el=event.target.closest&&event.target.closest(SEL);
+    if(el&&!(event.relatedTarget&&el.contains(event.relatedTarget)))zoomOff(el);
+  });
+  document.addEventListener('pointerdown',event=>{
+    if(event.pointerType!=='touch')return;
+    downX=event.clientX;downY=event.clientY;downT=Date.now();moved=false;
+    const el=event.target.closest&&event.target.closest(SEL);
+    if(box&&box.classList.contains('is-zoomed')&&(!el||el!==box))zoomOff(box);
+  });
+  document.addEventListener('pointerup',event=>{
+    if(event.pointerType!=='touch')return;
+    const el=event.target.closest&&event.target.closest(SEL);
+    if(!el||!imgOf(el)||moved||Date.now()-downT>450)return;
+    if(el.classList.contains('is-zoomed'))zoomOff(el);else zoomOn(el,event);
+  });
+  document.addEventListener('pointercancel',()=>zoomOff(box));
+  window.addEventListener('resize',()=>zoomOff(box));
+}
 function initViewer(){
   const viewer=document.querySelector('.viewer');
   const visual=viewer?.querySelector('.gem3d');
@@ -611,7 +666,7 @@ function initFX(){
     };
     update();window.addEventListener('scroll',update,{passive:true});
   }
-  initTilt();initViewer();initLazyVideos();
+  initTilt();initViewer();initImageZoom();initLazyVideos();
 }
 function onPageRefresh(callback){
   window.GEMZ_PAGE_REFRESH=callback;
