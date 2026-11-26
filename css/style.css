@@ -140,7 +140,7 @@ video[data-lazy-video]:not(.media-ready){opacity:0;transition:opacity .3s ease}.
 .jewellery-card:hover{transform:translateY(-6px);box-shadow:var(--shadow)}
 .jewellery-art{aspect-ratio:1;border-radius:12px;display:grid;place-items:center;overflow:hidden;background:#fff}
 .jewellery-art svg{width:78%;filter:drop-shadow(0 12px 14px rgba(12,14,19,.12));transition:transform .7s var(--ease)}
-.jewellery-art img{width:100%;height:100%;object-fit:cover}
+.jewellery-art img{width:100%;height:100%;object-fit:cover;transition:transform .22s var(--ease)}
 .jewellery-card:hover .jewellery-art svg{transform:scale(1.08) rotate(-4deg)}
 .jewellery-card-body{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 4px 4px}
 .jewellery-card-body h3{font-size:1.5rem}
@@ -177,7 +177,7 @@ video[data-lazy-video]:not(.media-ready){opacity:0;transition:opacity .3s ease}.
 .card{display:block;background:var(--white);border-radius:var(--r);padding:14px;border:1px solid var(--line);transition:transform .22s ease,box-shadow .35s var(--ease),border-color .35s;transform-style:preserve-3d}
 .card:hover{box-shadow:var(--shadow);border-color:rgba(201,138,43,.5)}
 .frame{aspect-ratio:1;border-radius:12px;display:grid;place-items:center;position:relative;overflow:hidden;transform:translateZ(30px);background:#fff}
-.frame img{width:100%;height:100%;object-fit:cover}
+.frame img{width:100%;height:100%;object-fit:cover;transition:transform .22s var(--ease)}
 .watch-glyph{font-size:clamp(3rem,10vw,6rem);line-height:1;filter:drop-shadow(0 15px 18px rgba(0,0,0,.35))}
 .frame svg{width:68%;transition:transform .8s var(--ease);filter:drop-shadow(0 18px 24px rgba(0,0,0,.35))}
 .card:hover .frame svg{transform:scale(1.12) rotate(-6deg)}
@@ -238,9 +238,13 @@ video[data-lazy-video]:not(.media-ready){opacity:0;transition:opacity .3s ease}.
 /* Product image hover / tap zoom */
 .viewer.has-product-image,.jewellery-product-visual.has-product-image{overflow:hidden;cursor:zoom-in;touch-action:pan-y;-webkit-tap-highlight-color:transparent}
 .viewer.has-product-image.is-zoomed,.jewellery-product-visual.has-product-image.is-zoomed{cursor:zoom-out;touch-action:none}
-.viewer.has-product-image img,.jewellery-product-visual.has-product-image img{transform-origin:var(--zx,50%) var(--zy,50%);transition:transform .28s cubic-bezier(.22,.61,.36,1);will-change:transform;-webkit-user-drag:none;user-select:none;-webkit-user-select:none}
+.viewer.has-product-image img,.jewellery-product-visual.has-product-image img{transform-origin:var(--zx,50%) var(--zy,50%);transition:transform .18s cubic-bezier(.22,.61,.36,1);will-change:transform;-webkit-user-drag:none;user-select:none;-webkit-user-select:none}
 .viewer.has-product-image.is-zoomed img,.jewellery-product-visual.has-product-image.is-zoomed img{transform:scale(var(--zoom,2.2))}
 @media(prefers-reduced-motion:reduce){.viewer.has-product-image img,.jewellery-product-visual.has-product-image img{transition:none}}
+@media(hover:hover) and (pointer:fine){
+  .card:hover .frame img,.jewellery-card:hover .jewellery-art img{transform:scale(1.06)}
+  .viewer.has-product-image:not(.is-zoomed):hover img,.jewellery-product-visual.has-product-image:not(.is-zoomed):hover img{transform:scale(1.35)}
+}
 .jewellery-product .specs td:first-child{width:48%}
 .detail-actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
 
